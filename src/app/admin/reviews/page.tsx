@@ -37,6 +37,7 @@ import { collection, doc, updateDoc, deleteDoc, query, where, getDocs } from 'fi
 import { ProductReview, ReviewStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 export default function AdminReviewsPage() {
   const db = useFirestore();

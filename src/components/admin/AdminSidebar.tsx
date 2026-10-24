@@ -16,6 +16,7 @@ const MENU_ITEMS = [
   { id: 'reviews', label: 'Customer Reviews', icon: 'fa-star', href: '/admin/reviews' },
   { id: 'coupons', label: 'Coupons', icon: 'fa-ticket', href: '/admin/coupons' },
   { id: 'orders', label: 'Orders', icon: 'fa-cart-shopping', href: '/admin/orders' },
+  { id: 'users', label: 'Users & Coins', icon: 'fa-users', href: '/admin/users' },
 ];
 
 export const AdminSidebar: React.FC = () => {

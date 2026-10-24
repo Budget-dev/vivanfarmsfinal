@@ -153,9 +153,13 @@ service cloud.firestore {
     }
 
     // ── USER PROFILES ─────────────────────────────────────────────────────
-    // Preserved exactly from old rules.
     match /userProfiles/{userId} {
-      allow get, write: if isOwner(userId) || isMasterAdmin();
+      allow read, write: if isOwner(userId) || isMasterAdmin();
+    }
+
+    // ── COIN TRANSACTIONS ──────────────────────────────────────────────────
+    match /coinTransactions/{txId} {
+      allow read, list, write: if isMasterAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
     }
 
     // ── ORDERS ────────────────────────────────────────────────────────────
