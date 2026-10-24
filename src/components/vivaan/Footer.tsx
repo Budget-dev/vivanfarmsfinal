@@ -94,33 +94,28 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-1.5 md:space-y-2 text-[11px] md:text-sm text-emerald-100/80">
               <li>
-                <Link href="/shop?cat=ghee" className="hover:text-white transition-colors">
+                <Link href="/category/ghee" className="hover:text-white transition-colors">
                   A2 Desi Gir Cow Ghee
                 </Link>
               </li>
               <li>
-                <Link href="/shop?cat=ghee" className="hover:text-white transition-colors">
+                <Link href="/category/ghee" className="hover:text-white transition-colors">
                   Murrah Buffalo Bilona Ghee
                 </Link>
               </li>
               <li>
-                <Link href="/shop?cat=oils" className="hover:text-white transition-colors">
-                  Wood Pressed Mustard Oil
+                <Link href="/category/ghee" className="hover:text-white transition-colors">
+                  Native Hallikar Cow Ghee
                 </Link>
               </li>
               <li>
-                <Link href="/shop?cat=oils" className="hover:text-white transition-colors">
-                  Wood Pressed Groundnut Oil
+                <Link href="/category/sweets" className="hover:text-white transition-colors">
+                  Artisanal Bilona Ghee Laddus
                 </Link>
               </li>
               <li>
-                <Link href="/shop?cat=honey" className="hover:text-white transition-colors">
-                  Raw Wild Forest Honey
-                </Link>
-              </li>
-              <li>
-                <Link href="/shop?cat=combos" className="hover:text-white transition-colors">
-                  Healthy Combo Packs
+                <Link href="/category/sweets" className="hover:text-white transition-colors">
+                  Mathura Peda & Barfi Assortment
                 </Link>
               </li>
             </ul>

@@ -17,32 +17,11 @@ const CATEGORIES_DATA = [
     colorBg: 'from-[#DF9F3D] to-[#C98A28]'
   },
   {
-    id: 'honey',
-    title: 'Raw Wild Honey',
-    subtitle: 'Forest Harvested',
-    emoji: '🍯',
-    colorBg: 'from-[#E2A645] to-[#CE8E2C]'
-  },
-  {
-    id: 'oils',
-    title: 'Wood Pressed Oils',
-    subtitle: 'Cold Extracted',
-    emoji: '🌻',
-    colorBg: 'from-[#DF9F3D] to-[#BD7E1E]'
-  },
-  {
     id: 'sweets',
     title: 'Farm Sweets',
     subtitle: 'A2 Ghee & Jaggery',
     emoji: '🍬',
     colorBg: 'from-[#E5A844] to-[#C98A28]'
-  },
-  {
-    id: 'all',
-    title: 'Organic Combos',
-    subtitle: 'Curated Bundles',
-    emoji: '🎁',
-    colorBg: 'from-[#D99532] to-[#B87518]'
   }
 ];
 

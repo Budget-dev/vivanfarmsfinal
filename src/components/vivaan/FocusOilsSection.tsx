@@ -263,8 +263,10 @@ export const FocusOilsSection: React.FC<FocusOilsSectionProps> = ({
               const varIdx = selectedVariants[p.id] || 0;
               const currentVar = Array.isArray(p.vars) && p.vars.length > varIdx ? p.vars[varIdx] : null;
               const displayPrice = currentVar?.p ? Number(currentVar.p) : Number(p.price) || 0;
-              const displayMrp = currentVar?.mrp ? Number(currentVar.mrp) : Number(p.mrpPrice) || displayPrice;
-              const discount = displayMrp > displayPrice ? Math.round(((displayMrp - displayPrice) / displayMrp) * 100) : 0;
+              const rawMrp = currentVar?.mrp ? Number(currentVar.mrp) : Number(p.mrpPrice) || displayPrice;
+              const displayMrp = rawMrp > displayPrice ? rawMrp : Math.round(displayPrice * 1.4);
+              const discount = Math.round(((displayMrp - displayPrice) / displayMrp) * 100);
+              const yourPrice = Math.round(displayPrice * 0.95);
               const isAdded = !!justAddedMap[p.id];
               const inCart = cartIds.includes(p.id);
 
@@ -272,37 +274,38 @@ export const FocusOilsSection: React.FC<FocusOilsSectionProps> = ({
                 <div
                   key={p.id}
                   onClick={() => router.push(`/product/${p.id}`)}
-                  className="w-[155px] sm:w-[240px] md:w-[260px] shrink-0 bg-white rounded-2xl border border-gray-200 hover:border-[#0D3B2E]/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-visible cursor-pointer group relative"
+                  className="w-[175px] sm:w-[240px] md:w-[260px] shrink-0 bg-white rounded-2xl border border-gray-200 hover:border-[#0D3B2E]/30 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer group relative p-2.5 sm:p-3 select-none"
                 >
-                  {/* Image Section */}
-                  <div className="relative h-[175px] sm:h-[220px] md:h-[250px] w-full bg-[#FAF8F5] p-2.5 sm:p-4 flex items-center justify-center border-b border-[#F2ECE1] rounded-t-2xl">
-                    {/* Hanging FLAT 30% OFF Maroon Badge */}
-                    <div className="absolute top-0 left-2.5 z-10 bg-[#8B264E] text-white rounded-b-xl px-2 pt-1 pb-1.5 text-center shadow-xs flex flex-col items-center justify-center leading-none select-none pointer-events-none">
-                      <span className="text-[7px] sm:text-[7.5px] font-black uppercase tracking-wider">FLAT</span>
-                      <span className="text-[11px] sm:text-xs font-black tracking-tight my-0.5">{discount > 0 ? discount : 30}%</span>
-                      <span className="text-[7px] sm:text-[7.5px] font-black uppercase tracking-wider">OFF</span>
-                    </div>
+                  {/* Top-Left Hanging FLAT OFF Deep Green Badge */}
+                  <div className="absolute top-2 left-2 z-10 bg-[#143E31] text-white rounded-b-xl rounded-t-sm px-2 pt-1 pb-1.5 text-center shadow-xs flex flex-col items-center justify-center leading-none select-none pointer-events-none">
+                    <span className="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-white">FLAT</span>
+                    <span className="text-[12px] sm:text-[13px] font-black tracking-tight text-[#EBB847] my-0.5">{discount}%</span>
+                    <span className="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-white">OFF</span>
+                  </div>
 
-                    {/* Product Image */}
+                  {/* Clean White Product Image Area */}
+                  <div className="relative w-full h-[155px] sm:h-[195px] md:h-[215px] flex items-center justify-center bg-white mt-1">
                     <div className="relative w-full h-full flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
                       <Image
                         src={(p.imageUrls && p.imageUrls[0]) || '/images/products/mustard_oil.jpg'}
                         alt={p.name}
                         fill
-                        className="object-contain p-2 sm:p-3"
+                        className="object-contain p-1 sm:p-2"
                         sizes="(max-width: 640px) 180px, 280px"
                       />
                     </div>
+                  </div>
 
-                    {/* Floating ADD Button positioned right on the seam */}
+                  {/* Floating ADD Button aligned to the right */}
+                  <div className="flex justify-end -mt-3 relative z-10 mb-1">
                     <button
                       type="button"
                       onClick={(e) => handleAdd(p, e)}
                       className={cn(
-                        "absolute right-2.5 -bottom-3.5 sm:right-3 sm:-bottom-4 z-20 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-md active:scale-95",
+                        "px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm tracking-wide flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-95",
                         isAdded || inCart
-                          ? "bg-emerald-700 text-white"
-                          : "bg-[#1B4D3E] text-white hover:bg-[#0D3B2E]"
+                          ? "bg-emerald-800 text-white"
+                          : "bg-[#1D4A3E] text-white hover:bg-[#143E31]"
                       )}
                       aria-label={`Add ${p.name} to cart`}
                     >
@@ -310,37 +313,60 @@ export const FocusOilsSection: React.FC<FocusOilsSectionProps> = ({
                       {isAdded ? (
                         <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       ) : (
-                        <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.2]" />
                       )}
                     </button>
                   </div>
 
-                  {/* Body Section */}
-                  <div className="p-3 pt-4 sm:p-4 sm:pt-5 flex flex-col flex-1 justify-between gap-1.5 sm:gap-2">
-                    <div className="space-y-1">
-                      <h3 className="font-serif text-xs sm:text-sm font-bold text-gray-900 group-hover:text-[#0D3B2E] transition-colors line-clamp-2 min-h-[2.6em] leading-snug">
-                        {p.name}
-                      </h3>
-                      <div className="flex items-center gap-1 text-[11px] sm:text-xs">
-                        <Star className="w-3.5 h-3.5 fill-[#F5A623] text-[#F5A623] shrink-0" />
-                        <span className="font-black text-gray-900">{p.rating || 4.8}</span>
-                        <span className="text-gray-500 text-[10px] sm:text-[11px]">({p.reviewCount || 1323} reviews)</span>
+                  {/* Title */}
+                  <h3 className="font-serif text-[13px] sm:text-[15px] font-bold text-[#111827] group-hover:text-[#0D3B2E] transition-colors line-clamp-2 min-h-[2.4em] leading-snug">
+                    {p.name}
+                  </h3>
+
+                  {/* Rating */}
+                  <div className="flex items-center gap-1.5 text-xs text-gray-700 mt-1 mb-1.5">
+                    <Star className="w-3.5 h-3.5 text-[#EAB308] fill-transparent stroke-[2.2] shrink-0" />
+                    <span className="text-[11.5px] sm:text-xs text-gray-700 font-normal">
+                      {p.reviewCount || 0} review
+                    </span>
+                  </div>
+
+                  {/* Strikethrough Price on Left, Selling Price on Right */}
+                  <div className="flex items-baseline gap-2.5 mt-0.5 mb-2">
+                    {displayMrp > displayPrice && (
+                      <span className="text-xs sm:text-sm text-gray-400 line-through font-normal">
+                        ₹{displayMrp.toLocaleString('en-IN')}
+                      </span>
+                    )}
+                    <span className="text-sm sm:text-base font-black text-black leading-none">
+                      ₹{displayPrice.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+
+                  {/* YOUR PRICE Green Offer Box */}
+                  <div className="mt-auto border border-[#143E31] rounded-lg overflow-hidden bg-white">
+                    {/* Dark Green Gradient Top Banner */}
+                    <div className="bg-gradient-to-r from-[#1E4E40] to-[#143B2F] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-[#A3C9BC] leading-tight">
+                          YOUR PRICE
+                        </span>
+                        <span className="text-base sm:text-lg md:text-xl font-black text-white leading-none mt-0.5">
+                          ₹ {yourPrice.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="bg-[#EAB308] text-[#1F2937] px-2 py-0.5 rounded-[4px] text-[9.5px] sm:text-[10.5px] font-black tracking-tight whitespace-nowrap shadow-2xs">
+                        {discount}% + 5% OFF
                       </div>
                     </div>
 
-                    {/* Price Row (NO PURPLE BOX) */}
-                    <div className="pt-1.5 sm:pt-2 flex items-baseline gap-1.5 mt-auto">
-                      <span className="text-sm sm:text-base font-black text-gray-900 leading-none">
-                        ₹{displayPrice.toLocaleString('en-IN')}
-                      </span>
-                      {displayMrp > displayPrice && (
-                        <span className="text-[10px] sm:text-xs text-gray-400 line-through font-semibold">
-                          ₹{displayMrp.toLocaleString('en-IN')}
-                        </span>
-                      )}
+                    {/* Pale Mint Bottom Strip */}
+                    <div className="bg-[#EDF5F1] px-2.5 py-1 sm:px-3 sm:py-1 border-t border-[#143E31]/20">
+                      <p className="text-[8.5px] sm:text-[9.5px] text-[#0D3B2E] font-medium leading-tight truncate">
+                        <span className="font-bold">MRP</span> ₹{displayMrp.toLocaleString('en-IN')} + 5% extra prepaid incl.
+                      </p>
                     </div>
                   </div>
-
                 </div>
               );
             })}

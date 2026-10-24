@@ -19,8 +19,6 @@ interface TopPicksSectionProps {
 const CATEGORY_TABS = [
   { id: 'all', label: 'ALL' },
   { id: 'ghee', label: 'VEDIC GHEE' },
-  { id: 'honey', label: 'RAW HONEY' },
-  { id: 'oils', label: 'WOOD PRESSED OILS' },
   { id: 'sweets', label: 'FARM SWEETS' }
 ];
 

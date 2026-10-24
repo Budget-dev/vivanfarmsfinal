@@ -14,7 +14,7 @@ export const CATEGORIES: CategoryDef[] = [
     id: 'all',
     name: 'All Products',
     slug: 'all',
-    description: 'Explore our complete farm-to-table range of artisanal Vedic A2 Ghee, cold pressed oils, raw honey, homemade sweets, and stone-ground staples.',
+    description: 'Explore our complete farm-to-table range of artisanal Vedic A2 Ghee and pure homemade sweets.',
     icon: '✨'
   },
   {
@@ -30,41 +30,6 @@ export const CATEGORIES: CategoryDef[] = [
     slug: 'sweets',
     description: 'Artisanal homemade sweets crafted strictly with pure A2 Gir Cow Bilona Ghee, organic jaggery, and premium whole nuts.',
     icon: '🍬'
-  },
-  {
-    id: 'honey',
-    name: 'Honey',
-    slug: 'honey',
-    description: '100% Raw, unprocessed, and unfiltered forest honey directly from natural bee hives, packed with live active enzymes.',
-    icon: '🍯'
-  },
-  {
-    id: 'oils',
-    name: 'Wood Pressed Oils',
-    slug: 'oils',
-    description: 'Extracted at ambient room temperature (< 40°C) on traditional wooden ghani/kolhu to preserve vital micro-nutrients.',
-    icon: '🫒'
-  },
-  {
-    id: 'staples',
-    name: 'Atta & Staples',
-    slug: 'atta',
-    description: 'Slow stone-milled indigenous flours, cold-ground spices, and unrefined sweeteners free of bleaching agents.',
-    icon: '🌾'
-  },
-  {
-    id: 'superfoods',
-    name: 'Superfoods',
-    slug: 'superfoods',
-    description: 'Nutrient-dense Ayurvedic preparations, cold-churned makkhan, herbal infusions, and wild-harvested tonics.',
-    icon: '🌿'
-  },
-  {
-    id: 'combos',
-    name: 'Combos & Gift Packs',
-    slug: 'combos',
-    description: 'Curated pantry bundles and celebratory heritage gift hampers at special direct-from-farm bundle pricing.',
-    icon: '🎁'
   }
 ];
 
@@ -488,7 +453,18 @@ export const ALL_PRODUCTS: Product[] = [
 
 export function getCategoryProducts(catId: string, customList?: Product[]): Product[] {
   const source = customList && customList.length > 0 ? customList : ALL_PRODUCTS;
-  if (!catId || catId === 'all') return source;
+  
+  const isGheeOrSweets = (p: Product) => {
+    const cat = p.cat?.toLowerCase() || '';
+    const name = p.name?.toLowerCase() || '';
+    const id = p.id?.toLowerCase() || '';
+    return cat === 'ghee' || cat === 'sweets' || name.includes('ghee') || id.includes('ghee') || 
+           name.includes('sweet') || name.includes('ladoo') || name.includes('peda') || name.includes('barfi');
+  };
+
+  if (!catId || catId === 'all') {
+    return source.filter(isGheeOrSweets);
+  }
 
   return source.filter(p => {
     const cat = p.cat?.toLowerCase() || '';
@@ -497,11 +473,6 @@ export function getCategoryProducts(catId: string, customList?: Product[]): Prod
 
     if (catId === 'ghee') return cat === 'ghee' || name.includes('ghee') || id.includes('ghee');
     if (catId === 'sweets') return cat === 'sweets' || name.includes('sweet') || name.includes('ladoo') || name.includes('peda') || name.includes('barfi');
-    if (catId === 'honey') return cat === 'honey' || name.includes('honey');
-    if (catId === 'oils') return cat === 'oils' || name.includes('oil');
-    if (catId === 'atta' || catId === 'staples') return cat === 'staples' || name.includes('atta') || name.includes('flour') || name.includes('wheat') || name.includes('jaggery') || name.includes('sugar');
-    if (catId === 'superfoods') return cat === 'superfoods' || name.includes('chyawanprash') || name.includes('butter') || name.includes('makkhan') || name.includes('superfood');
-    if (catId === 'combos' || catId === 'gift-card') return cat === 'combo' || cat === 'combos' || name.includes('combo') || name.includes('pack') || name.includes('trio') || name.includes('bundle') || name.includes('hamper');
 
     return cat === catId;
   });

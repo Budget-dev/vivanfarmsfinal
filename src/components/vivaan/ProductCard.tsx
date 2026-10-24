@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Star, ShoppingCart, Leaf } from 'lucide-react';
+import { Star, ShoppingCart, Leaf, Check } from 'lucide-react';
 import { Product } from '@/types';
 import { JarIcon, ComboIcon } from './JarIcon';
 import { cn } from '@/lib/utils';
@@ -35,12 +35,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isInCart, onO
   const router = useRouter();
   
   // Ensure we have numbers to work with
-  const price = Number(product.price) || 0;
-  const mrpPrice = Number(product.mrpPrice) || price;
-
-  const discount = mrpPrice > price 
-    ? Math.round(((mrpPrice - price) / mrpPrice) * 100)
-    : 0;
+  const rawMrp = Number(product.mrpPrice) || price;
+  const mrpPrice = rawMrp > price ? rawMrp : Math.round(price * 1.4);
+  const discount = Math.round(((mrpPrice - price) / mrpPrice) * 100);
+  const yourPrice = Math.round(price * 0.95);
 
   const description = getSmartDescription(product);
 
@@ -100,69 +98,91 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isInCart, onO
   return (
     <div 
       onClick={handleNavigate}
-      className="bg-white rounded-2xl overflow-visible border border-gray-200 cursor-pointer transition-all duration-300 hover:shadow-xl hover:border-[#0D3B2E]/30 group relative flex flex-col w-full mx-auto select-none"
+      className="bg-white rounded-2xl border border-gray-200 hover:border-[#0D3B2E]/30 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer group relative select-none p-2.5 sm:p-3 w-full mx-auto"
     >
-      {/* Top Section: Tall Image Area */}
-      <div className="relative h-[175px] sm:h-[220px] md:h-[250px] w-full bg-[#FAF8F5] p-2.5 sm:p-4 flex items-center justify-center border-b border-[#F2ECE1] rounded-t-2xl shrink-0">
-        {/* Hanging FLAT 30% OFF Maroon Badge */}
-        <div className="absolute top-0 left-2.5 z-10 bg-[#8B264E] text-white rounded-b-xl px-2 pt-1 pb-1.5 text-center shadow-xs flex flex-col items-center justify-center leading-none select-none pointer-events-none">
-          <span className="text-[7px] sm:text-[7.5px] font-black uppercase tracking-wider">FLAT</span>
-          <span className="text-[11px] sm:text-xs font-black tracking-tight my-0.5">{discount > 0 ? discount : 30}%</span>
-          <span className="text-[7px] sm:text-[7.5px] font-black uppercase tracking-wider">OFF</span>
-        </div>
+      {/* Top-Left Hanging FLAT OFF Deep Green Badge */}
+      <div className="absolute top-2 left-2 z-10 bg-[#143E31] text-white rounded-b-xl rounded-t-sm px-2 pt-1 pb-1.5 text-center shadow-xs flex flex-col items-center justify-center leading-none select-none pointer-events-none">
+        <span className="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-white">FLAT</span>
+        <span className="text-[12px] sm:text-[13px] font-black tracking-tight text-[#EBB847] my-0.5">{discount}%</span>
+        <span className="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-white">OFF</span>
+      </div>
 
-        {/* Product Image / Icon */}
+      {/* Clean White Product Image Area */}
+      <div className="relative w-full h-[155px] sm:h-[195px] md:h-[215px] flex items-center justify-center bg-white mt-1">
         <div className="relative z-10 w-full h-full flex items-center justify-center">
           {getIcon()}
         </div>
+      </div>
 
-        {/* Floating ADD Button positioned right on the boundary */}
+      {/* Floating ADD Button aligned to the right */}
+      <div className="flex justify-end -mt-3 relative z-10 mb-1">
         <button 
           type="button"
           onClick={handleAddClick}
           className={cn(
-            "absolute right-2.5 -bottom-3.5 sm:right-3 sm:-bottom-4 z-20 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-md active:scale-95",
+            "px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm tracking-wide flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-95",
             (justAdded || isInCart) 
-              ? "bg-emerald-700 text-white" 
-              : "bg-[#1B4D3E] text-white hover:bg-[#0D3B2E]"
+              ? "bg-emerald-800 text-white" 
+              : "bg-[#1D4A3E] text-white hover:bg-[#143E31]"
           )}
           aria-label={`Add ${product.name} to cart`}
         >
           <span>{justAdded ? 'ADDED' : isInCart ? 'IN CART' : 'ADD'}</span>
           {justAdded ? (
-            <span className="text-xs">✓</span>
+            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           ) : (
-            <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.2]" />
           )}
         </button>
       </div>
 
-      {/* Info Section */}
-      <div className="p-3 pt-4 sm:p-4 sm:pt-5 bg-white flex flex-col flex-1 justify-between gap-1.5 sm:gap-2 rounded-b-2xl">
-        <div className="space-y-1">
-          {/* Title */}
-          <h3 className="font-serif text-xs sm:text-sm font-bold text-gray-900 leading-snug line-clamp-2 min-h-[2.6em] group-hover:text-[#0D3B2E] transition-colors capitalize">
-            {product.name}
-          </h3>
+      {/* Title */}
+      <h3 className="font-serif text-[13px] sm:text-[15px] font-bold text-[#111827] group-hover:text-[#0D3B2E] transition-colors line-clamp-2 min-h-[2.4em] leading-snug">
+        {product.name}
+      </h3>
 
-          {/* Rating */}
-          <div className="flex items-center gap-1 text-[11px] sm:text-xs">
-            <Star className="w-3.5 h-3.5 fill-[#F5A623] text-[#F5A623] shrink-0" />
-            <span className="font-black text-gray-900">{product.rating || '4.8'}</span>
-            <span className="text-gray-500 text-[10px] sm:text-[11px]">({product.reviewCount || 1323} reviews)</span>
+      {/* Rating */}
+      <div className="flex items-center gap-1.5 text-xs text-gray-700 mt-1 mb-1.5">
+        <Star className="w-3.5 h-3.5 text-[#EAB308] fill-transparent stroke-[2.2] shrink-0" />
+        <span className="text-[11.5px] sm:text-xs text-gray-700 font-normal">
+          {product.reviewCount || 0} review
+        </span>
+      </div>
+
+      {/* Strikethrough Price on Left, Selling Price on Right */}
+      <div className="flex items-baseline gap-2.5 mt-0.5 mb-2">
+        {mrpPrice > price && (
+          <span className="text-xs sm:text-sm text-gray-400 line-through font-normal">
+            ₹{mrpPrice.toLocaleString('en-IN')}
+          </span>
+        )}
+        <span className="text-sm sm:text-base font-black text-black leading-none">
+          ₹{price.toLocaleString('en-IN')}
+        </span>
+      </div>
+
+      {/* YOUR PRICE Green Offer Box */}
+      <div className="mt-auto border border-[#143E31] rounded-lg overflow-hidden bg-white">
+        {/* Dark Green Gradient Top Banner */}
+        <div className="bg-gradient-to-r from-[#1E4E40] to-[#143B2F] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-[#A3C9BC] leading-tight">
+              YOUR PRICE
+            </span>
+            <span className="text-base sm:text-lg md:text-xl font-black text-white leading-none mt-0.5">
+              ₹ {yourPrice.toLocaleString('en-IN')}
+            </span>
+          </div>
+          <div className="bg-[#EAB308] text-[#1F2937] px-2 py-0.5 rounded-[4px] text-[9.5px] sm:text-[10.5px] font-black tracking-tight whitespace-nowrap shadow-2xs">
+            {discount}% + 5% OFF
           </div>
         </div>
 
-        {/* Price Row (NO PURPLE BOX) */}
-        <div className="pt-1.5 sm:pt-2 flex items-baseline gap-1.5 mt-auto">
-          <span className="text-sm sm:text-base font-black text-gray-900 leading-none">
-            ₹{price.toLocaleString('en-IN')}
-          </span>
-          {mrpPrice > price && (
-            <span className="text-[10px] sm:text-xs text-gray-400 line-through font-semibold">
-              ₹{mrpPrice.toLocaleString('en-IN')}
-            </span>
-          )}
+        {/* Pale Mint Bottom Strip */}
+        <div className="bg-[#EDF5F1] px-2.5 py-1 sm:px-3 sm:py-1 border-t border-[#143E31]/20">
+          <p className="text-[8.5px] sm:text-[9.5px] text-[#0D3B2E] font-medium leading-tight truncate">
+            <span className="font-bold">MRP</span> ₹{mrpPrice.toLocaleString('en-IN')} + 5% extra prepaid incl.
+          </p>
         </div>
       </div>
     </div>

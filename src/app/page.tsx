@@ -7,11 +7,8 @@ import { Ticker } from '@/components/vivaan/Ticker';
 import { FestiveHero } from '@/components/vivaan/FestiveHero';
 import { CleanestPantrySection } from '@/components/vivaan/CleanestPantrySection';
 import { NativeIngredientsSection } from '@/components/vivaan/NativeIngredientsSection';
-import { FocusOilsSection } from '@/components/vivaan/FocusOilsSection';
 import { FocusGheeSection } from '@/components/vivaan/FocusGheeSection';
 import { QualityAssuranceSection } from '@/components/vivaan/QualityAssuranceSection';
-import { HealthyCombosSection } from '@/components/vivaan/HealthyCombosSection';
-import { SuperfoodsSection } from '@/components/vivaan/SuperfoodsSection';
 import { CustomerReviewsSection } from '@/components/vivaan/CustomerReviewsSection';
 import { CertificationsStrip } from '@/components/vivaan/CertificationsStrip';
 import { Footer } from '@/components/vivaan/Footer';
@@ -49,29 +46,6 @@ const DEFAULT_CATALOG: Product[] = [
     description: 'Slow-cooked over slow wood fire in earthen pots, made from cultured A2 Gir curd using the two-way wooden bilona.'
   },
   {
-    id: 'oil-mustard-yellow',
-    name: 'Wood Pressed Yellow Mustard Oil (Kachi Ghani)',
-    cat: 'oils',
-    vol: '500 ml',
-    price: 360,
-    mrpPrice: 450,
-    rating: 4.9,
-    reviewCount: 420,
-    purityCoins: 36,
-    soldCountLabel: '2.8k sold',
-    stock: 50,
-    statusBadge: 'Cold-Pressed < 40°C',
-    badges: ['Bestseller'],
-    pi: 1,
-    imageUrls: ['/images/products/mustard_oil.jpg'],
-    vars: [
-      { s: '500 ml', p: 360, mrp: 450, on: true },
-      { s: '1 L', p: 680, mrp: 850, on: false },
-      { s: '5 L Can', p: 3200, mrp: 3900, on: false },
-    ],
-    description: 'Slow-pressed from indigenous yellow mustard seeds. Rich pungent aroma and natural golden color.'
-  },
-  {
     id: 'ghee-gir-jar-500ml',
     name: 'A2 Desi Gir Cow Cultured Bilona Ghee (Glass Jar)',
     cat: 'ghee',
@@ -85,7 +59,7 @@ const DEFAULT_CATALOG: Product[] = [
     stock: 120,
     statusBadge: 'Golden Granular Danedar',
     badges: ['Bestseller'],
-    pi: 2,
+    pi: 1,
     imageUrls: ['/images/products/ghee_jar.jpg'],
     vars: [
       { s: '250 ml', p: 520, mrp: 600, on: false },
@@ -95,69 +69,95 @@ const DEFAULT_CATALOG: Product[] = [
     description: 'Golden granular texture with intoxicating nutty aroma. High in natural CLA, butyric acid, and fat-soluble vitamins.'
   },
   {
-    id: 'oil-groundnut-cold',
-    name: 'Wood Pressed Groundnut Oil (Peanut Oil Canister)',
-    cat: 'oils',
-    vol: '5 L Can',
-    price: 1850,
-    mrpPrice: 2200,
+    id: 'ghee-buffalo-murrah-1l',
+    name: 'Vedic Pure Desi Murrah Buffalo Ghee (Bilona)',
+    cat: 'ghee',
+    vol: '1000 ml (1 L)',
+    price: 1350,
+    mrpPrice: 1600,
     rating: 4.9,
-    reviewCount: 310,
-    purityCoins: 185,
-    soldCountLabel: '1.9k sold',
-    stock: 40,
-    statusBadge: 'Zero Palm Oil',
-    badges: ['Value Pack'],
-    pi: 3,
-    imageUrls: ['/images/products/groundnut_can.jpg'],
-    vars: [
-      { s: '1 L', p: 390, mrp: 480, on: false },
-      { s: '5 L Can', p: 1850, mrp: 2200, on: true },
-    ],
-    description: 'Heart-healthy cooking oil extracted from handpicked Saurashtra peanuts on traditional wooden kolhu.'
-  },
-  {
-    id: 'honey-wild-forest',
-    name: 'Raw Unprocessed Wild Forest Honey',
-    cat: 'honey',
-    vol: '450 g',
-    price: 490,
-    mrpPrice: 590,
-    rating: 5.0,
-    reviewCount: 780,
-    purityCoins: 49,
-    soldCountLabel: '4.8k sold',
+    reviewCount: 680,
+    purityCoins: 135,
+    soldCountLabel: '3.1k sold',
     stock: 90,
-    statusBadge: 'Unpasteurized & Raw',
-    badges: ['Wild Harvest'],
-    pi: 4,
-    imageUrls: ['/images/products/honey_jar.jpg'],
+    statusBadge: 'High Smoke Point',
+    badges: ['Heritage'],
+    pi: 2,
+    imageUrls: ['/images/products/ghee_tin.jpg'],
     vars: [
-      { s: '450 g', p: 490, mrp: 590, on: true },
-      { s: '1 kg', p: 950, mrp: 1150, on: false }
+      { s: '500 ml', p: 720, mrp: 850, on: false },
+      { s: '1000 ml (1 L)', p: 1350, mrp: 1600, on: true },
+      { s: '5000 ml (5 L)', p: 6400, mrp: 7500, on: false },
     ],
-    description: 'Ethically harvested from wild bee colonies in Gujarat and Himachal deciduous forests. Rich pollen enzymes.'
+    description: 'Handcrafted from grass-fed Murrah buffalo whole milk curd. Creamy white granular texture with deep richness.'
   },
   {
-    id: 'combo-ghee-twin-pack',
-    name: 'A2 Desi Gir Cow Ghee Twin Value Pack (2 x 500ml)',
-    cat: 'combo',
-    vol: '1000 ml (2 Jars)',
-    price: 1750,
-    mrpPrice: 2300,
-    rating: 5.0,
-    reviewCount: 520,
-    purityCoins: 175,
-    soldCountLabel: '2.4k sold',
-    stock: 60,
-    statusBadge: 'Save ₹550',
-    badges: ['Value Gift Pack'],
-    pi: 5,
-    imageUrls: ['/images/products/combo_pack.jpg'],
+    id: 'ghee-hallikar-cow-500ml',
+    name: 'Native Hallikar Cow Vedic Ghee (Rare Breed)',
+    cat: 'ghee',
+    vol: '500 ml',
+    price: 1150,
+    mrpPrice: 1350,
+    rating: 4.9,
+    reviewCount: 290,
+    purityCoins: 115,
+    soldCountLabel: '1.1k sold',
+    stock: 45,
+    statusBadge: 'Rare Indigenous Breed',
+    badges: ['Artisanal'],
+    pi: 3,
+    imageUrls: ['/images/products/ghee_jar.jpg'],
     vars: [
-      { s: '2 x 500ml Jars', p: 1750, mrp: 2300, on: true }
+      { s: '500 ml', p: 1150, mrp: 1350, on: true },
+      { s: '1000 ml (1 L)', p: 2150, mrp: 2500, on: false },
     ],
-    description: 'Double the goodness. Two premium glass jars of Vedic Bilona A2 Gir Cow Ghee at our lowest combo price.'
+    description: 'Sourced from agile indigenous Hallikar cows grazing on wild herbal shrubs. Intense therapeutic qualities.'
+  },
+  {
+    id: 'sweets-handmade-ladoo',
+    name: 'Home made sweets (Artisanal Bilona Ghee Laddus)',
+    cat: 'sweets',
+    vol: '500 g',
+    price: 450,
+    mrpPrice: 550,
+    rating: 4.9,
+    reviewCount: 120,
+    purityCoins: 45,
+    soldCountLabel: '1.2k sold',
+    stock: 55,
+    statusBadge: 'Freshly Prepared',
+    badges: ['Bestseller', 'No Refined Sugar'],
+    pi: 4,
+    imageUrls: ['/images/products/sweets.jpg'],
+    vars: [
+      { s: '250 g', p: 240, mrp: 290, on: false },
+      { s: '500 g', p: 450, mrp: 550, on: true },
+      { s: '1 kg (1000g)', p: 850, mrp: 1050, on: false },
+    ],
+    description: 'Traditional slow-roasted besan and dry fruit gond laddus made strictly with our in-house A2 Gir Bilona Ghee and organic dhaga mishri.'
+  },
+  {
+    id: 'sweets-motichoor-peda',
+    name: 'Vedic Mathura Peda & Dry Fruit Barfi Assortment',
+    cat: 'sweets',
+    vol: '500 g',
+    price: 520,
+    mrpPrice: 620,
+    rating: 5.0,
+    reviewCount: 95,
+    purityCoins: 52,
+    soldCountLabel: '850+ sold',
+    stock: 40,
+    statusBadge: 'A2 Gir Khoya Base',
+    badges: ['Festive Pick'],
+    pi: 5,
+    imageUrls: ['/images/products/sweets.jpg'],
+    vars: [
+      { s: '250 g', p: 280, mrp: 330, on: false },
+      { s: '500 g', p: 520, mrp: 620, on: true },
+      { s: '1 kg', p: 980, mrp: 1190, on: false },
+    ],
+    description: 'Prepared by simmering whole A2 Gir milk on iron kadhai. Naturally flavored with crushed green cardamom and Kashmiri saffron.'
   }
 ];
 
@@ -228,17 +228,11 @@ export default function VivaanFarms() {
   };
 
   const handleCategoryFilter = (catId: string) => {
-    if (catId === 'all') {
-      scrollToPantry();
-    } else if (catId === 'oils') {
-      const el = document.getElementById('focus-oils') || document.getElementById('cleanest-pantry');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else if (catId === 'ghee') {
+    if (catId === 'ghee') {
       const el = document.getElementById('focus-ghee') || document.getElementById('cleanest-pantry');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else if (catId === 'combos') {
-      const el = document.getElementById('healthy-combos') || document.getElementById('cleanest-pantry');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else if (catId === 'sweets') {
+      scrollToPantry();
     } else {
       scrollToPantry();
     }
@@ -293,16 +287,7 @@ export default function VivaanFarms() {
           {/* ── 4. Native Ingredients. No Substitutes. ── */}
           <NativeIngredientsSection />
 
-          {/* ── 6. Product in Focus: Explore Our Cold-Pressed Oils ── */}
-          <div id="focus-oils">
-            <FocusOilsSection
-              products={products}
-              cartIds={cartIds}
-              onAddToCart={(p, v) => addToCart(p)}
-            />
-          </div>
-
-          {/* ── 7. Product in Focus: Explore Our A2 Desi Ghee ── */}
+          {/* ── 5. Product in Focus: Explore Our A2 Desi Ghee ── */}
           <div id="focus-ghee">
             <FocusGheeSection
               products={products}
@@ -311,27 +296,9 @@ export default function VivaanFarms() {
             />
           </div>
 
-          {/* ── 8. Only Perfect Makes The Cut (Lab Quality Testing) ── */}
+          {/* ── 6. Only Perfect Makes The Cut (Lab Quality Testing) ── */}
           <div id="quality-assurance">
             <QualityAssuranceSection />
-          </div>
-
-          {/* ── 9. Healthy Combo Packs ── */}
-          <div id="healthy-combos">
-            <HealthyCombosSection
-              products={products}
-              cartIds={cartIds}
-              onAddToCart={(p, v) => addToCart(p)}
-            />
-          </div>
-
-          {/* ── 10. Explore Our Superfoods & Staples ── */}
-          <div id="superfoods">
-            <SuperfoodsSection
-              products={products}
-              cartIds={cartIds}
-              onAddToCart={(p, v) => addToCart(p)}
-            />
           </div>
 
           {/* ── 11. What Do Our Customers Say (Testimonials) ── */}

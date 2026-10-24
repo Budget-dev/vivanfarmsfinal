@@ -75,9 +75,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
 
   const navItems = [
     { label: 'All Products', onClick: () => { onFilter('all'); setMobileMenuOpen(false); } },
-    { label: 'A2 Ghee', onClick: () => { onFilter('ghee'); setMobileMenuOpen(false); } },
-    { label: 'Sweets', onClick: () => { onFilter('sweets'); setMobileMenuOpen(false); } },
-    { label: 'Honey', onClick: () => { onFilter('honey'); setMobileMenuOpen(false); } },
+    { label: 'A2 Desi Ghee', onClick: () => { onFilter('ghee'); setMobileMenuOpen(false); } },
+    { label: 'Homemade Sweets', onClick: () => { onFilter('sweets'); setMobileMenuOpen(false); } },
   ];
 
   return (
@@ -110,38 +109,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
           </Link>
         </div>
 
-        <nav className="hidden lg:flex items-center gap-5 xl:gap-8 mx-4">
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-10 mx-4">
           <button 
             onClick={() => onFilter('all')}
-            className="text-[12px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
+            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
             All Products
           </button>
           <button 
-            onClick={() => onFilter('oils')}
-            className="text-[12px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
-          >
-            Wood Pressed Oils
-          </button>
-          <button 
             onClick={() => onFilter('ghee')}
-            className="text-[12px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
+            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
             A2 Desi Ghee
           </button>
           <button 
-            onClick={() => onFilter('honey')}
-            className="text-[12px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
+            onClick={() => onFilter('sweets')}
+            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
-            Raw Honey
+            Homemade Sweets
           </button>
-          <button 
-            onClick={() => onFilter('combos')}
-            className="text-[12px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
-          >
-            Healthy Combos
-          </button>
-          <Link href="/about" className="text-[12px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase">
+          <Link href="/about" className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase">
             Our Story
           </Link>
         </nav>
