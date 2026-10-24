@@ -29,25 +29,6 @@ export const CATEGORY_ICONS_DATA = [
     isPhoto: false,
   },
   {
-    id: 'oils',
-    label: 'Oil',
-    image: '/images/categories/oils.png',
-    isPhoto: false,
-  },
-  {
-    id: 'atta',
-    label: 'Atta',
-    image: '/images/categories/atta.png',
-    isPhoto: false,
-  },
-  {
-    id: 'superfoods',
-    label: 'Superfo...',
-    fullLabel: 'Superfoods',
-    image: '/images/categories/superfoods.png',
-    isPhoto: false,
-  },
-  {
     id: 'combos',
     label: 'Combo',
     fullLabel: 'Combos',
@@ -69,7 +50,7 @@ export const PantryCategoryIcons: React.FC<PantryCategoryIconsProps> = ({
   return (
     <div className="w-full py-1 sm:py-3 mb-2 sm:mb-4">
       <div className="max-w-[1000px] mx-auto px-1 sm:px-2">
-        <div className="flex items-center justify-start sm:justify-center gap-2 sm:gap-4 md:gap-7 overflow-x-auto no-scrollbar py-1 px-1">
+        <div className="flex items-center justify-center gap-3 sm:gap-6 md:gap-8 overflow-x-auto no-scrollbar py-1 px-1">
           {CATEGORY_ICONS_DATA.map((cat) => {
             const isSelected = selectedId === cat.id;
             const hasError = !!failedImages[cat.id];
