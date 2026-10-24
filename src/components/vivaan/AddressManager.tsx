@@ -157,73 +157,198 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     }
   }, [address, onChange]);
 
-  // GPS / Geolocation Detection with fallback
-  const handleUseCurrentLocation = () => {
-    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
-      setGeoState('error');
-      setGeoMessage('Location service is not supported on this device. Please enter manually.');
-      return;
+  // Helper to reverse geocode coordinates using BigDataCloud with Nominatim fallback
+  const reverseGeocodeCoords = async (latitude: number, longitude: number) => {
+    let road = '';
+    let city = '';
+    let state = '';
+    let pincode = '';
+    let locality = '';
+    let houseNumber = '';
+
+    // 1. Primary: BigDataCloud Reverse Geocode (CORS-friendly, ultra-fast for browsers)
+    try {
+      const bdcRes = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+      );
+      if (bdcRes.ok) {
+        const bdc = await bdcRes.json();
+        city = bdc.city || bdc.locality || '';
+        state = bdc.principalSubdivision || '';
+        locality = bdc.locality || '';
+        pincode = (bdc.postcode || '').replace(/\D/g, '').slice(0, 6);
+      }
+    } catch (e) {
+      console.warn('BigDataCloud reverse geocode error:', e);
     }
 
-    setGeoState('detecting');
-    setGeoMessage('Detecting your GPS location...');
+    // 2. Secondary: OpenStreetMap Nominatim (to enrich street, house number, or missing pincode)
+    if (!city || !pincode || !road) {
+      try {
+        const nomRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+          { credentials: 'omit' }
+        );
+        if (nomRes.ok) {
+          const nomData = await nomRes.json();
+          const addr = nomData.address || {};
+          road = addr.road || addr.street || addr.suburb || addr.neighbourhood || road;
+          city = city || addr.city || addr.town || addr.village || addr.county || addr.district || '';
+          state = state || addr.state || '';
+          pincode = pincode || (addr.postcode || '').replace(/\D/g, '').slice(0, 6);
+          houseNumber = addr.house_number || '';
+        }
+      } catch (e) {
+        console.warn('Nominatim reverse geocode error:', e);
+      }
+    }
+
+    const fullStreet = [houseNumber, road, locality].filter(Boolean).join(', ');
+    return { street: fullStreet, city, state, pincode };
+  };
+
+  // Helper for IP-based location fallback (Works on PCs/laptops without GPS or when permission is denied)
+  const detectLocationByIP = async () => {
+    try {
+      // Provider 1: ipwho.is (fast, free, accurate city/state/pincode for India)
+      const res = await fetch('https://ipwho.is/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success !== false) {
+          return {
+            city: data.city || '',
+            state: data.region || '',
+            pincode: (data.postal || '').replace(/\D/g, '').slice(0, 6)
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('ipwho.is error:', e);
+    }
+
+    try {
+      // Provider 2: freeipapi.com
+      const res2 = await fetch('https://freeipapi.com/api/json');
+      if (res2.ok) {
+        const data2 = await res2.json();
+        return {
+          city: data2.cityName || '',
+          state: data2.regionName || '',
+          pincode: (data2.zipCode || '').replace(/\D/g, '').slice(0, 6)
+        };
+      }
+    } catch (e) {
+      console.warn('freeipapi error:', e);
+    }
+
+    return null;
+  };
+
+  // GPS & IP Geolocation Detection with robust fallbacks
+  const handleUseCurrentLocation = useCallback(async (isSilent: boolean | unknown = false) => {
+    const silent = isSilent === true;
+    if (!silent) {
+      setGeoState('detecting');
+      setGeoMessage('Detecting your location...');
+    }
+
+    const applyIPFallback = async (fallbackMsg?: string) => {
+      const ipResult = await detectLocationByIP();
+      if (ipResult && (ipResult.city || ipResult.state || ipResult.pincode)) {
+        onChange({
+          ...address,
+          city: ipResult.city || address.city,
+          state: ipResult.state || address.state,
+          pincode: ipResult.pincode || address.pincode,
+        });
+        setGeoState('success');
+        setGeoMessage(`Location detected: ${[ipResult.city, ipResult.state].filter(Boolean).join(', ')}. Please check flat/street details.`);
+        if (ipResult.pincode && ipResult.pincode.length === 6) {
+          handlePincodeLookup(ipResult.pincode);
+        }
+        return true;
+      }
+      if (!silent) {
+        setGeoState('error');
+        setGeoMessage(fallbackMsg || 'Unable to detect location. Please enter your address manually.');
+      }
+      return false;
+    };
+
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+      await applyIPFallback('Location service not supported. Located via network.');
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         try {
-          // 1. Try free OpenStreetMap Nominatim reverse geocode
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-            { credentials: 'omit' }
-          );
-          
-          if (!response.ok) throw new Error('Geocoding response not ok');
-          const data = await response.json();
-          const addr = data.address || {};
+          const geo = await reverseGeocodeCoords(latitude, longitude);
 
-          const road = addr.road || addr.street || addr.suburb || addr.neighbourhood || '';
-          const city = addr.city || addr.town || addr.village || addr.county || addr.district || '';
-          const state = addr.state || '';
-          const pincode = (addr.postcode || '').replace(/\D/g, '').slice(0, 6);
+          if (geo.city || geo.state || geo.pincode || geo.street) {
+            onChange({
+              ...address,
+              address: geo.street || address.address,
+              city: geo.city || address.city,
+              state: geo.state || address.state,
+              pincode: geo.pincode || address.pincode,
+            });
 
-          const fullStreet = [addr.house_number, road, addr.suburb].filter(Boolean).join(', ');
+            setGeoState('success');
+            setGeoMessage(`Location detected: ${[geo.city, geo.state].filter(Boolean).join(', ')}. Please check flat/building number.`);
 
-          onChange({
-            ...address,
-            address: fullStreet || address.address,
-            city: city || address.city,
-            state: state || address.state,
-            pincode: pincode || address.pincode,
-          });
-
-          setGeoState('success');
-          setGeoMessage('Location detected! Please check flat/building number.');
-          
-          if (pincode && pincode.length === 6) {
-            handlePincodeLookup(pincode);
+            if (geo.pincode && geo.pincode.length === 6) {
+              handlePincodeLookup(geo.pincode);
+            }
+          } else {
+            await applyIPFallback();
           }
-        } catch (fetchErr) {
-          console.warn('Reverse geocode error:', fetchErr);
-          setGeoState('error');
-          setGeoMessage('GPS coordinates found, but auto-fill is offline. Please enter address manually.');
+        } catch (err) {
+          console.warn('Geocoding error:', err);
+          await applyIPFallback();
         }
       },
-      (geoError) => {
-        if (geoError.code === geoError.PERMISSION_DENIED) {
-          setGeoState('denied');
-          setGeoMessage('Location permission denied. Please enter your address manually.');
-        } else if (geoError.code === geoError.TIMEOUT) {
-          setGeoState('error');
-          setGeoMessage('Location request timed out. Please enter your address manually.');
-        } else {
-          setGeoState('error');
-          setGeoMessage('Unable to detect location. Please enter your address manually.');
-        }
+      async (geoError) => {
+        console.warn('GPS detection notice:', geoError.message);
+        // Seamlessly fallback to IP location if GPS is denied, timed out, or unavailable
+        await applyIPFallback(
+          geoError.code === geoError.PERMISSION_DENIED
+            ? 'GPS permission denied. Located via network — please verify flat/street.'
+            : 'GPS timed out. Located via network — please verify flat/street.'
+        );
       },
-      { timeout: 12000, enableHighAccuracy: true, maximumAge: 60000 }
+      { timeout: 7000, enableHighAccuracy: false, maximumAge: 300000 }
     );
-  };
+  }, [address, handlePincodeLookup, onChange]);
+
+  // Automatic location detection on mount if address fields are blank
+  useEffect(() => {
+    if (!address.city && !address.pincode && !address.address) {
+      const isAlreadyRun = typeof window !== 'undefined' && sessionStorage.getItem('vivaan_geo_autodetected');
+      if (!isAlreadyRun) {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('vivaan_geo_autodetected', '1');
+        }
+        // Run silent IP-based auto detection
+        detectLocationByIP().then((ip) => {
+          if (ip && (ip.city || ip.state || ip.pincode)) {
+            onChange({
+              ...address,
+              city: ip.city || address.city,
+              state: ip.state || address.state,
+              pincode: ip.pincode || address.pincode,
+            });
+            setGeoState('success');
+            setGeoMessage(`Auto-detected: ${[ip.city, ip.state].filter(Boolean).join(', ')}. Please add house/flat number.`);
+            if (ip.pincode && ip.pincode.length === 6) {
+              handlePincodeLookup(ip.pincode);
+            }
+          }
+        });
+      }
+    }
+  }, [address, handlePincodeLookup, onChange]);
 
   const handleFieldChange = (name: keyof ShippingAddress, value: string) => {
     let formattedValue = value;
@@ -258,7 +383,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
 
         <button
           type="button"
-          onClick={handleUseCurrentLocation}
+          onClick={() => handleUseCurrentLocation(false)}
           disabled={geoState === 'detecting'}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-[#1B5E3B]/30 text-primary text-xs font-bold uppercase tracking-wider hover:bg-primary/5 active:scale-95 transition-all shadow-xs cursor-pointer"
         >
