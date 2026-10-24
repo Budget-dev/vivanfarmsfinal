@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Star, ShoppingCart, Check, Heart, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
-import { GheeCategoryIcons } from './FocusSectionIcons';
 
 interface FocusGheeSectionProps {
   products: Product[];
@@ -202,12 +201,6 @@ export const FocusGheeSection: React.FC<FocusGheeSectionProps> = ({
             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
-
-        {/* Ghee Category Circular Icons */}
-        <GheeCategoryIcons
-          selected={filterType}
-          onSelect={(id) => setFilterType(id)}
-        />
 
         {/* Carousel Container with Left/Right Arrows */}
         <div className="relative group/carousel mt-4 sm:mt-6">
