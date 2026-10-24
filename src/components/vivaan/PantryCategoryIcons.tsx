@@ -9,7 +9,16 @@ interface PantryCategoryIconsProps {
   onSelect: (id: string) => void;
 }
 
-export const CATEGORY_ICONS_DATA = [
+export interface CategoryIconItem {
+  id: string;
+  label: string;
+  fullLabel?: string;
+  image: string;
+  isPhoto: boolean;
+  fallbackImage?: string;
+}
+
+export const CATEGORY_ICONS_DATA: CategoryIconItem[] = [
   {
     id: 'ghee',
     label: 'Ghee',

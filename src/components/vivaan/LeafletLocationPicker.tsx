@@ -105,7 +105,19 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
       try {
         // Dynamically load leaflet and styles on client-side
         const L = (await import('leaflet')).default;
-        await import('leaflet/dist/leaflet.css');
+        try {
+          // @ts-ignore
+          await import('leaflet/dist/leaflet.css');
+        } catch {
+          // Fallback stylesheet if direct CSS import is not bundled
+          if (!document.getElementById('leaflet-css-cdn')) {
+            const link = document.createElement('link');
+            link.id = 'leaflet-css-cdn';
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(link);
+          }
+        }
 
         if (!isMounted || !mapContainerRef.current) return;
 

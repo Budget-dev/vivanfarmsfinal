@@ -35,9 +35,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isInCart, onO
   const router = useRouter();
   
   // Ensure we have numbers to work with
+  const price = Number(product.price) || 0;
   const rawMrp = Number(product.mrpPrice) || price;
   const mrpPrice = rawMrp > price ? rawMrp : Math.round(price * 1.4);
-  const discount = Math.round(((mrpPrice - price) / mrpPrice) * 100);
+  const discount = mrpPrice > 0 ? Math.round(((mrpPrice - price) / mrpPrice) * 100) : 0;
   const yourPrice = Math.round(price * 0.95);
 
   const description = getSmartDescription(product);
@@ -73,8 +74,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isInCart, onO
     if (product.cat === 'combo') return <ComboIcon className="scale-75 md:scale-90" />;
     return (
       <JarIcon 
-        c1={product.pi % 2 === 0 ? '#D4EDE0' : '#EBF5EE'} 
-        c2={product.pi % 2 === 0 ? '#1B5E3B' : '#0D3520'} 
+        c1={(product.pi ?? 0) % 2 === 0 ? '#D4EDE0' : '#EBF5EE'} 
+        c2={(product.pi ?? 0) % 2 === 0 ? '#1B5E3B' : '#0D3520'} 
         sub="" 
         idSuffix={product.id} 
         className="scale-75 md:scale-90" 

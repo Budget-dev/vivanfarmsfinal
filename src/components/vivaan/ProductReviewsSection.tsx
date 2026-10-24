@@ -41,6 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoginModal } from './LoginModal';
 import { cn } from '@/lib/utils';
 import { ErrorCard } from '@/components/ui/ErrorCard';
+import { format } from 'date-fns';
 
 interface ProductReviewsSectionProps {
   productId: string;

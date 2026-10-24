@@ -3,9 +3,9 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-let razorpayClient: Razorpay | null = null;
+let razorpayClient: InstanceType<typeof Razorpay> | null = null;
 
-function getRazorpay(): Razorpay | null {
+function getRazorpay(): InstanceType<typeof Razorpay> | null {
   const key_id = process.env.RAZORPAY_KEY_ID;
   const key_secret = process.env.RAZORPAY_KEY_SECRET;
   if (!key_id || !key_secret) {

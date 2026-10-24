@@ -18,6 +18,7 @@ export interface Product {
   name: string;
   vol: string;
   price: number;
+  basePrice?: number;
   mrpPrice?: number;
   off?: string;
   rating: number;
@@ -35,10 +36,11 @@ export interface Product {
   categoryId?: string;
   stock: number;
   badges: string[];
-  pi: number; // placeholder index
+  pi?: number; // placeholder index
   vars: ProductVariant[];
   description?: string;
   imageUrls?: string[];
+  videoUrl?: string;
   ingredients?: string[];
   benefits?: string[];
 }
@@ -85,6 +87,7 @@ export interface ProductReview {
   status: ReviewStatus;
   adminComment?: string;
   verifiedPurchase?: boolean;
+  isVerified?: boolean;
   helpfulCount?: number;
   helpfulUsers?: string[];
   images?: string[];
