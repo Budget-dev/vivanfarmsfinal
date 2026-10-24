@@ -10,11 +10,18 @@ import {
   Heart, 
   Check, 
   SlidersHorizontal, 
+  MoreVertical,
   ChevronRight, 
   ArrowLeft,
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Header } from '@/components/vivaan/Header';
 import { Ticker } from '@/components/vivaan/Ticker';
 import { Footer } from '@/components/vivaan/Footer';
@@ -222,41 +229,63 @@ export default function CategoryDetailPage() {
             {/* ── Right Content Area ── */}
             <div className="flex-1 min-w-0">
               
-              {/* Category Header Banner */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-[#EAE3D2] mb-6 sm:mb-8 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[10px] sm:text-xs font-black text-[#6B5A45] tracking-[2.5px] uppercase">
-                      Farm Fresh Organic Goods
-                    </span>
-                    <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0D3B2E] mt-1 tracking-tight">
+              {/* Compact Category Header & Filter Card */}
+              <div className="bg-white rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-3 border border-[#EAE3D2] mb-3.5 sm:mb-5 shadow-2xs">
+                <div className="flex items-center justify-between gap-3">
+                  {/* Left: Category Title & Compact Farm Fresh Badge */}
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <h1 className="font-serif text-base sm:text-xl font-extrabold text-[#0D3B2E] tracking-tight truncate">
                       {currentCategory.name}
                     </h1>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1.5 max-w-2xl leading-relaxed">
-                      {currentCategory.description}
-                    </p>
+                    <span className="shrink-0 text-[8.5px] sm:text-[9.5px] font-black text-[#6B5A45] tracking-[1.5px] uppercase bg-[#FAF7F2] border border-[#EAE3D2] px-2 py-0.5 rounded-full">
+                      Farm Fresh
+                    </span>
                   </div>
 
-                  {/* Filter & Sort Controls */}
-                  <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
-                    <span className="text-xs font-bold text-gray-500 whitespace-nowrap">
-                      {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'}
+                  {/* Right: Item Count & Compact Three-Dots Filter Button */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <span className="text-[11px] sm:text-xs font-semibold text-gray-400 whitespace-nowrap">
+                      {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'}
                     </span>
-                    
-                    <div className="flex items-center gap-1.5 bg-[#FAF8F5] border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-[#0D3B2E]">
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-[#0D3B2E]" />
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        className="bg-transparent text-xs font-bold text-[#0D3B2E] focus:outline-none cursor-pointer"
-                        aria-label="Sort products"
-                      >
-                        <option value="featured">Featured</option>
-                        <option value="price-asc">Price: Low to High</option>
-                        <option value="price-desc">Price: High to Low</option>
-                        <option value="rating">Highest Rated</option>
-                      </select>
-                    </div>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-8 w-8 sm:w-auto sm:h-8 sm:px-2.5 rounded-lg border border-gray-200 bg-[#FAF8F5] hover:bg-[#F2ECE1] text-[#0D3B2E] transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95 shadow-2xs"
+                          aria-label="Filter and Sort"
+                        >
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-[#0D3B2E] hidden sm:block" />
+                          <span className="text-xs font-bold hidden sm:inline">Sort</span>
+                          <MoreVertical className="w-4 h-4 text-[#0D3B2E]" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 rounded-2xl p-1.5 bg-white shadow-xl border border-gray-100 z-[1000]">
+                        <div className="px-2.5 py-1 text-[10px] font-black text-[#6B5A45] uppercase tracking-wider">
+                          Sort Products
+                        </div>
+                        {[
+                          { id: 'featured', label: 'Featured' },
+                          { id: 'price-asc', label: 'Price: Low to High' },
+                          { id: 'price-desc', label: 'Price: High to Low' },
+                          { id: 'rating', label: 'Highest Rated' },
+                        ].map((option) => (
+                          <DropdownMenuItem
+                            key={option.id}
+                            onClick={() => setSortBy(option.id as any)}
+                            className={cn(
+                              "flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl cursor-pointer transition-colors",
+                              sortBy === option.id
+                                ? "bg-[#0D3B2E]/10 text-[#0D3B2E] font-bold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            )}
+                          >
+                            <span>{option.label}</span>
+                            {sortBy === option.id && <Check className="w-3.5 h-3.5 text-[#0D3B2E]" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
