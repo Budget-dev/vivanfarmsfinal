@@ -20,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { LeafletLocationPicker } from './LeafletLocationPicker';
 
 export interface ShippingAddress {
   name: string;
@@ -51,6 +52,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
   const [selectedTag, setSelectedTag] = useState<'Home' | 'Work' | 'Other'>('Home');
 
   // Geolocation states
+  const [isLeafletOpen, setIsLeafletOpen] = useState(false);
   const [geoState, setGeoState] = useState<'idle' | 'detecting' | 'success' | 'denied' | 'error'>('idle');
   const [geoMessage, setGeoMessage] = useState<string>('');
 
@@ -378,28 +380,65 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 bg-[#FAF7EF] p-4 rounded-2xl border border-[#EEE0BC]">
         <div className="flex items-center gap-2 text-xs font-bold text-[#5B4E38]">
           <Navigation className="w-4 h-4 text-primary shrink-0" />
-          <span>Need faster checkout?</span>
+          <span>Real-Time Doorstep Delivery</span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => handleUseCurrentLocation(false)}
-          disabled={geoState === 'detecting'}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-[#1B5E3B]/30 text-primary text-xs font-bold uppercase tracking-wider hover:bg-primary/5 active:scale-95 transition-all shadow-xs cursor-pointer"
-        >
-          {geoState === 'detecting' ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Detecting...</span>
-            </>
-          ) : (
-            <>
-              <MapPin className="w-3.5 h-3.5 text-secondary" />
-              <span>Use Current Location</span>
-            </>
-          )}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsLeafletOpen(prev => !prev)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0D3B2E] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#154E3E] active:scale-95 transition-all shadow-xs cursor-pointer"
+          >
+            <MapPin className="w-3.5 h-3.5 text-[#EBB847]" />
+            <span>{isLeafletOpen ? 'Close Leaflet Map' : 'Fetch Location (Leaflet Map)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleUseCurrentLocation(false)}
+            disabled={geoState === 'detecting'}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-[#1B5E3B]/30 text-primary text-xs font-bold uppercase tracking-wider hover:bg-primary/5 active:scale-95 transition-all shadow-xs cursor-pointer"
+          >
+            {geoState === 'detecting' ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Detecting...</span>
+              </>
+            ) : (
+              <>
+                <Navigation className="w-3.5 h-3.5 text-secondary" />
+                <span>Quick GPS</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* 2. Interactive Leaflet JS Location Picker */}
+      {isLeafletOpen && (
+        <LeafletLocationPicker
+          onLocationSelect={(loc) => {
+            onChange({
+              ...address,
+              address: loc.address || address.address,
+              city: loc.city || address.city,
+              state: loc.state || address.state,
+              pincode: loc.pincode || address.pincode,
+            });
+            setGeoState('success');
+            setGeoMessage(`Leaflet verified: ${[loc.city, loc.state].filter(Boolean).join(', ')}.`);
+            if (loc.pincode && loc.pincode.length === 6) {
+              handlePincodeLookup(loc.pincode);
+            }
+            setIsLeafletOpen(false);
+            toast({
+              title: "Address Updated",
+              description: "Doorstep location & PIN code applied from Leaflet JS.",
+            });
+          }}
+          onClose={() => setIsLeafletOpen(false)}
+        />
+      )}
 
       {/* Geolocation Feedback Alert */}
       {geoState !== 'idle' && (
@@ -480,7 +519,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             autoComplete="name"
             value={address.name} 
             onChange={(e) => handleFieldChange('name', e.target.value)} 
-            placeholder="e.g. Ramesh Patel" 
+            placeholder=""
             className={cn(
               "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
               errors.name && "border-red-500 bg-red-50/30"
@@ -506,7 +545,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
               maxLength={10}
               value={address.phone} 
               onChange={(e) => handleFieldChange('phone', e.target.value)} 
-              placeholder="10-digit number" 
+              placeholder=""
               className={cn(
                 "h-12 pl-16 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
                 errors.phone && "border-red-500 bg-red-50/30"
@@ -526,7 +565,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             autoComplete="street-address"
             value={address.address} 
             onChange={(e) => handleFieldChange('address', e.target.value)} 
-            placeholder="e.g. 204, Shanti Heights, Near Gayatri Temple, Station Road" 
+            placeholder=""
             className={cn(
               "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
               errors.address && "border-red-500 bg-red-50/30"
@@ -561,7 +600,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             maxLength={6}
             value={address.pincode} 
             onChange={(e) => handleFieldChange('pincode', e.target.value)} 
-            placeholder="6-digit PIN code" 
+            placeholder=""
             className={cn(
               "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
               errors.pincode && "border-red-500 bg-red-50/30"
@@ -589,7 +628,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
               autoComplete="address-level2"
               value={address.city} 
               onChange={(e) => handleFieldChange('city', e.target.value)} 
-              placeholder="City" 
+              placeholder=""
               className={cn(
                 "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
                 errors.city && "border-red-500 bg-red-50/30"
@@ -607,7 +646,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
               autoComplete="address-level1"
               value={address.state} 
               onChange={(e) => handleFieldChange('state', e.target.value)} 
-              placeholder="State" 
+              placeholder=""
               className="h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary" 
             />
           </div>
