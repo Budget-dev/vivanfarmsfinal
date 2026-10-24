@@ -236,7 +236,10 @@ export const FocusGheeSection: React.FC<FocusGheeSectionProps> = ({
               const displayPrice = currentVar?.p ? Number(currentVar.p) : Number(p.price) || 0;
               const rawMrp = currentVar?.mrp ? Number(currentVar.mrp) : Number(p.mrpPrice) || displayPrice;
               const displayMrp = rawMrp > displayPrice ? rawMrp : Math.round(displayPrice * 1.4);
-              const discount = Math.round(((displayMrp - displayPrice) / displayMrp) * 100);
+              const rawDiscount = displayMrp > displayPrice && displayMrp > 0
+                ? Math.round(((displayMrp - displayPrice) / displayMrp) * 100)
+                : 15;
+              const discount = isNaN(rawDiscount) || rawDiscount <= 0 ? 15 : rawDiscount;
               const yourPrice = Math.round(displayPrice * 0.95);
               const isAdded = !!justAddedMap[p.id];
               const inCart = cartIds.includes(p.id);

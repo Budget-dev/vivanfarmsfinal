@@ -8,6 +8,8 @@ import { FestiveHero } from '@/components/vivaan/FestiveHero';
 import { CleanestPantrySection } from '@/components/vivaan/CleanestPantrySection';
 import { NativeIngredientsSection } from '@/components/vivaan/NativeIngredientsSection';
 import { FocusGheeSection } from '@/components/vivaan/FocusGheeSection';
+import { FocusSweetsSection } from '@/components/vivaan/FocusSweetsSection';
+import { FocusHoneySection } from '@/components/vivaan/FocusHoneySection';
 import { QualityAssuranceSection } from '@/components/vivaan/QualityAssuranceSection';
 import { CustomerReviewsSection } from '@/components/vivaan/CustomerReviewsSection';
 import { CertificationsStrip } from '@/components/vivaan/CertificationsStrip';
@@ -158,6 +160,51 @@ const DEFAULT_CATALOG: Product[] = [
       { s: '1 kg', p: 980, mrp: 1190, on: false },
     ],
     description: 'Prepared by simmering whole A2 Gir milk on iron kadhai. Naturally flavored with crushed green cardamom and Kashmiri saffron.'
+  },
+  {
+    id: 'honey-wild-forest',
+    name: 'Raw Unprocessed Wild Forest Honey',
+    cat: 'honey',
+    vol: '500 ml',
+    price: 850,
+    mrpPrice: 999,
+    rating: 4.9,
+    reviewCount: 120,
+    purityCoins: 85,
+    soldCountLabel: '4.8k sold',
+    stock: 90,
+    statusBadge: 'Selling Fast',
+    badges: ['15% OFF', 'Unpasteurized & Raw'],
+    pi: 6,
+    imageUrls: ['/images/products/honey_jar.jpg'],
+    vars: [
+      { s: '250 g', p: 450, mrp: 520, on: false },
+      { s: '500 ml', p: 850, mrp: 999, on: true },
+      { s: '1 kg', p: 1550, mrp: 1850, on: false },
+    ],
+    description: 'Ethically harvested from wild bee colonies in Gujarat and Himachal deciduous forests. Rich in pollen enzymes and natural minerals.'
+  },
+  {
+    id: 'honey-jamun-raw',
+    name: 'Raw Organic Jamun Monofloral Honey',
+    cat: 'honey',
+    vol: '500 g',
+    price: 540,
+    mrpPrice: 650,
+    rating: 4.8,
+    reviewCount: 310,
+    purityCoins: 54,
+    soldCountLabel: '1.7k sold',
+    stock: 50,
+    statusBadge: 'Low Glycemic Index',
+    badges: ['Single Origin'],
+    pi: 7,
+    imageUrls: ['/images/products/honey_jar.jpg'],
+    vars: [
+      { s: '500 g', p: 540, mrp: 650, on: true },
+      { s: '1 kg', p: 990, mrp: 1200, on: false },
+    ],
+    description: 'Gathered by honeybees foraging exclusively on flowering Indian Blackberry (Jamun) trees. Deep amber color with herbal undertones.'
   }
 ];
 
@@ -232,7 +279,11 @@ export default function VivaanFarms() {
       const el = document.getElementById('focus-ghee') || document.getElementById('cleanest-pantry');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else if (catId === 'sweets') {
-      scrollToPantry();
+      const el = document.getElementById('focus-sweets') || document.getElementById('cleanest-pantry');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else if (catId === 'honey') {
+      const el = document.getElementById('focus-honey') || document.getElementById('cleanest-pantry');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else {
       scrollToPantry();
     }
@@ -290,6 +341,24 @@ export default function VivaanFarms() {
           {/* ── 5. Product in Focus: Explore Our A2 Desi Ghee ── */}
           <div id="focus-ghee">
             <FocusGheeSection
+              products={products}
+              cartIds={cartIds}
+              onAddToCart={(p, v) => addToCart(p)}
+            />
+          </div>
+
+          {/* ── 6. Product in Focus: Explore Our Homemade Sweets ── */}
+          <div id="focus-sweets">
+            <FocusSweetsSection
+              products={products}
+              cartIds={cartIds}
+              onAddToCart={(p, v) => addToCart(p)}
+            />
+          </div>
+
+          {/* ── 7. Product in Focus: Explore Our Raw Forest Honey ── */}
+          <div id="focus-honey">
+            <FocusHoneySection
               products={products}
               cartIds={cartIds}
               onAddToCart={(p, v) => addToCart(p)}
