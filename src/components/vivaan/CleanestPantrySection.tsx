@@ -98,28 +98,15 @@ export const CleanestPantrySection: React.FC<CleanestPantrySectionProps> = ({
     <section id="cleanest-pantry" className="py-6 sm:py-10 md:py-16 bg-[#FFFFFF] border-b border-[#EAE3D2] relative select-none">
       <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12">
         
-        {/* Section Heading with Centered See All button matching reference screenshot */}
-        <div className="text-center mb-3 sm:mb-6 md:mb-7">
+        {/* Section Heading */}
+        <div className="text-center mb-4 sm:mb-6 md:mb-7">
           <p className="text-[10px] sm:text-xs md:text-sm font-serif font-black text-[#6B5A45] tracking-[2.5px] uppercase mb-1">
             WELCOME TO VIVAAN
           </p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0D3B2E] tracking-tight">
+          <h2 className="font-serif text-[17px] min-[360px]:text-[19px] min-[400px]:text-[22px] sm:text-3xl md:text-4xl font-extrabold text-[#0D3B2E] tracking-tight whitespace-nowrap">
             Your One-Stop Cleanest Pantry
           </h2>
-          <div className="w-12 sm:w-16 h-0.5 bg-[#0D3B2E]/25 mx-auto my-2 rounded-full" />
-
-          {/* Centered See All Pill Button */}
-          <div className="mt-2.5 sm:mt-3">
-            <button
-              type="button"
-              onClick={() => router.push(`/category/${selectedCat === 'all' ? 'all' : selectedCat}`)}
-              className="inline-flex items-center gap-2 px-5 py-1.5 sm:py-2 rounded-full border border-[#0D3B2E] text-[#0D3B2E] bg-white hover:bg-[#0D3B2E] hover:text-white transition-all text-xs sm:text-sm font-serif font-bold tracking-wide shadow-xs cursor-pointer active:scale-95 group"
-              aria-label="See all products in cleanest pantry"
-            >
-              <span>See All</span>
-              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
+          <div className="w-12 sm:w-16 h-0.5 bg-[#0D3B2E]/25 mx-auto mt-2 rounded-full" />
         </div>
 
         {/* Authentic Circular Category Icons Row matching screenshot */}
