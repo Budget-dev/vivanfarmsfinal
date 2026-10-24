@@ -55,7 +55,7 @@ export const QualityAssuranceSection: React.FC = () => {
   };
 
   return (
-    <section className="py-8 sm:py-12 md:py-20 bg-[#E8F4F8] border-b border-[#D2E7ED] relative select-none">
+    <section className="py-8 sm:py-12 md:py-20 bg-[#E8F4F8] relative select-none">
       <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12">
         
         {/* Title */}

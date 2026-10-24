@@ -9,7 +9,7 @@ interface FarmJourneySectionProps {
 }
 
 export const FarmJourneySection: React.FC<FarmJourneySectionProps> = ({
-  upperWaveColor = "text-white",
+  upperWaveColor = "text-[#E8F4F8]",
   lowerWaveColor = "text-white"
 }) => {
   const steps = [
@@ -20,35 +20,35 @@ export const FarmJourneySection: React.FC<FarmJourneySectionProps> = ({
   ];
 
   return (
-    <section className="relative w-full bg-[#FAF6EE] pt-14 pb-16 sm:pt-20 sm:pb-24 md:pt-24 md:pb-32 overflow-hidden select-none">
+    <section className="relative w-full bg-[#FAF6EE] pt-12 pb-14 sm:pt-16 sm:pb-20 md:pt-20 md:pb-28 overflow-hidden select-none border-none">
       
-      {/* ── Upper Wave Transition (Borderless organic transition) ── */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none z-10 pointer-events-none">
+      {/* ── Upper Wave Transition (Seamless organic transition from section above) ── */}
+      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none z-10 pointer-events-none -mt-px">
         <svg 
-          viewBox="0 0 1440 80" 
+          viewBox="0 0 1440 96" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg" 
-          className={`w-full h-6 sm:h-12 md:h-16 ${upperWaveColor}`}
+          className={`w-full h-8 sm:h-14 md:h-20 lg:h-24 ${upperWaveColor}`}
           preserveAspectRatio="none"
         >
           <path 
-            d="M0,0 L1440,0 L1440,25 C1200,75 960,10 720,45 C480,80 240,15 0,55 Z" 
+            d="M0,0 L1440,0 L1440,30 C1200,85 960,10 720,50 C480,90 240,15 0,65 Z" 
             fill="currentColor" 
           />
         </svg>
       </div>
 
-      {/* ── Lower Wave Transition (Borderless organic transition) ── */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10 pointer-events-none">
+      {/* ── Lower Wave Transition (Seamless organic transition to section below) ── */}
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10 pointer-events-none -mb-px">
         <svg 
-          viewBox="0 0 1440 80" 
+          viewBox="0 0 1440 96" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg" 
-          className={`w-full h-6 sm:h-12 md:h-16 ${lowerWaveColor}`}
+          className={`w-full h-8 sm:h-14 md:h-20 lg:h-24 ${lowerWaveColor}`}
           preserveAspectRatio="none"
         >
           <path 
-            d="M0,80 L1440,80 L1440,55 C1200,15 960,75 720,35 C480,5 240,70 0,25 Z" 
+            d="M0,96 L1440,96 L1440,65 C1200,15 960,85 720,45 C480,10 240,80 0,30 Z" 
             fill="currentColor" 
           />
         </svg>
@@ -57,7 +57,7 @@ export const FarmJourneySection: React.FC<FarmJourneySectionProps> = ({
       <div className="w-full relative z-10">
         
         {/* Section Header */}
-        <div className="text-center mb-6 sm:mb-10 md:mb-12 px-4 max-w-[1440px] mx-auto">
+        <div className="text-center mb-6 sm:mb-8 md:mb-10 px-4 max-w-[1440px] mx-auto">
           <p className="text-[10px] sm:text-xs font-black text-[#6B5A45] tracking-[2.5px] uppercase mb-1 sm:mb-1.5">
             Farm to Kitchen Transparency
           </p>
@@ -70,15 +70,15 @@ export const FarmJourneySection: React.FC<FarmJourneySectionProps> = ({
           <div className="w-12 sm:w-16 h-0.5 bg-[#113B29]/20 mx-auto mt-2 rounded-full" />
         </div>
 
-        {/* Full-Width Journey Map Graphic (Edge-to-Edge on Mobile, Zero Borders) */}
-        <div className="w-full max-w-[1440px] mx-auto px-0 sm:px-6 lg:px-10 mb-6 sm:mb-10 md:mb-12">
-          <div className="relative w-full aspect-[1376/768] overflow-hidden rounded-none sm:rounded-3xl shadow-xs sm:shadow-lg bg-white">
+        {/* Full-Width Journey Map Graphic (Edge-to-Edge on Mobile & Desktop, Zero Borders) */}
+        <div className="w-full px-0 mx-0 mb-6 sm:mb-8 md:mb-10 border-none">
+          <div className="relative w-full aspect-[1376/768] overflow-hidden rounded-none shadow-none border-none bg-[#FAF6EE]">
             <Image 
               src="/products/buffalo-ghee/journey_map.jpg"
               alt="From Our Farmers To Your Kitchen 14 Day Journey"
               fill
               className="object-cover object-center w-full h-full"
-              sizes="(max-width: 768px) 100vw, 1440px"
+              sizes="100vw"
               priority
             />
           </div>
