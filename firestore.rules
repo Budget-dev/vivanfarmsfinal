@@ -167,9 +167,7 @@ service cloud.firestore {
             || resource.data.userId == request.auth.uid
             || isMasterAdmin());
       allow list: if isMasterAdmin()
-          || (isSignedIn()
-            && (request.query.limit == null || request.query.limit <= 100)
-            && resource.data.userId == request.auth.uid);
+          || (isSignedIn() && (request.query.limit == null || request.query.limit <= 100));
       allow update, delete: if isMasterAdmin();
     }
 

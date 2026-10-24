@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Star, ShoppingCart, Check, Tag, Heart, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { Product } from '@/types';
@@ -140,6 +141,7 @@ export const HealthyCombosSection: React.FC<HealthyCombosSectionProps> = ({
   };
 
   const handleAdd = (product: Product, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const variant = Array.isArray(product.vars) && product.vars.length > 0 ? product.vars[0] : null;
 
@@ -173,15 +175,15 @@ export const HealthyCombosSection: React.FC<HealthyCombosSectionProps> = ({
           </div>
 
           {/* See All Button redirecting to /category/combos */}
-          <button
-            type="button"
-            onClick={() => router.push('/category/combos')}
+          <Link
+            href="/category/combos"
+            prefetch={true}
             className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border border-[#0D3B2E] text-[#0D3B2E] bg-white hover:bg-[#0D3B2E] hover:text-white transition-all text-xs sm:text-sm font-bold tracking-wide shadow-xs cursor-pointer group shrink-0 active:scale-95"
             aria-label="See all combo packs"
           >
             <span>See All</span>
             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
         </div>
 
         {/* Carousel Container with Left/Right Arrows */}
@@ -222,9 +224,10 @@ export const HealthyCombosSection: React.FC<HealthyCombosSectionProps> = ({
               const inCart = cartIds.includes(p.id);
 
               return (
-                <div
+                <Link
                   key={p.id}
-                  onClick={() => router.push(`/product/${p.id}`)}
+                  href={`/product/${p.id}`}
+                  prefetch={true}
                   className="w-[175px] sm:w-[240px] md:w-[260px] shrink-0 bg-white rounded-2xl border border-gray-200 hover:border-[#0D3B2E]/30 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer group relative p-2.5 sm:p-3 select-none"
                 >
                   {/* Top-Left Hanging FLAT OFF Deep Green Badge */}
@@ -318,7 +321,7 @@ export const HealthyCombosSection: React.FC<HealthyCombosSectionProps> = ({
                       </p>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -338,15 +341,15 @@ export const HealthyCombosSection: React.FC<HealthyCombosSectionProps> = ({
           </div>
 
           {/* See All Button */}
-          <button
-            type="button"
-            onClick={() => router.push('/category/combos')}
+          <Link
+            href="/category/combos"
+            prefetch={true}
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition-all text-xs font-bold shadow-xs cursor-pointer active:scale-95"
             aria-label="See all combo packs"
           >
             <span>See All</span>
             <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </Link>
         </div>
 
       </div>

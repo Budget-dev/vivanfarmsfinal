@@ -73,19 +73,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
     router.push('/');
   };
 
-  const handleCategoryNav = (cat: string) => {
-    router.push(`/category/${cat}`);
-    onFilter?.(cat);
-    setMobileMenuOpen(false);
-  };
-
-  const navItems = [
-    { label: 'All Products', slug: 'all', onClick: () => handleCategoryNav('all') },
-    { label: 'A2 Desi Ghee', slug: 'ghee', onClick: () => handleCategoryNav('ghee') },
-    { label: 'Homemade Sweets', slug: 'sweets', onClick: () => handleCategoryNav('sweets') },
-    { label: 'Raw Forest Honey', slug: 'honey', onClick: () => handleCategoryNav('honey') },
-    { label: 'Cold Pressed Oils', slug: 'oils', onClick: () => handleCategoryNav('oils') },
-    { label: 'Healthy Combos', slug: 'combos', onClick: () => handleCategoryNav('combos') },
+  const sidebarNavItems = [
+    { label: 'A2 Desi Ghee', slug: 'ghee', href: '/category/ghee', icon: '🐄' },
+    { label: 'Homemade Sweets', slug: 'sweets', href: '/category/sweets', icon: '🍬' },
+    { label: 'Raw Forest Honey', slug: 'honey', href: '/category/honey', icon: '🍯' },
   ];
 
   return (
@@ -119,43 +110,32 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
         </div>
 
         <nav className="hidden lg:flex items-center gap-5 xl:gap-8 mx-4">
-          <button 
-            onClick={() => handleCategoryNav('all')}
-            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
-          >
-            All Products
-          </button>
-          <button 
-            onClick={() => handleCategoryNav('ghee')}
+          <Link 
+            href="/category/ghee"
+            prefetch={true}
             className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
             A2 Desi Ghee
-          </button>
-          <button 
-            onClick={() => handleCategoryNav('sweets')}
+          </Link>
+          <Link 
+            href="/category/sweets"
+            prefetch={true}
             className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
             Sweets
-          </button>
-          <button 
-            onClick={() => handleCategoryNav('honey')}
+          </Link>
+          <Link 
+            href="/category/honey"
+            prefetch={true}
             className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
             Raw Honey
-          </button>
-          <button 
-            onClick={() => handleCategoryNav('oils')}
-            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
+          </Link>
+          <Link 
+            href="/about" 
+            prefetch={true}
+            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase"
           >
-            Wood-Pressed Oils
-          </button>
-          <button 
-            onClick={() => handleCategoryNav('combos')}
-            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
-          >
-            Combos
-          </button>
-          <Link href="/about" className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase">
             Our Story
           </Link>
         </nav>
@@ -217,16 +197,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
                   </div>
 
                   <DropdownMenuItem 
-                    onClick={() => router.push('/track')} 
-                    className="rounded-2xl p-3 cursor-pointer hover:bg-primary/5 focus:bg-primary/5 flex items-center gap-3.5 transition-all my-1 group"
+                    asChild
+                    className="rounded-2xl p-3 cursor-pointer hover:bg-primary/5 focus:bg-primary/5 transition-all my-1 group"
                   >
-                    <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center shrink-0 text-primary group-hover:border-primary group-hover:bg-primary/10 transition-colors">
-                      <Package className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">Track My Order</div>
-                      <div className="text-xs text-gray-500 font-normal">Check delivery status</div>
-                    </div>
+                    <Link href="/track" prefetch={true} className="flex items-center gap-3.5 w-full">
+                      <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center shrink-0 text-primary group-hover:border-primary group-hover:bg-primary/10 transition-colors">
+                        <Package className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">Track My Order</div>
+                        <div className="text-xs text-gray-500 font-normal">Check delivery status</div>
+                      </div>
+                    </Link>
                   </DropdownMenuItem>
 
                   <div className="border-b border-gray-100 my-2" />
@@ -343,15 +325,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
               <div className="px-6 mb-6">
                 <div className="text-[10px] font-black text-[#7A6848] uppercase tracking-[3px] mb-3 text-left">Store Collections</div>
                 <div className="space-y-1">
-                  {navItems.map((item) => (
-                    <button 
+                  {sidebarNavItems.map((item) => (
+                    <Link 
                       key={item.label}
-                      onClick={item.onClick}
+                      href={item.href}
+                      prefetch={true}
+                      onClick={() => {
+                        onFilter?.(item.slug);
+                        setMobileMenuOpen(false);
+                      }}
                       className="w-full flex items-center justify-between py-3 px-4 rounded-2xl hover:bg-primary/5 transition-all group cursor-pointer"
                     >
-                      <span className="text-sm font-bold text-primary/80 group-hover:text-primary">{item.label}</span>
+                      <span className="text-sm font-bold text-primary/80 group-hover:text-primary flex items-center gap-2.5">
+                        <span className="text-base">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </span>
                       <ChevronRight className="w-4 h-4 text-primary/20 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </div>

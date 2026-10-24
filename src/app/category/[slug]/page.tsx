@@ -3,7 +3,7 @@
 import React, { useState, useMemo, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { 
   Star, 
   ShoppingCart, 
@@ -24,18 +24,14 @@ import { CertificationsStrip } from '@/components/vivaan/CertificationsStrip';
 import { useCart } from '@/hooks/use-cart';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types';
-import { CATEGORIES, ALL_PRODUCTS, getCategoryProducts } from '@/lib/catalog';
+import { CATEGORIES, SIDEBAR_CATEGORIES, ALL_PRODUCTS, getCategoryProducts } from '@/lib/catalog';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
-interface PageProps {
-  params: Promise<{ slug: string }>;
-}
-
-export default function CategoryDetailPage({ params }: PageProps) {
+export default function CategoryDetailPage() {
   const router = useRouter();
-  const resolvedParams = use(params);
-  const activeSlug = (resolvedParams?.slug || 'all').toLowerCase();
+  const urlParams = useParams();
+  const activeSlug = ((urlParams?.slug as string) || 'all').toLowerCase();
 
   const db = useFirestore();
   const productsRef = useMemoFirebase(() => collection(db, 'products'), [db]);
@@ -115,6 +111,7 @@ export default function CategoryDetailPage({ params }: PageProps) {
   };
 
   const handleAdd = (product: Product, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const varIdx = selectedVariants[product.id] || 0;
     const variant = Array.isArray(product.vars) && product.vars.length > varIdx ? product.vars[varIdx] : null;
@@ -125,7 +122,7 @@ export default function CategoryDetailPage({ params }: PageProps) {
       vol: variant?.s || product.vol || 'Standard'
     };
 
-    addToCart(itemToAdd, variant);
+    addToCart(itemToAdd, 1);
     setJustAddedMap(prev => ({ ...prev, [product.id]: true }));
     setTimeout(() => {
       setJustAddedMap(prev => ({ ...prev, [product.id]: false }));
@@ -161,12 +158,13 @@ export default function CategoryDetailPage({ params }: PageProps) {
 
           {/* Mobile Category Scrollable Pill Tabs */}
           <div className="lg:hidden mb-5 overflow-x-auto no-scrollbar -mx-3 px-3 py-1 flex items-center gap-2">
-            {CATEGORIES.map(cat => {
+            {SIDEBAR_CATEGORIES.map(cat => {
               const isActive = cat.slug === activeSlug || cat.id === activeSlug;
               return (
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
+                  prefetch={true}
                   className={cn(
                     "text-xs font-serif font-bold whitespace-nowrap px-4 py-2 rounded-full transition-all shrink-0",
                     isActive
@@ -187,21 +185,23 @@ export default function CategoryDetailPage({ params }: PageProps) {
             {/* ── Left Sidebar (Desktop - Matching Screenshot 1) ── */}
             <aside className="hidden lg:block w-[240px] shrink-0 sticky top-[130px] bg-white rounded-2xl p-5 border border-[#EAE3D2] shadow-xs">
               <div className="flex flex-col space-y-2">
-                {CATEGORIES.map(cat => {
+                {SIDEBAR_CATEGORIES.map(cat => {
                   const isActive = cat.slug === activeSlug || cat.id === activeSlug;
 
                   return (
                     <Link
                       key={cat.id}
                       href={`/category/${cat.slug}`}
+                      prefetch={true}
                       className={cn(
-                        "block font-serif text-[16px] px-4 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer",
+                        "block font-serif text-[16px] px-4 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer flex items-center gap-2.5",
                         isActive
                           ? "bg-[#EFECE6] text-[#0D3B2E] font-extrabold shadow-2xs"
                           : "text-[#1C3A27] hover:text-[#0D3B2E] hover:bg-[#F9F7F2] font-semibold"
                       )}
                     >
-                      {cat.name}
+                      <span>{cat.icon}</span>
+                      <span>{cat.name}</span>
                     </Link>
                   );
                 })}
@@ -277,9 +277,10 @@ export default function CategoryDetailPage({ params }: PageProps) {
                     const inCart = cartIds.includes(p.id);
 
                     return (
-                      <div
+                      <Link
                         key={p.id}
-                        onClick={() => router.push(`/product/${p.id}`)}
+                        href={`/product/${p.id}`}
+                        prefetch={true}
                         className="bg-white rounded-2xl border border-gray-200 hover:border-[#0D3B2E]/30 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer group relative p-2.5 sm:p-3 select-none"
                       >
                         {/* Top-Left Hanging FLAT OFF Deep Green Badge */}
@@ -373,7 +374,7 @@ export default function CategoryDetailPage({ params }: PageProps) {
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>

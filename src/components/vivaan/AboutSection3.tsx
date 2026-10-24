@@ -315,7 +315,7 @@ export function AboutSection3() {
                 animationNum={15}
                 timelineRef={heroRef}
                 customVariants={revealVariants}
-                href="/"
+                href="/category/honey"
                 className="inline-flex items-center justify-center gap-2 hover:gap-3 bg-amber-900 hover:bg-amber-950 text-white px-6 py-3.5 rounded-2xl cursor-pointer font-bold text-xs uppercase tracking-widest shadow-lg transition-all duration-300 ease-in-out w-full"
               >
                 <span>EXPLORE OUR HONEY</span> <ArrowRight className="w-4 h-4" />

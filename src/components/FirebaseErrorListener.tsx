@@ -30,7 +30,7 @@ export function FirebaseErrorListener() {
     };
   }, []);
 
-  if (!error || isDismissed) {
+  if (!error || isDismissed || process.env.NODE_ENV !== 'development') {
     return null;
   }
 

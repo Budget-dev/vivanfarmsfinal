@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Star, ShoppingCart, Heart, ChevronLeft, ChevronRight, Check, ArrowRight } from 'lucide-react';
 import { Product } from '@/types';
@@ -19,6 +20,7 @@ const PANTRY_CATEGORIES = [
   { id: 'all', label: 'All', icon: '✨' },
   { id: 'ghee', label: 'A2 Ghee', icon: '🐄' },
   { id: 'sweets', label: 'Sweets', icon: '🍬' },
+  { id: 'honey', label: 'Raw Honey', icon: '🍯' },
 ];
 
 export const CleanestPantrySection: React.FC<CleanestPantrySectionProps> = ({
@@ -54,6 +56,7 @@ export const CleanestPantrySection: React.FC<CleanestPantrySectionProps> = ({
   };
 
   const handleAdd = (product: Product, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     pauseAutoScroll();
     const varIdx = selectedVariants[product.id] || 0;
@@ -73,6 +76,7 @@ export const CleanestPantrySection: React.FC<CleanestPantrySectionProps> = ({
   };
 
   const handleVariantSelect = (productId: string, idx: number, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     pauseAutoScroll();
     setSelectedVariants(prev => ({ ...prev, [productId]: idx }));
@@ -161,9 +165,10 @@ export const CleanestPantrySection: React.FC<CleanestPantrySectionProps> = ({
               const inCart = cartIds.includes(p.id);
 
               return (
-                <div
+                <Link
                   key={p.id}
-                  onClick={() => router.push(`/product/${p.id}`)}
+                  href={`/product/${p.id}`}
+                  prefetch={true}
                   className="w-[175px] sm:w-[240px] md:w-[260px] shrink-0 bg-white rounded-2xl border border-gray-200 hover:border-[#0D3B2E]/30 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer group relative p-2.5 sm:p-3 select-none"
                 >
                   {/* Top-Left Hanging FLAT OFF Deep Green Badge */}
@@ -257,7 +262,7 @@ export const CleanestPantrySection: React.FC<CleanestPantrySectionProps> = ({
                       </p>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -277,15 +282,15 @@ export const CleanestPantrySection: React.FC<CleanestPantrySectionProps> = ({
           </div>
 
           {/* See All Button */}
-          <button
-            type="button"
-            onClick={() => router.push(`/category/${selectedCat === 'all' ? 'ghee' : selectedCat}`)}
+          <Link
+            href={`/category/${selectedCat === 'all' ? 'ghee' : selectedCat}`}
+            prefetch={true}
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition-all text-xs font-bold shadow-xs cursor-pointer active:scale-95"
             aria-label="See all products"
           >
             <span>See All</span>
             <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </Link>
         </div>
 
       </div>
