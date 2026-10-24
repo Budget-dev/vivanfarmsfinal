@@ -73,10 +73,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
     router.push('/');
   };
 
+  const handleCategoryNav = (cat: string) => {
+    router.push(`/category/${cat}`);
+    onFilter?.(cat);
+    setMobileMenuOpen(false);
+  };
+
   const navItems = [
-    { label: 'All Products', onClick: () => { onFilter('all'); setMobileMenuOpen(false); } },
-    { label: 'A2 Desi Ghee', onClick: () => { onFilter('ghee'); setMobileMenuOpen(false); } },
-    { label: 'Homemade Sweets', onClick: () => { onFilter('sweets'); setMobileMenuOpen(false); } },
+    { label: 'All Products', slug: 'all', onClick: () => handleCategoryNav('all') },
+    { label: 'A2 Desi Ghee', slug: 'ghee', onClick: () => handleCategoryNav('ghee') },
+    { label: 'Homemade Sweets', slug: 'sweets', onClick: () => handleCategoryNav('sweets') },
+    { label: 'Raw Forest Honey', slug: 'honey', onClick: () => handleCategoryNav('honey') },
+    { label: 'Cold Pressed Oils', slug: 'oils', onClick: () => handleCategoryNav('oils') },
+    { label: 'Healthy Combos', slug: 'combos', onClick: () => handleCategoryNav('combos') },
   ];
 
   return (
@@ -109,24 +118,42 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
           </Link>
         </div>
 
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-10 mx-4">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-8 mx-4">
           <button 
-            onClick={() => onFilter('all')}
+            onClick={() => handleCategoryNav('all')}
             className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
             All Products
           </button>
           <button 
-            onClick={() => onFilter('ghee')}
+            onClick={() => handleCategoryNav('ghee')}
             className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
             A2 Desi Ghee
           </button>
           <button 
-            onClick={() => onFilter('sweets')}
+            onClick={() => handleCategoryNav('sweets')}
             className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
           >
-            Homemade Sweets
+            Sweets
+          </button>
+          <button 
+            onClick={() => handleCategoryNav('honey')}
+            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
+          >
+            Raw Honey
+          </button>
+          <button 
+            onClick={() => handleCategoryNav('oils')}
+            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
+          >
+            Wood-Pressed Oils
+          </button>
+          <button 
+            onClick={() => handleCategoryNav('combos')}
+            className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase cursor-pointer"
+          >
+            Combos
           </button>
           <Link href="/about" className="text-[13px] font-extrabold text-[#0D3B2E] hover:text-[#2D6A4F] transition-all tracking-wider uppercase">
             Our Story

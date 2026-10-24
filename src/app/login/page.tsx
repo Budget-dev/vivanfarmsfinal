@@ -47,15 +47,17 @@ function LoginContent() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  const syncProfile = async (u: any) => {
-    await setDoc(doc(db, 'userProfiles', u.uid), {
+  const syncProfile = (u: any) => {
+    setDoc(doc(db, 'userProfiles', u.uid), {
       id: u.uid,
-      firstName: u.displayName?.split(' ')[0] || '',
-      lastName: u.displayName?.split(' ').slice(1).join(' ') || '',
+      firstName: u.displayName?.split(' ')[0] || (name ? name.split(' ')[0] : ''),
+      lastName: u.displayName?.split(' ').slice(1).join(' ') || (name ? name.split(' ').slice(1).join(' ') : ''),
       email: u.email?.toLowerCase().trim(),
       purityCoins: 500,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    }, { merge: true }).catch((err: any) => {
+      console.warn("Background profile sync notice:", err);
+    });
   };
 
   const handleForgotPassword = async () => {
@@ -98,9 +100,9 @@ function LoginContent() {
       if (isSignUp) {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         if (name) {
-          await updateProfile(result.user, { displayName: name });
+          updateProfile(result.user, { displayName: name }).catch(console.warn);
         }
-        await syncProfile(result.user);
+        syncProfile(result.user);
         toast({ title: "Welcome!", description: "Account created successfully." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -128,12 +130,14 @@ function LoginContent() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      await syncProfile(result.user);
+      syncProfile(result.user);
       toast({ title: "Welcome!", description: `Signed in as ${result.user.displayName || result.user.email}` });
       router.push(returnTo);
     } catch (err: any) {
-      setError(err.message || "Google sign in failed.");
-      toast({ variant: "destructive", title: "Google Login Failed", description: err.message });
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(err.message || "Google sign in failed.");
+        toast({ variant: "destructive", title: "Google Login Failed", description: err.message });
+      }
     } finally {
       setLoading(false);
     }

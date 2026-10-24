@@ -8,9 +8,10 @@ import {
   X,
   ChevronLeft
 } from 'lucide-react';
-import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Product, ProductVariant } from '@/types';
+import { getProductById } from '@/lib/catalog';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
 import { Ticker } from '@/components/vivaan/Ticker';
@@ -52,12 +53,9 @@ export default function ProductDetailsPage() {
   const router = useRouter();
   const db = useFirestore();
 
-  // Firestore Queries
+  // Firestore Live Query for real-time document overrides
   const productRef = useMemoFirebase(() => id ? doc(db, 'products', id as string) : null, [db, id]);
-  const { data: dbProduct, isLoading: productLoading } = useDoc(productRef);
-  
-  const relatedRef = useMemoFirebase(() => collection(db, 'products'), [db]);
-  const { data: allProducts } = useCollection(relatedRef);
+  const { data: dbProduct } = useDoc(productRef);
   
   // Cart & Wishlist hooks
   const { cart, addToCart, updateQty, removeFromCart, totalQty } = useCart();
@@ -70,43 +68,41 @@ export default function ProductDetailsPage() {
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  // Standardize product with high-fidelity fallback to Vivaan A2 Buffalo Ghee
+  // Instant zero-delay resolution from catalog, with seamless Firestore overrides
   const product: Product = useMemo(() => {
+    const catalogMatch = getProductById(id as string);
+
     if (dbProduct) {
-      const basePrice = Number(dbProduct.basePrice) || Number(dbProduct.price) || 1099;
+      const basePrice = Number(dbProduct.basePrice) || Number(dbProduct.price) || (catalogMatch?.price ?? 1099);
       const rawVars = Array.isArray(dbProduct.vars) && dbProduct.vars.length > 0 
         ? dbProduct.vars 
-        : VIVAAN_BUFFALO_VARIANTS;
+        : (catalogMatch?.vars ?? VIVAAN_BUFFALO_VARIANTS);
 
       return {
         ...DEFAULT_BUFFALO_GHEE_PRODUCT,
+        ...(catalogMatch || {}),
         ...dbProduct,
-        id: dbProduct.id || (id as string) || 'a2-desi-buffalo-ghee',
-        name: dbProduct.name || 'A2 Desi Buffalo Ghee',
+        id: dbProduct.id || (id as string),
+        name: dbProduct.name || catalogMatch?.name || 'A2 Desi Buffalo Ghee',
         price: basePrice,
         vars: rawVars,
         imageUrls: Array.isArray(dbProduct.imageUrls) && dbProduct.imageUrls.length > 0
           ? dbProduct.imageUrls
-          : BUFFALO_GHEE_IMAGES
+          : (catalogMatch?.imageUrls ?? BUFFALO_GHEE_IMAGES)
       } as Product;
     }
 
-    if (allProducts && allProducts.length > 0 && id) {
-      const match = allProducts.find((p: any) => p.id === id || p.slug === id);
-      if (match) {
-        return {
-          ...DEFAULT_BUFFALO_GHEE_PRODUCT,
-          ...match,
-          imageUrls: Array.isArray(match.imageUrls) && match.imageUrls.length > 0
-            ? match.imageUrls
-            : BUFFALO_GHEE_IMAGES
-        } as Product;
-      }
+    if (catalogMatch) {
+      return {
+        ...DEFAULT_BUFFALO_GHEE_PRODUCT,
+        ...catalogMatch,
+        id: catalogMatch.id || (id as string),
+      } as Product;
     }
 
     // Default authentic Vivaan product representation
     return DEFAULT_BUFFALO_GHEE_PRODUCT;
-  }, [dbProduct, allProducts, id]);
+  }, [dbProduct, id]);
 
   // Synchronize default variant and images
   useEffect(() => {

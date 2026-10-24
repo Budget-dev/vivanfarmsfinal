@@ -47,15 +47,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  const syncProfile = async (user: any) => {
-    await setDoc(doc(db, 'userProfiles', user.uid), {
+  const syncProfile = (user: any) => {
+    // Non-blocking background sync so the user is never kept waiting
+    setDoc(doc(db, 'userProfiles', user.uid), {
       id: user.uid,
-      firstName: user.displayName?.split(' ')[0] || '',
-      lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+      firstName: user.displayName?.split(' ')[0] || (name ? name.split(' ')[0] : ''),
+      lastName: user.displayName?.split(' ').slice(1).join(' ') || (name ? name.split(' ').slice(1).join(' ') : ''),
       email: user.email?.toLowerCase().trim(),
       purityCoins: 500,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    }, { merge: true }).catch((err: any) => {
+      console.warn("Background profile sync notice:", err);
+    });
   };
 
   const handleGoogleAuth = async () => {
@@ -64,13 +67,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      await syncProfile(result.user);
+      syncProfile(result.user);
       toast({ title: "Welcome!", description: "Signed in with Google successfully." });
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Google sign in failed.");
-      toast({ variant: "destructive", title: "Login Failed", description: err.message });
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(err.message || "Google sign in failed.");
+        toast({ variant: "destructive", title: "Login Failed", description: err.message });
+      }
     } finally {
       setLoading(false);
     }
@@ -123,9 +128,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
       if (isSignUp) {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         if (name) {
-          await updateProfile(result.user, { displayName: name });
+          updateProfile(result.user, { displayName: name }).catch(console.warn);
         }
-        await syncProfile(result.user);
+        syncProfile(result.user);
         toast({ title: "Account Created!", description: "Welcome to Vivaan Farms." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
