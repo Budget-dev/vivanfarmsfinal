@@ -110,7 +110,7 @@ export const FestiveHero: React.FC<FestiveHeroProps> = ({ onShopClick }) => {
         - Desktop (>= md): 1983/793 aspect ratio with arrows & dots
       */}
       <div 
-        className="relative w-full cursor-pointer overflow-hidden shadow-xs aspect-[16/9] md:aspect-[1983/793] bg-[#F9F6EF]"
+        className="relative w-full cursor-pointer overflow-hidden shadow-xs aspect-[1983/793] bg-[#F9F6EF]"
         onClick={handleClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -131,7 +131,7 @@ export const FestiveHero: React.FC<FestiveHeroProps> = ({ onShopClick }) => {
                 alt={slide.alt}
                 fill
                 priority={index === 0}
-                sizes="(max-width: 768px) 100vw, 1983px"
+                sizes="100vw"
                 className="object-cover w-full h-full"
               />
             </div>
