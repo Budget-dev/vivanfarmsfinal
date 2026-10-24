@@ -1,100 +1,67 @@
 "use client";
 
-import React, { useRef } from 'react';
-import { useAutoScroll } from '@/hooks/use-auto-scroll';
-
-const CERTS = [
-  {
-    code: "ISO 9001:2015",
-    label: "Quality Certified",
-    sub: "Certified Management System"
-  },
-  {
-    code: "ISO 22000",
-    label: "Food Safety",
-    sub: "FSMS Standards"
-  },
-  {
-    code: "JAIVIK BHARAT",
-    label: "India Organic",
-    sub: "Organic Certification"
-  },
-  {
-    code: "US FDA",
-    label: "Registered Facility",
-    sub: "US Food & Drug Admin"
-  },
-  {
-    code: "FSSAI",
-    label: "Central License",
-    sub: "Lic. No. 10822003000214"
-  },
-  {
-    code: "100% ORGANIC",
-    label: "NPOP Standards",
-    sub: "Pesticide & Chemical Free"
-  },
-  {
-    code: "CRUELTY FREE",
-    label: "Vedic Ahimsa Dairy",
-    sub: "Calf-First Ethic"
-  },
-  {
-    code: "NON-GMO",
-    label: "Native Seeds",
-    sub: "Heirloom Crop Varieties"
-  }
-];
+import React from 'react';
+import Image from 'next/image';
+import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export const CertificationsStrip: React.FC = () => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useAutoScroll(scrollRef, {
-    interval: 3000,
-    resumeDelay: 3000,
-    stepDistance: 135
-  });
-
-  // Repeated list for continuous, seamless loop-around on wide displays
-  const displayCerts = [...CERTS, ...CERTS];
-
   return (
     <section className="py-8 sm:py-12 bg-[#FAF7F2] border-b border-[#EAE3D2] select-none">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12">
         
-        <div className="text-center mb-6">
-          <p className="text-[11px] sm:text-xs font-black text-[#6B5A45] tracking-[3px] uppercase">
+        {/* Section Subheading */}
+        <div className="text-center mb-5 sm:mb-7">
+          <p className="text-[10px] sm:text-xs font-black text-[#6B5A45] tracking-[3px] uppercase">
             Recognized & Certified For Complete Food Purity
           </p>
+          <div className="w-12 sm:w-16 h-0.5 bg-[#0D3B2E]/25 mx-auto mt-2 rounded-full" />
         </div>
 
-        {/* Badges Auto-scrolling Strip on Mobile and Desktop */}
-        <div 
-          ref={scrollRef}
-          className="flex overflow-x-auto no-scrollbar scroll-smooth gap-3 sm:gap-4 md:gap-5 items-center py-2 px-1"
-        >
-          {displayCerts.map((cert, idx) => (
-            <div
-              key={idx}
-              className="flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white border border-[#EBE3D3] hover:border-[#0D3B2E]/40 hover:shadow-md transition-all duration-300 text-center group h-24 sm:h-28 w-[110px] sm:w-[130px] md:w-[140px] shrink-0 cursor-pointer"
-            >
-              {/* Outer Seal Ring */}
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-dashed border-[#0D3B2E]/40 flex flex-col items-center justify-center mb-1 group-hover:border-[#0D3B2E] transition-colors bg-[#FAF8F5]">
-                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#0D3B2E]/10 flex items-center justify-center">
-                  <span className="text-[7.5px] sm:text-[8px] font-black text-[#0D3B2E] tracking-tighter uppercase leading-none text-center">
-                    {cert.code.split(' ')[0]}
-                  </span>
-                </div>
+        {/* Exclusive Single FSSAI Certification Card */}
+        <div className="max-w-xl mx-auto bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-[#EBE3D3] shadow-xs hover:shadow-md transition-all duration-300">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+            
+            {/* High-Resolution FSSAI Certification Seal Emblem */}
+            <div className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-full overflow-hidden shadow-xs border-2 border-[#113B29]/20 bg-white">
+              <Image 
+                src="/images/certifications/fssai.jpg"
+                alt="FSSAI Certified - Food Safety and Standards Authority of India"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 112px, 128px"
+                priority
+              />
+            </div>
+
+            {/* Certification Details */}
+            <div className="flex-1 space-y-1.5 sm:space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EBF5EF] text-[#0D3B2E] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                <span>100% Food Safety Assured</span>
               </div>
 
-              <div className="text-[9px] sm:text-[10px] font-bold text-gray-900 group-hover:text-[#0D3B2E] transition-colors leading-tight truncate w-full px-1">
-                {cert.label}
-              </div>
-              <div className="text-[7.5px] sm:text-[8px] text-gray-500 truncate w-full px-1">
-                {cert.sub}
+              <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-[#0D3B2E] tracking-tight">
+                FSSAI Certified
+              </h3>
+
+              <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
+                Licensed under the Food Safety and Standards Authority of India (FSSAI). Rigorously tested for 100% natural purity, batch safety, and zero chemical additives.
+              </p>
+
+              <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-[11px] font-bold text-[#6B5A45]">
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                  Zero Chemical Residues
+                </span>
+                <span className="text-gray-300">•</span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                  Batch-Tested Purity
+                </span>
               </div>
             </div>
-          ))}
+
+          </div>
         </div>
 
       </div>
