@@ -11,6 +11,7 @@ import { FocusGheeSection } from '@/components/vivaan/FocusGheeSection';
 import { FocusSweetsSection } from '@/components/vivaan/FocusSweetsSection';
 import { FocusHoneySection } from '@/components/vivaan/FocusHoneySection';
 import { QualityAssuranceSection } from '@/components/vivaan/QualityAssuranceSection';
+import { FarmJourneySection } from '@/components/product/FarmJourneySection';
 import { CustomerReviewsSection } from '@/components/vivaan/CustomerReviewsSection';
 import { CertificationsStrip } from '@/components/vivaan/CertificationsStrip';
 import { Footer } from '@/components/vivaan/Footer';
@@ -365,12 +366,17 @@ export default function VivaanFarms() {
             />
           </div>
 
-          {/* ── 6. Only Perfect Makes The Cut (Lab Quality Testing) ── */}
+          {/* ── 8. Only Perfect Makes The Cut (Lab Quality Testing) ── */}
           <div id="quality-assurance">
             <QualityAssuranceSection />
           </div>
 
-          {/* ── 11. What Do Our Customers Say (Testimonials) ── */}
+          {/* ── 9. From Our Farmers' To Your Kitchen (14 Days Journey) ── */}
+          <div id="farm-journey">
+            <FarmJourneySection />
+          </div>
+
+          {/* ── 10. What Do Our Customers Say (Testimonials) ── */}
           <CustomerReviewsSection />
 
           {/* ── 12. Recognized & Certified Purity Badges Strip ── */}
