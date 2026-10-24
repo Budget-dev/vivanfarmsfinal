@@ -35,6 +35,12 @@ export const CATEGORY_ICONS_DATA = [
     image: '/images/categories/combos.png',
     isPhoto: false,
   },
+  {
+    id: 'all',
+    label: 'All',
+    image: '/images/categories/all.png',
+    isPhoto: false,
+  },
 ];
 
 export const PantryCategoryIcons: React.FC<PantryCategoryIconsProps> = ({
