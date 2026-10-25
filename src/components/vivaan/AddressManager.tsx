@@ -1,21 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   MapPin, 
   Navigation, 
   CheckCircle2, 
   AlertCircle, 
-  RefreshCw, 
   Plus, 
-  Home, 
-  Briefcase, 
   Check, 
   Loader2,
   Phone,
   User,
   Building,
-  Sparkles
+  Sparkles,
+  Compass
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -51,8 +49,8 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
   const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
   const [selectedTag, setSelectedTag] = useState<'Home' | 'Work' | 'Other'>('Home');
 
-  // Geolocation states
-  const [isLeafletOpen, setIsLeafletOpen] = useState(false);
+  // Map & Geolocation states (Clean, zero technical library names)
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const [geoState, setGeoState] = useState<'idle' | 'detecting' | 'success' | 'denied' | 'error'>('idle');
   const [geoMessage, setGeoMessage] = useState<string>('');
 
@@ -94,7 +92,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     const updated = [
       newEntry,
       ...savedAddresses.filter(a => a.address !== address.address || a.pincode !== address.pincode)
-    ].slice(0, 4); // Keep top 4 addresses
+    ].slice(0, 4);
 
     setSavedAddresses(updated);
     try {
@@ -117,7 +115,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     });
   };
 
-  // Indian Pincode Auto-Lookup via Postal API
+  // Indian Pincode Auto-Lookup via India Post API
   const handlePincodeLookup = useCallback(async (code: string) => {
     const cleanPincode = code.trim().replace(/\D/g, '');
     if (cleanPincode.length !== 6) {
@@ -127,7 +125,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     }
 
     setPincodeLookupState('checking');
-    setPincodeNotice('Verifying pincode...');
+    setPincodeNotice('Verifying PIN code...');
 
     try {
       const res = await fetch(`https://api.postalpincode.in/pincode/${cleanPincode}`, {
@@ -137,29 +135,33 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
 
       if (Array.isArray(data) && data[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
         const postOffice = data[0].PostOffice[0];
-        const detectedCity = postOffice.District || postOffice.Block || postOffice.Name;
-        const detectedState = postOffice.State;
+        const detectedCity = postOffice.District || postOffice.Block || postOffice.Name || '';
+        const detectedState = postOffice.State || '';
+        const areaName = postOffice.Name || '';
 
         onChange({
           ...address,
           pincode: cleanPincode,
-          city: address.city || detectedCity,
-          state: address.state || detectedState,
+          city: detectedCity || address.city,
+          state: detectedState || address.state,
+          address: address.address 
+            ? address.address 
+            : (areaName && areaName !== detectedCity ? `${areaName}, ${detectedCity}` : address.address)
         });
 
         setPincodeLookupState('verified');
         setPincodeNotice(`${detectedCity}, ${detectedState}`);
       } else {
         setPincodeLookupState('failed');
-        setPincodeNotice('Pincode verified locally. Please confirm City and State.');
+        setPincodeNotice('PIN code accepted. Please confirm City and State.');
       }
     } catch {
       setPincodeLookupState('failed');
-      setPincodeNotice('Pincode lookup offline. Please enter City & State manually.');
+      setPincodeNotice('Postal lookup offline. Please enter City & State manually.');
     }
   }, [address, onChange]);
 
-  // Helper to reverse geocode coordinates using BigDataCloud with Nominatim fallback
+  // Reverse geocodes coordinates to complete Indian street address
   const reverseGeocodeCoords = async (latitude: number, longitude: number) => {
     let road = '';
     let city = '';
@@ -168,7 +170,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     let locality = '';
     let houseNumber = '';
 
-    // 1. Primary: BigDataCloud Reverse Geocode (CORS-friendly, ultra-fast for browsers)
+    // 1. Primary: BigDataCloud Reverse Geocode (Fast, accurate locality for India)
     try {
       const bdcRes = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
@@ -179,39 +181,42 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         state = bdc.principalSubdivision || '';
         locality = bdc.locality || '';
         pincode = (bdc.postcode || '').replace(/\D/g, '').slice(0, 6);
+
+        const adminLevels = bdc.localityInfo?.administrative || [];
+        const neighborhood = adminLevels.find((a: any) => a.order >= 10)?.name;
+        if (neighborhood && neighborhood !== city) {
+          locality = [neighborhood, locality].filter(Boolean).join(', ');
+        }
       }
     } catch (e) {
-      console.warn('BigDataCloud reverse geocode error:', e);
+      console.warn('BigDataCloud geocode notice:', e);
     }
 
-    // 2. Secondary: OpenStreetMap Nominatim (to enrich street, house number, or missing pincode)
-    if (!city || !pincode || !road) {
-      try {
-        const nomRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-          { credentials: 'omit' }
-        );
-        if (nomRes.ok) {
-          const nomData = await nomRes.json();
-          const addr = nomData.address || {};
-          road = addr.road || addr.street || addr.suburb || addr.neighbourhood || road;
-          city = city || addr.city || addr.town || addr.village || addr.county || addr.district || '';
-          state = state || addr.state || '';
-          pincode = pincode || (addr.postcode || '').replace(/\D/g, '').slice(0, 6);
-          houseNumber = addr.house_number || '';
-        }
-      } catch (e) {
-        console.warn('Nominatim reverse geocode error:', e);
+    // 2. Secondary: OpenStreetMap Nominatim for street/building level detail
+    try {
+      const nomRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+        { credentials: 'omit' }
+      );
+      if (nomRes.ok) {
+        const nomData = await nomRes.json();
+        const addr = nomData.address || {};
+        road = addr.road || addr.street || addr.suburb || addr.neighbourhood || addr.residential || road;
+        city = city || addr.city || addr.town || addr.village || addr.county || addr.district || '';
+        state = state || addr.state || '';
+        pincode = pincode || (addr.postcode || '').replace(/\D/g, '').slice(0, 6);
+        houseNumber = addr.house_number || '';
       }
+    } catch (e) {
+      console.warn('Nominatim geocode notice:', e);
     }
 
     const fullStreet = [houseNumber, road, locality].filter(Boolean).join(', ');
     return { street: fullStreet, city, state, pincode };
   };
 
-  // Helper for multi-provider IP-based location fallback
+  // Resilient multi-provider network IP geolocation fallback
   const detectLocationByIP = async () => {
-    // Provider 1: BigDataCloud IP Geocode (CORS-friendly, no keys, fast & highly accurate in India)
     try {
       const bdcRes = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client');
       if (bdcRes.ok) {
@@ -221,21 +226,13 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         const pincode = (data.postcode || '').replace(/\D/g, '').slice(0, 6);
         const locality = data.locality || '';
         if (city || state) {
-          return {
-            city,
-            state,
-            pincode,
-            locality,
-            lat: data.latitude,
-            lng: data.longitude
-          };
+          return { city, state, pincode, locality, lat: data.latitude, lng: data.longitude };
         }
       }
     } catch (e) {
       console.warn('BigDataCloud IP detection notice:', e);
     }
 
-    // Provider 2: ipwho.is (fast postal code resolver)
     try {
       const res = await fetch('https://ipwho.is/');
       if (res.ok) {
@@ -252,10 +249,9 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         }
       }
     } catch (e) {
-      console.warn('ipwho.is detection notice:', e);
+      console.warn('ipwho.is notice:', e);
     }
 
-    // Provider 3: geojs.io (failsafe open IP service)
     try {
       const geoRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
       if (geoRes.ok) {
@@ -270,47 +266,52 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         };
       }
     } catch (e) {
-      console.warn('geojs.io detection notice:', e);
+      console.warn('geojs.io notice:', e);
     }
 
     return null;
   };
 
-  // GPS & IP Geolocation Detection with robust fallbacks
+  /**
+   * One-Click Auto-Fill: Fills ALL address fields (Street, City, State, PIN code) at once!
+   */
   const handleUseCurrentLocation = useCallback(async (isSilent: boolean | unknown = false) => {
     const silent = isSilent === true;
     if (!silent) {
       setGeoState('detecting');
-      setGeoMessage('Detecting your live doorstep location...');
+      setGeoMessage('Detecting your live location...');
     }
 
-    const applyIPFallback = async (fallbackMsg?: string) => {
+    const applyIPFallback = async (fallbackNotice?: string) => {
       const ipResult = await detectLocationByIP();
       if (ipResult && (ipResult.city || ipResult.state || ipResult.pincode)) {
         let finalPincode = ipResult.pincode;
-        let finalStreet = ipResult.locality || '';
+        let finalStreet = ipResult.locality || (ipResult.city ? `${ipResult.city} Area` : '');
+        let finalCity = ipResult.city || '';
+        let finalState = ipResult.state || '';
 
         // If postal code is missing but coords exist, reverse geocode to fetch 6-digit Indian PIN
-        if (!finalPincode && ipResult.lat && ipResult.lng) {
+        if ((!finalPincode || !finalStreet) && ipResult.lat && ipResult.lng) {
           try {
             const enriched = await reverseGeocodeCoords(ipResult.lat, ipResult.lng);
             finalPincode = enriched.pincode || finalPincode;
             finalStreet = enriched.street || finalStreet;
-          } catch {
-            // keep existing
-          }
+            finalCity = enriched.city || finalCity;
+            finalState = enriched.state || finalState;
+          } catch {}
         }
 
+        // Enter ALL fields at one time!
         onChange({
           ...address,
           address: finalStreet || address.address,
-          city: ipResult.city || address.city,
-          state: ipResult.state || address.state,
+          city: finalCity || address.city,
+          state: finalState || address.state,
           pincode: finalPincode || address.pincode,
         });
 
         setGeoState('success');
-        setGeoMessage(`Location detected: ${[ipResult.city, ipResult.state].filter(Boolean).join(', ')}. Please verify street/flat number.`);
+        setGeoMessage(`Address auto-filled: ${[finalCity, finalState, finalPincode].filter(Boolean).join(', ')}.`);
 
         if (finalPincode && finalPincode.length === 6) {
           handlePincodeLookup(finalPincode);
@@ -320,13 +321,13 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
 
       if (!silent) {
         setGeoState('error');
-        setGeoMessage(fallbackMsg || 'Unable to detect location automatically. Please enter your address.');
+        setGeoMessage(fallbackNotice || 'Could not auto-detect location. Please enter address manually.');
       }
       return false;
     };
 
     if (typeof window === 'undefined' || !('geolocation' in navigator)) {
-      await applyIPFallback('Location service not supported by browser. Located via network.');
+      await applyIPFallback('Location service unavailable on device. Located via network.');
       return;
     }
 
@@ -337,19 +338,25 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
           const geo = await reverseGeocodeCoords(latitude, longitude);
 
           if (geo.city || geo.state || geo.pincode || geo.street) {
+            const fullStreet = geo.street || (geo.city ? `${geo.city} Area` : '');
+            const finalCity = geo.city || '';
+            const finalState = geo.state || '';
+            const finalPincode = geo.pincode || '';
+
+            // Enter ALL fields at one time!
             onChange({
               ...address,
-              address: geo.street || address.address,
-              city: geo.city || address.city,
-              state: geo.state || address.state,
-              pincode: geo.pincode || address.pincode,
+              address: fullStreet || address.address,
+              city: finalCity || address.city,
+              state: finalState || address.state,
+              pincode: finalPincode || address.pincode,
             });
 
             setGeoState('success');
-            setGeoMessage(`GPS location verified: ${[geo.city, geo.state].filter(Boolean).join(', ')}. Please add house/flat number.`);
+            setGeoMessage(`Address auto-filled: ${[finalCity, finalState, finalPincode].filter(Boolean).join(', ')}.`);
 
-            if (geo.pincode && geo.pincode.length === 6) {
-              handlePincodeLookup(geo.pincode);
+            if (finalPincode && finalPincode.length === 6) {
+              handlePincodeLookup(finalPincode);
             }
           } else {
             await applyIPFallback();
@@ -361,11 +368,10 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
       },
       async (geoError) => {
         console.warn('GPS detection notice:', geoError.message);
-        // Seamlessly fallback to IP location if GPS is denied, timed out, or unavailable
         await applyIPFallback(
           geoError.code === geoError.PERMISSION_DENIED
-            ? 'GPS permission denied. Located via network — please add house/flat details.'
-            : 'GPS timed out. Located via network — please add house/flat details.'
+            ? 'GPS permission denied. Located via network — all fields auto-filled.'
+            : 'GPS timed out. Located via network — all fields auto-filled.'
         );
       },
       { timeout: 4000, enableHighAccuracy: false, maximumAge: 60000 }
@@ -373,7 +379,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
   }, [address, handlePincodeLookup, onChange]);
 
   // Automatic location detection on mount if address fields are blank
-  const hasAttemptedMountDetection = React.useRef(false);
+  const hasAttemptedMountDetection = useRef(false);
   useEffect(() => {
     if (hasAttemptedMountDetection.current) return;
     if (!address.city && !address.pincode && !address.address) {
@@ -385,7 +391,6 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
   const handleFieldChange = (name: keyof ShippingAddress, value: string) => {
     let formattedValue = value;
     if (name === 'phone') {
-      // Only keep digits and limit to 10
       formattedValue = value.replace(/\D/g, '').slice(0, 10);
     }
     if (name === 'pincode') {
@@ -405,49 +410,61 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* 1. Quick Location Detection & Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#FAF7EF] p-4 rounded-2xl border border-[#EEE0BC]">
-        <div className="flex items-center gap-2 text-xs font-bold text-[#5B4E38]">
-          <Navigation className="w-4 h-4 text-primary shrink-0" />
-          <span>Real-Time Doorstep Delivery</span>
+    <div className={`space-y-5 ${className}`}>
+      {/* ── 1. Streamlined One-Click Location Auto-Fill Bar ── */}
+      <div className="bg-[#FAF7EF] p-3.5 sm:p-4 rounded-2xl border border-[#EEE0BC] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-[#0D3B2E] text-white flex items-center justify-center shrink-0">
+            <Compass className="w-4 h-4 text-[#EBB847]" />
+          </div>
+          <div>
+            <h3 className="text-xs font-extrabold text-[#0D3B2E] uppercase tracking-wider">
+              Doorstep Delivery Location
+            </h3>
+            <p className="text-[11px] text-[#7A6848] font-medium leading-tight">
+              Auto-fill all address fields in one click or select on map
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsLeafletOpen(prev => !prev)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0D3B2E] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#154E3E] active:scale-95 transition-all shadow-xs cursor-pointer"
-          >
-            <MapPin className="w-3.5 h-3.5 text-[#EBB847]" />
-            <span>{isLeafletOpen ? 'Close Leaflet Map' : 'Fetch Location (Leaflet Map)'}</span>
-          </button>
-
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Main 1-Click Auto-Fill Button */}
           <button
             type="button"
             onClick={() => handleUseCurrentLocation(false)}
             disabled={geoState === 'detecting'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-[#1B5E3B]/30 text-primary text-xs font-bold uppercase tracking-wider hover:bg-primary/5 active:scale-95 transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0D3B2E] hover:bg-[#14472D] text-white text-xs font-black uppercase tracking-wider active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-60"
           >
             {geoState === 'detecting' ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Detecting...</span>
+                <span>Locating...</span>
               </>
             ) : (
               <>
-                <Navigation className="w-3.5 h-3.5 text-secondary" />
-                <span>Quick GPS</span>
+                <Navigation className="w-3.5 h-3.5 text-[#EBB847]" />
+                <span>Auto-Fill My Location</span>
               </>
             )}
+          </button>
+
+          {/* Clean Map Picker Button */}
+          <button
+            type="button"
+            onClick={() => setIsMapPickerOpen(prev => !prev)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-white border border-[#0D3B2E]/30 text-[#0D3B2E] text-xs font-bold uppercase tracking-wider hover:bg-gray-50 active:scale-95 transition-all shadow-2xs cursor-pointer"
+          >
+            <MapPin className="w-3.5 h-3.5 text-emerald-700" />
+            <span>{isMapPickerOpen ? 'Hide Map' : 'Pin on Map'}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Interactive Leaflet JS Location Picker */}
-      {isLeafletOpen && (
+      {/* ── 2. Interactive Map Location Picker (No Technical Jargon) ── */}
+      {isMapPickerOpen && (
         <LeafletLocationPicker
           onLocationSelect={(loc) => {
+            // Populate ALL fields at one time
             onChange({
               ...address,
               address: loc.address || address.address,
@@ -456,21 +473,21 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
               pincode: loc.pincode || address.pincode,
             });
             setGeoState('success');
-            setGeoMessage(`Leaflet verified: ${[loc.city, loc.state].filter(Boolean).join(', ')}.`);
+            setGeoMessage(`Address auto-filled: ${[loc.city, loc.state, loc.pincode].filter(Boolean).join(', ')}.`);
             if (loc.pincode && loc.pincode.length === 6) {
               handlePincodeLookup(loc.pincode);
             }
-            setIsLeafletOpen(false);
+            setIsMapPickerOpen(false);
             toast({
-              title: "Address Updated",
-              description: "Doorstep location & PIN code applied from Leaflet JS.",
+              title: "Address Auto-Filled",
+              description: "All doorstep address fields have been populated from map pin.",
             });
           }}
-          onClose={() => setIsLeafletOpen(false)}
+          onClose={() => setIsMapPickerOpen(false)}
         />
       )}
 
-      {/* Geolocation Feedback Alert */}
+      {/* Geolocation Feedback Banner */}
       {geoState !== 'idle' && (
         <div className={cn(
           "p-3 rounded-xl text-xs flex items-start gap-2.5 transition-all",
@@ -483,7 +500,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
           {geoState === 'denied' && <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />}
           {geoState === 'error' && <AlertCircle className="w-4 h-4 text-gray-600 shrink-0 mt-0.5" />}
           {geoState === 'detecting' && <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0 mt-0.5" />}
-          <div className="flex-1 leading-relaxed">
+          <div className="flex-1 font-semibold leading-relaxed">
             {geoMessage}
           </div>
           {geoState !== 'detecting' && (
@@ -498,12 +515,12 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         </div>
       )}
 
-      {/* 2. Saved Addresses Carousel (if user has saved addresses) */}
+      {/* ── 3. Saved Addresses Carousel (if available) ── */}
       {savedAddresses.length > 0 && (
         <div className="space-y-2">
           <div className="text-[11px] font-black uppercase tracking-wider text-[#7A6848] flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-secondary" />
-            <span>Select from Saved Addresses</span>
+            <span>Saved Addresses</span>
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
             {savedAddresses.map((saved, idx) => {
@@ -536,20 +553,19 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         </div>
       )}
 
-      {/* 3. Address Form with Mobile-First Inputs */}
+      {/* ── 4. Clean, Simplified Address Form ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 sm:p-7 rounded-3xl border border-[#EEE0BC] shadow-sm">
         
         {/* Full Name */}
         <div className="space-y-1">
           <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1">
-            <User className="w-3 h-3 text-primary" /> Full Name *
+            <User className="w-3 h-3 text-[#0D3B2E]" /> Full Name *
           </label>
           <Input 
             name="name" 
             autoComplete="name"
             value={address.name} 
             onChange={(e) => handleFieldChange('name', e.target.value)} 
-            placeholder=""
             className={cn(
               "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
               errors.name && "border-red-500 bg-red-50/30"
@@ -561,7 +577,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         {/* Mobile Number with Indian +91 Prefix */}
         <div className="space-y-1">
           <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1">
-            <Phone className="w-3 h-3 text-primary" /> Mobile Number *
+            <Phone className="w-3 h-3 text-[#0D3B2E]" /> Mobile Number *
           </label>
           <div className="relative flex items-center">
             <span className="absolute left-3 text-xs font-bold text-[#7A6848] select-none pointer-events-none">
@@ -575,7 +591,6 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
               maxLength={10}
               value={address.phone} 
               onChange={(e) => handleFieldChange('phone', e.target.value)} 
-              placeholder=""
               className={cn(
                 "h-12 pl-16 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
                 errors.phone && "border-red-500 bg-red-50/30"
@@ -588,14 +603,13 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         {/* Complete Street Address */}
         <div className="md:col-span-2 space-y-1">
           <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1">
-            <Building className="w-3 h-3 text-primary" /> Flat / House No., Landmark, Street Address *
+            <Building className="w-3 h-3 text-[#0D3B2E]" /> Flat / House No., Landmark, Street Address *
           </label>
           <Input 
             name="address" 
             autoComplete="street-address"
             value={address.address} 
             onChange={(e) => handleFieldChange('address', e.target.value)} 
-            placeholder=""
             className={cn(
               "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
               errors.address && "border-red-500 bg-red-50/30"
@@ -604,7 +618,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
           {errors.address && <span className="text-[10px] text-red-600 font-bold block">{errors.address}</span>}
         </div>
 
-        {/* Pincode with Instant Auto-Verify */}
+        {/* PIN Code with Instant Postal Auto-Fill */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
@@ -612,7 +626,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             </label>
             {pincodeLookupState === 'checking' && (
               <span className="text-[10px] text-blue-600 font-semibold flex items-center gap-1">
-                <Loader2 className="w-2.5 h-2.5 animate-spin" /> Verifying
+                <Loader2 className="w-2.5 h-2.5 animate-spin" /> Verifying...
               </span>
             )}
             {pincodeLookupState === 'verified' && (
@@ -630,7 +644,6 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             maxLength={6}
             value={address.pincode} 
             onChange={(e) => handleFieldChange('pincode', e.target.value)} 
-            placeholder=""
             className={cn(
               "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
               errors.pincode && "border-red-500 bg-red-50/30"
@@ -647,7 +660,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
           {errors.pincode && <span className="text-[10px] text-red-600 font-bold block">{errors.pincode}</span>}
         </div>
 
-        {/* City & State (Auto-populated or Editable) */}
+        {/* City & State (Auto-populated from Location or Pincode) */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
@@ -658,7 +671,6 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
               autoComplete="address-level2"
               value={address.city} 
               onChange={(e) => handleFieldChange('city', e.target.value)} 
-              placeholder=""
               className={cn(
                 "h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary",
                 errors.city && "border-red-500 bg-red-50/30"
@@ -676,7 +688,6 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
               autoComplete="address-level1"
               value={address.state} 
               onChange={(e) => handleFieldChange('state', e.target.value)} 
-              placeholder=""
               className="h-12 rounded-xl bg-[#FDFBFA] border-[#DDD0B5] text-sm font-semibold focus:border-primary" 
             />
           </div>
@@ -694,7 +705,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
                 className={cn(
                   "px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer",
                   selectedTag === tag 
-                    ? "bg-primary text-white shadow-xs" 
+                    ? "bg-[#0D3B2E] text-white shadow-xs" 
                     : "bg-[#F5EFE1] text-[#7A6848] hover:bg-[#EEE0BC]"
                 )}
               >
@@ -706,7 +717,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
           <button
             type="button"
             onClick={handleSaveCurrentAddress}
-            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer py-1"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#0D3B2E] hover:underline cursor-pointer py-1"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Save Address</span>

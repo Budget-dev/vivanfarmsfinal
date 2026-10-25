@@ -359,10 +359,10 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
           </div>
           <div>
             <h3 className="text-xs font-extrabold text-[#0D3B2E] uppercase tracking-wider">
-              Live Location via Leaflet JS
+              Pin Location on Map
             </h3>
             <p className="text-[10px] text-[#7A6848] font-medium leading-tight">
-              Real-time GPS detection & doorstep pin positioning
+              Tap anywhere on the map or drag the pin to set your exact doorstep address
             </p>
           </div>
         </div>
@@ -437,7 +437,7 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
           className="h-10 px-5 rounded-full bg-[#0D3B2E] hover:bg-[#144E3F] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
         >
           <Check className="w-3.5 h-3.5" />
-          <span>Apply This Location</span>
+          <span>Apply This Address</span>
         </button>
       </div>
     </div>
