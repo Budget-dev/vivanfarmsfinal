@@ -19,6 +19,11 @@ function getRazorpay(): InstanceType<typeof Razorpay> | null {
 
 export async function createRazorpayOrder(amount: number) {
   try {
+    const validAmount = Number(amount);
+    if (!Number.isFinite(validAmount) || validAmount <= 0) {
+      return { success: false, error: 'Invalid payment amount specified.' };
+    }
+
     const razorpay = getRazorpay();
     if (!razorpay) {
       console.error('Razorpay API keys (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET) are missing from environment');
@@ -26,7 +31,7 @@ export async function createRazorpayOrder(amount: number) {
     }
 
     const options = {
-      amount: Math.round(amount * 100), // amount in the smallest currency unit (paise)
+      amount: Math.round(validAmount * 100), // amount in the smallest currency unit (paise)
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
     };
@@ -45,6 +50,10 @@ export async function verifyRazorpayPayment(
   signature: string
 ) {
   try {
+    if (!orderId || !paymentId || !signature) {
+      return { success: false, error: 'Payment verification parameters missing' };
+    }
+
     const secret = process.env.RAZORPAY_KEY_SECRET;
     if (!secret) {
       return { success: false, error: 'Payment verification secret is missing' };

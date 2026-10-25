@@ -16,7 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const ADMIN_EMAIL = 'vivanfarmsnatural@gmail.com';
 
   useEffect(() => {
-    if (!isUserLoading && (!user || user.email !== ADMIN_EMAIL) && pathname !== '/admin/login') {
+    if (!isUserLoading && (!user || user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) && pathname !== '/admin/login') {
       router.push('/admin/login');
     }
   }, [user, isUserLoading, router, pathname]);
@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   // Final gate check for authorized email
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
     return null; // The useEffect will handle redirect
   }
 

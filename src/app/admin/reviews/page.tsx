@@ -45,7 +45,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, updateDoc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
 import { ProductReview, ReviewStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -158,7 +158,7 @@ export default function AdminReviewsPage() {
       }
       
       const productRef = doc(db, 'products', productId);
-      await updateDoc(productRef, { rating, reviewCount });
+      await setDoc(productRef, { rating, reviewCount }, { merge: true });
     } catch (error) {
       console.error('Failed to sync product stats:', error);
     }

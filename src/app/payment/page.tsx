@@ -71,7 +71,7 @@ export default function PaymentPage() {
 
     try {
       const finalOrderId = details.orderId || `VIVAAN-${Date.now()}`;
-      const customerEmail = user?.email || shippingAddress?.phone ? `${shippingAddress.phone}@vivaanfarms.com` : 'customer@vivaanfarms.com';
+      const customerEmail = user?.email || (shippingAddress?.phone ? `${shippingAddress.phone}@vivaanfarms.com` : 'customer@vivaanfarms.com');
       const customerUserId = user?.uid || `guest_${Date.now()}`;
 
       // 1. Attempt Courier Shipment Registration (Non-blocking: failures won't abort order creation)

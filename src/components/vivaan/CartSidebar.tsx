@@ -24,7 +24,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cart,
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState('');
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const subtotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
   const coinsDiscount = cart.length > 0 ? 200 : 0;
   const total = Math.max(0, subtotal - discount - coinsDiscount);
 

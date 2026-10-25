@@ -160,8 +160,8 @@ export function useCart() {
     broadcastCart([]);
   }, []);
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+  const subtotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
+  const totalQty = cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
 
   return { cart, addToCart, setBuyNowItem, updateQty, removeFromCart, clearCart, subtotal, totalQty, isLoaded };
 }

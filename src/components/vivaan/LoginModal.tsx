@@ -9,7 +9,8 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   updateProfile,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  getAdditionalUserInfo
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -47,16 +48,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  const syncProfile = (user: any) => {
+  const syncProfile = (user: any, isNewUser = false) => {
     // Non-blocking background sync so the user is never kept waiting
-    setDoc(doc(db, 'userProfiles', user.uid), {
+    const profileData: any = {
       id: user.uid,
       firstName: user.displayName?.split(' ')[0] || (name ? name.split(' ')[0] : ''),
       lastName: user.displayName?.split(' ').slice(1).join(' ') || (name ? name.split(' ').slice(1).join(' ') : ''),
       email: user.email?.toLowerCase().trim(),
-      purityCoins: 500,
       updatedAt: new Date().toISOString()
-    }, { merge: true }).catch((err: any) => {
+    };
+    if (isNewUser) {
+      profileData.purityCoins = 500;
+      profileData.createdAt = new Date().toISOString();
+    }
+    setDoc(doc(db, 'userProfiles', user.uid), profileData, { merge: true }).catch((err: any) => {
       console.warn("Background profile sync notice:", err);
     });
   };
@@ -67,7 +72,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      syncProfile(result.user);
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
+      syncProfile(result.user, isNewUser);
       toast({ title: "Welcome!", description: "Signed in with Google successfully." });
       onSuccess?.();
       onClose();
@@ -130,7 +136,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
         if (name) {
           updateProfile(result.user, { displayName: name }).catch(console.warn);
         }
-        syncProfile(result.user);
+        syncProfile(result.user, true);
         toast({ title: "Account Created!", description: "Welcome to Vivaan Farms." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);

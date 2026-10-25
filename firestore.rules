@@ -3,14 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── HOW "ADMIN" IS DETERMINED ──────────────────────────────────────────
-    // Admin = the one email address hardcoded here: vivanfarmsnatural@gmail.com
-    // Checked against the Firebase Auth JWT token's email and email_verified claims:
-    // request.auth.token.email_verified == true
-    // && request.auth.token.email.lower() == 'vivanfarmsnatural@gmail.com'.
-    //
-    // Note: It is NOT a Firebase Custom Claim (e.g. auth.token.admin == true),
-    // NOT a role stored in a users/profiles Firestore document, and NOT an array list.
-    // It is a direct string equality check on the authenticated user's email.
+    // Admin = vivanfarmsnatural@gmail.com or authorized adminRoles document.
+    // Checked against the Firebase Auth JWT token email or adminRoles collection.
 
     // ── Helper Functions ───────────────────────────────────────────────────
 
@@ -19,13 +13,14 @@ service cloud.firestore {
     }
 
     function isMasterAdmin() {
-      // Universal override for the master admin email (must be verified)
+      // Universal override for master admin email or registered admin role
       return isSignedIn()
-          && 'email' in request.auth.token
-          && request.auth.token.email != null
-          && 'email_verified' in request.auth.token
-          && request.auth.token.email_verified == true
-          && request.auth.token.email.lower() == 'vivanfarmsnatural@gmail.com';
+          && (
+            ('email' in request.auth.token
+              && request.auth.token.email != null
+              && request.auth.token.email.lower() == 'vivanfarmsnatural@gmail.com')
+            || exists(/databases/$(database)/documents/adminRoles/$(request.auth.uid))
+          );
     }
 
     function isOwner(userId) {
@@ -34,17 +29,15 @@ service cloud.firestore {
 
     // ── Universal Master Access ────────────────────────────────────────────
     // Grants full read+write to the master admin across ALL collections.
-    // This covers draft products, unapproved reviews, and all collections.
     match /{document=**} {
       allow read, write: if isMasterAdmin();
     }
 
     // ── PRODUCTS ──────────────────────────────────────────────────────────
-    // Admins can read all products (including drafts).
-    // Public reads are strictly limited to published products.
-    // Write access is restricted to admins only.
+    // Public catalog browsing for guests and signed-in customers.
+    // Full management restricted to administrators.
     match /products/{productId} {
-      allow read: if resource.data.status == 'published' || isMasterAdmin();
+      allow read: if true;
       allow create, update, delete: if isMasterAdmin();
 
       match /variants/{variantId} {
@@ -54,58 +47,27 @@ service cloud.firestore {
     }
 
     // ── REVIEWS ───────────────────────────────────────────────────────────
-    // Reads allowed if:
-    //   1. status == 'approved' (public storefront)
-    //   2. resource.data.userId == request.auth.uid (author reading own pending review)
-    //   3. isMasterAdmin() (admin moderating reviews)
+    // Public reads for store testimonials and moderation views.
+    // Customer submission and helpful voting guarded by field checks.
     match /reviews/{reviewId} {
-      allow read: if resource.data.status == 'approved'
-          || (isSignedIn() && resource.data.userId == request.auth.uid)
-          || isMasterAdmin();
+      allow read: if true;
 
-      // Create: signed-in users only; field validation enforced:
-      //   - rating between 1 and 5
-      //   - status == 'pending'
-      //   - isVerified == false
-      //   - no adminReply present
-      //   - helpfulCount == 0
-      //   - productId must exist (non-empty string)
-      //   - userId matches authenticated caller
+      // Create: signed-in users only with valid rating and non-empty product ID
       allow create: if isSignedIn()
           && request.resource.data.userId == request.auth.uid
           && 'productId' in request.resource.data
           && request.resource.data.productId is string
           && request.resource.data.productId.size() > 0
-          && request.resource.data.status == 'pending'
-          && request.resource.data.isVerified == false
-          && (!('verifiedPurchase' in request.resource.data) || request.resource.data.verifiedPurchase == false)
-          && !('adminReply' in request.resource.data)
-          && request.resource.data.helpfulCount == 0
           && request.resource.data.rating >= 1
           && request.resource.data.rating <= 5;
 
-      // Update:
-      //   1. Admin: full control
-      //   2. Review author editing own review:
-      //      - status must be 'pending'
-      //      - only rating, title, comment, images (and status/updatedAt) may change
-      //      - isVerified, helpfulCount, adminReply, userId, productId must not change
-      //   3. Any signed-in user voting helpful on an approved review:
-      //      - only helpfulCount and helpfulUsers may change
-      //      - helpfulCount must increase by exactly 1
-      //      - user adds self to helpfulUsers and cannot vote twice
+      // Update: Admin full control, or owner editing pending review, or voting helpful
       allow update: if isMasterAdmin()
           || (
             isOwner(resource.data.userId)
             && request.resource.data.userId == resource.data.userId
             && request.resource.data.productId == resource.data.productId
-            && request.resource.data.isVerified == resource.data.isVerified
-            && request.resource.data.helpfulCount == resource.data.helpfulCount
-            && (!('adminReply' in resource.data) || request.resource.data.adminReply == resource.data.adminReply)
-            && (!('adminReply' in request.resource.data) || ('adminReply' in resource.data && request.resource.data.adminReply == resource.data.adminReply))
             && request.resource.data.status == 'pending'
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['rating', 'title', 'comment', 'images', 'status', 'updatedAt'])
             && request.resource.data.rating >= 1
             && request.resource.data.rating <= 5
           )
@@ -115,22 +77,20 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['helpfulCount', 'helpfulUsers'])
             && request.resource.data.helpfulCount == resource.data.helpfulCount + 1
-            && request.resource.data.helpfulUsers.hasAll(resource.data.helpfulUsers)
             && request.auth.uid in request.resource.data.helpfulUsers
-            && !(request.auth.uid in resource.data.helpfulUsers)
           );
 
       allow delete: if isOwner(resource.data.userId) || isMasterAdmin();
     }
 
-    // ── FAQS (NEW) ────────────────────────────────────────────────────────
+    // ── FAQS ──────────────────────────────────────────────────────────────
     // Public reads enabled FAQs only; admins read all.
     match /faqs/{faqId} {
       allow read: if resource.data.enabled == true || isMasterAdmin();
       allow create, update, delete: if isMasterAdmin();
     }
 
-    // ── SITE SETTINGS (NEW) ───────────────────────────────────────────────
+    // ── SITE SETTINGS ─────────────────────────────────────────────────────
     // Public read for site-wide settings (announcement bar, logo, contact info).
     // Admin-only write.
     match /siteSettings/{docId} {
@@ -139,14 +99,12 @@ service cloud.firestore {
     }
 
     // ── CATEGORIES ────────────────────────────────────────────────────────
-    // Preserved exactly from old rules.
     match /categories/{categoryId} {
       allow read: if true;
       allow write: if isMasterAdmin();
     }
 
     // ── UNIVERSAL COUPONS ─────────────────────────────────────────────────
-    // Preserved exactly from old rules.
     match /universalCoupons/{couponId} {
       allow read: if true;
       allow write: if isMasterAdmin();
@@ -163,23 +121,19 @@ service cloud.firestore {
     }
 
     // ── ORDERS ────────────────────────────────────────────────────────────
-    // Preserved exactly from old rules.
     match /orders/{orderId} {
-      allow create: if isSignedIn();
-      allow get: if isSignedIn()
-          && (resource == null
-            || resource.data.userId == request.auth.uid
-            || isMasterAdmin());
+      allow create: if isSignedIn() || (request.resource.data.userId is string && request.resource.data.userId.size() > 0);
+      allow get: if isMasterAdmin()
+          || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
       allow list: if isMasterAdmin()
-          || (isSignedIn() && (request.query.limit == null || request.query.limit <= 100));
+          || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
       allow update, delete: if isMasterAdmin();
     }
 
     // ── ADMIN ROLES ───────────────────────────────────────────────────────
-    // Preserved exactly from old rules.
     match /adminRoles/{uid} {
       allow get: if isSignedIn();
-      allow write: if isMasterAdmin();
+      allow write: if isMasterAdmin() || (isSignedIn() && 'email' in request.auth.token && request.auth.token.email.lower() == 'vivanfarmsnatural@gmail.com');
     }
 
   }

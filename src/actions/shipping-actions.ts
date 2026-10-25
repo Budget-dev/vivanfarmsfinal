@@ -33,30 +33,39 @@ async function getNimbusToken() {
  */
 export async function createShipment(orderData: any) {
   try {
+    if (!orderData || !orderData.shippingAddress) {
+      return { success: false, error: 'Missing shipping address or order data' };
+    }
+
     const token = await getNimbusToken();
     if (!token) throw new Error('Failed to authenticate with shipping partner.');
 
+    const shipAddr = orderData.shippingAddress || {};
+    const items = Array.isArray(orderData.items) ? orderData.items : [];
+    const isCod = orderData.paymentMethod === 'Cash on Delivery';
+    const streetAddress = shipAddr.address || shipAddr.addressLine1 || shipAddr.street || 'Address not specified';
+
     const payload = {
-      order_number: orderData.orderId,
+      order_number: orderData.orderId || `VF-${Date.now()}`,
       shipping_charges: 0,
       discount: 0,
-      cod: 0, // 0 for Prepaid
-      payment_method: 'Prepaid',
+      cod: isCod ? (Number(orderData.totalAmount) || 0) : 0,
+      payment_method: isCod ? 'COD' : 'Prepaid',
       consignee: {
-        name: orderData.shippingAddress.name,
-        address: orderData.shippingAddress.address,
+        name: shipAddr.name || 'Valued Customer',
+        address: streetAddress,
         address_2: '',
-        city: orderData.shippingAddress.city,
-        state: orderData.shippingAddress.state,
-        pincode: orderData.shippingAddress.pincode,
-        phone: orderData.shippingAddress.phone,
-        email: orderData.userEmail,
+        city: shipAddr.city || '',
+        state: shipAddr.state || '',
+        pincode: (shipAddr.pincode || '').replace(/\D/g, '').slice(0, 6),
+        phone: (shipAddr.phone || '').replace(/\D/g, '').slice(-10),
+        email: orderData.userEmail || '',
       },
-      order_items: orderData.items.map((item: any) => ({
-        name: item.name,
-        qty: item.qty,
-        price: item.price,
-        sku: item.id,
+      order_items: items.map((item: any) => ({
+        name: item.name || 'Organic Farm Product',
+        qty: Number(item.qty) || 1,
+        price: Number(item.price) || 0,
+        sku: String(item.id || item.sku || 'SKU'),
       })),
       package_weight: 500, // Default weight in grams
       package_length: 10,

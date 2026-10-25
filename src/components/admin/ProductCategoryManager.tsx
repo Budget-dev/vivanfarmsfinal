@@ -339,6 +339,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
       cat: catId,
       imageUrls: finalImageUrls,
       isLive: true, 
+      status: 'published',
       updatedAt: new Date().toISOString(),
       volumeUnit: volumeUnit === 'custom' ? (customUnitName || 'custom') : volumeUnit,
       volumeValue: defaultVar.s,
