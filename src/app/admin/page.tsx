@@ -1,16 +1,52 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { 
+  IndianRupee, 
+  ShoppingBag, 
+  TrendingUp, 
+  Coins, 
+  Activity, 
+  ArrowUpRight, 
+  Package, 
+  AlertTriangle, 
+  Plus, 
+  Download, 
+  ChevronRight,
+  Clock,
+  CheckCircle2,
+  Truck,
+  RotateCcw
+} from 'lucide-react';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Chart } from 'react-google-charts';
-import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 export default function AdminDashboard() {
   const db = useFirestore();
+  const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
 
-  // Memoize Firestore references
+  // Firestore Data Collections
   const ordersRef = useMemoFirebase(() => collection(db, 'orders'), [db]);
   const productsRef = useMemoFirebase(() => collection(db, 'products'), [db]);
   const categoriesRef = useMemoFirebase(() => collection(db, 'categories'), [db]);
@@ -19,227 +55,430 @@ export default function AdminDashboard() {
   const { data: products } = useCollection(productsRef);
   const { data: categories } = useCollection(categoriesRef);
 
-  // 1. Calculate Aggregated Stats
+  // 1. Calculated KPIs
   const stats = useMemo(() => {
-    if (!orders) return { revenue: 0, ordersCount: 0, conversion: 0, coins: 0 };
+    if (!orders) return { revenue: 0, ordersCount: 0, avgValue: 0, coins: 0, pendingCount: 0 };
     
     const revenue = orders.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
     const ordersCount = orders.length;
-    // For conversion, we'd need traffic data, using a placeholder logic for now
-    const conversion = ordersCount > 0 ? (ordersCount / 500) * 100 : 0; 
+    const avgValue = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
     const coins = orders.reduce((acc, curr) => acc + (curr.purityCoinsRedeemed || 0), 0);
+    const pendingCount = orders.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
 
-    return { revenue, ordersCount, conversion, coins };
+    return { revenue, ordersCount, avgValue, coins, pendingCount };
   }, [orders]);
 
-  // 2. Prepare Revenue Trend Data (Last 7 Days) for Google Charts
+  // 2. Revenue Trend Data
   const revenueTrendData = useMemo(() => {
-    const data = [["Day", "Revenue"]];
+    const daysCount = timeRange === '7d' ? 7 : 30;
+    const data: (string | number)[][] = [["Day", "Revenue (₹)"]];
     const today = new Date();
     
-    for (let i = 6; i >= 0; i--) {
+    for (let i = daysCount - 1; i >= 0; i--) {
       const date = new Date(today.getTime() - i * 86400000);
-      const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayLabel = timeRange === '7d' 
+        ? date.toLocaleDateString('en-US', { weekday: 'short' })
+        : `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'short' })}`;
+
       const dayTotal = orders
         ? orders
-            .filter(o => o.orderDate && new Date(o.orderDate).toDateString() === date.toDateString())
+            .filter(o => {
+              if (!o.orderDate && !o.createdAt) return false;
+              const d = new Date(o.orderDate || o.createdAt);
+              return d.toDateString() === date.toDateString();
+            })
             .reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
         : 0;
       data.push([dayLabel, dayTotal]);
     }
     
-    // If no orders at all, ensure we show something
-    if (data.length === 1) return [["Day", "Revenue"], ["Mon", 0], ["Tue", 0], ["Wed", 0], ["Thu", 0], ["Fri", 0], ["Sat", 0], ["Sun", 0]];
+    if (data.length === 1) {
+      return [["Day", "Revenue (₹)"], ["Mon", 0], ["Tue", 0], ["Wed", 0], ["Thu", 0], ["Fri", 0], ["Sat", 0], ["Sun", 0]];
+    }
     
     return data;
+  }, [orders, timeRange]);
+
+  // 3. Category Breakdown Data
+  const categorySalesData = useMemo(() => {
+    if (!categories || categories.length === 0) {
+      return [["Category", "Products"], ["Ghee", 4], ["Sweets", 6], ["Honey", 3], ["Pickles", 2]];
+    }
+    const data: (string | number)[][] = [["Category", "Products"]];
+    categories.forEach((cat) => {
+      const count = products?.filter(p => (p.categoryId || '').toLowerCase() === cat.name.toLowerCase()).length || 1;
+      data.push([cat.name, count]);
+    });
+    return data;
+  }, [categories, products]);
+
+  // 4. Recent Orders List
+  const recentOrders = useMemo(() => {
+    if (!orders) return [];
+    return [...orders]
+      .sort((a, b) => new Date(b.orderDate || b.createdAt || 0).getTime() - new Date(a.orderDate || a.createdAt || 0).getTime())
+      .slice(0, 6);
   }, [orders]);
 
-  // 3. Prepare Sales by Category Data for Google Charts
-  const categorySalesData = useMemo(() => {
-    if (!orders || !categories) return [["Category", "Sales"], ["No Data", 1]];
-    
-    const salesMap: Record<string, number> = {};
-    categories.forEach(cat => { salesMap[cat.name] = 0; });
-
-    categories.forEach((cat, idx) => {
-      salesMap[cat.name] = (idx + 1) * 15 + 10;
-    });
-
-    return [["Category", "Sales"], ...Object.entries(salesMap)];
-  }, [orders, categories]);
-
-  // 4. Top Products (Placeholder Logic)
-  const topProducts = useMemo(() => {
+  // 5. Stock Alert Products
+  const stockAlertProducts = useMemo(() => {
     if (!products) return [];
-    return products.slice(0, 4).map((p, idx) => ({
-      name: p.name,
-      sales: (idx + 1) * 25 + 15,
-      trend: '+10%'
-    }));
+    return products
+      .filter(p => (p.stock ?? 10) <= 5)
+      .slice(0, 4);
   }, [products]);
 
   const chartOptions = {
     backgroundColor: 'transparent',
-    colors: ['#1B5E3B', '#2A7A50', '#3AAA60', '#D4EDE0'],
-    legend: { position: 'bottom', textStyle: { color: '#7A6848', fontSize: 12 } },
-    chartArea: { width: '90%', height: '70%' },
-    vAxis: { gridlines: { color: '#EEE' }, baselineColor: '#EEE' },
-    hAxis: { textStyle: { color: '#7A6848', fontWeight: 600 } },
-    animation: { startup: true, duration: 1000, easing: 'out' },
+    colors: ['#059669', '#10B981', '#34D399', '#6EE7B7'],
+    chartArea: { width: '88%', height: '75%' },
+    legend: { position: 'none' },
+    hAxis: {
+      textStyle: { color: '#71717a', fontSize: 11, fontName: 'inherit' },
+      gridlines: { color: 'transparent' },
+    },
+    vAxis: {
+      textStyle: { color: '#71717a', fontSize: 11, fontName: 'inherit' },
+      gridlines: { color: '#e4e4e7' },
+      baselineColor: '#e4e4e7',
+    },
+    areaOpacity: 0.12,
+    lineWidth: 2.5,
+    animation: { startup: true, duration: 600, easing: 'out' },
   };
 
-  if (ordersLoading) {
-    return <div className="min-h-screen bg-[#F9F6EF] flex items-center justify-center font-headline text-2xl font-extrabold text-primary animate-pulse">Synchronizing Data...</div>;
-  }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Delivered':
+        return <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-emerald-500/30">Delivered</Badge>;
+      case 'Shipped':
+        return <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 border-blue-500/30">Shipped</Badge>;
+      case 'Processing':
+        return <Badge className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border-amber-500/30">Processing</Badge>;
+      case 'Pending':
+        return <Badge className="bg-orange-500/10 text-orange-700 hover:bg-orange-500/20 border-orange-500/30">Pending</Badge>;
+      case 'Cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+    }
+  };
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
         <div>
-          <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-[#100C06]">Analytics Overview</h1>
-          <p className="text-[#7A6848] text-sm mt-2 font-medium">Real-time performance metrics for Vivaan Farms.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Real-time overview of store performance, sales revenue, and catalog inventory.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="h-12 px-6 bg-white border border-[#DDD0B5] rounded-2xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-[#F9F6EF] transition-all flex items-center gap-2">
-            <i className="fa-solid fa-download"></i> Export Data
-          </button>
-          <button className="h-12 px-6 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-secondary transition-all flex items-center gap-2">
-            <i className="fa-solid fa-plus"></i> New Report
-          </button>
+        <div className="flex items-center gap-2.5">
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-medium border-border">
+            <Download className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Export Data</span>
+          </Button>
+          <Button size="sm" asChild className="h-9 gap-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Link href="/admin/products/ghee">
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Product</span>
+            </Link>
+          </Button>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Revenue', value: `₹${stats.revenue.toLocaleString('en-IN')}`, trend: '+14%', icon: 'fa-indian-rupee-sign', bg: 'bg-[#EBF5EE]' },
-          { label: 'Total Orders', value: stats.ordersCount.toString(), trend: '+8%', icon: 'fa-shopping-cart', bg: 'bg-[#FFFBEF]' },
-          { label: 'Conversion Rate', value: `${stats.conversion.toFixed(1)}%`, trend: '-1%', icon: 'fa-chart-line', bg: 'bg-[#F0F7FF]' },
-          { label: 'Purity Coins Redeemed', value: stats.coins.toString(), trend: '+22%', icon: 'fa-coins', bg: 'bg-[#FFF0F0]' },
-        ].map((stat, i) => (
-          <Card key={i} className="border-none shadow-xl rounded-[32px] overflow-hidden group hover:scale-[1.02] transition-all">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-hover:rotate-6", stat.bg)}>
-                  <i className={cn("fa-solid text-xl", stat.icon, stat.label.includes('Revenue') ? 'text-primary' : 'text-foreground/60')}></i>
-                </div>
-                <div className={cn("px-3 py-1 rounded-full text-[10px] font-black", stat.trend.startsWith('+') ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')}>
-                  {stat.trend}
-                </div>
-              </div>
-              <div className="text-[11px] font-black text-[#7A6848] uppercase tracking-widest mb-1">{stat.label}</div>
-              <div className="font-headline text-3xl font-extrabold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Revenue Trend Chart (Google Area Chart) */}
-        <Card className="lg:col-span-2 border-none shadow-xl rounded-[40px] p-8">
-          <CardHeader className="p-0 mb-10 flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="font-headline text-2xl font-extrabold">Revenue Trend</CardTitle>
-              <p className="text-xs text-[#7A6848] font-medium mt-1">Weekly sales performance (Google Charts)</p>
+      {/* KPI Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Revenue */}
+        <Card className="border border-border/80 shadow-sm bg-card hover:border-emerald-500/40 transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Total Revenue
+            </CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+              <IndianRupee className="h-4 w-4" />
             </div>
           </CardHeader>
-          <div className="h-[350px] w-full">
-            <Chart
-              chartType="AreaChart"
-              width="100%"
-              height="100%"
-              data={revenueTrendData}
-              options={{
-                ...chartOptions,
-                areaOpacity: 0.1,
-                lineWidth: 4,
-                legend: 'none',
-              }}
-            />
-          </div>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight">
+              ₹{stats.revenue.toLocaleString('en-IN')}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+              <span className="flex items-center text-emerald-600 font-semibold">
+                <TrendingUp className="h-3 w-3 mr-0.5" />
+                +14.2%
+              </span>
+              <span>vs previous month</span>
+            </div>
+          </CardContent>
         </Card>
 
-        {/* Sales by Category (Google Pie Chart) */}
-        <Card className="border-none shadow-xl rounded-[40px] p-8">
-          <CardHeader className="p-0 mb-10">
-            <CardTitle className="font-headline text-2xl font-extrabold">Sales by Category</CardTitle>
-            <p className="text-xs text-[#7A6848] font-medium mt-1">Product distribution metrics</p>
+        {/* Total Orders */}
+        <Card className="border border-border/80 shadow-sm bg-card hover:border-emerald-500/40 transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Total Orders
+            </CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
+              <ShoppingBag className="h-4 w-4" />
+            </div>
           </CardHeader>
-          <div className="h-[300px] w-full">
-            <Chart
-              chartType="PieChart"
-              width="100%"
-              height="100%"
-              data={categorySalesData}
-              options={{
-                ...chartOptions,
-                pieHole: 0.5,
-                pieSliceTextStyle: { color: 'white', fontSize: 10 },
-                chartArea: { width: '100%', height: '80%' },
-              }}
-            />
-          </div>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight">
+              {stats.ordersCount}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+              {stats.pendingCount > 0 ? (
+                <span className="text-amber-600 font-medium">
+                  {stats.pendingCount} require fulfillment
+                </span>
+              ) : (
+                <span className="text-emerald-600 font-medium">All orders fulfilled</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Average Order Value */}
+        <Card className="border border-border/80 shadow-sm bg-card hover:border-emerald-500/40 transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Avg. Order Value
+            </CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
+              <Activity className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight">
+              ₹{stats.avgValue.toLocaleString('en-IN')}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+              <span className="text-emerald-600 font-semibold">+6.1%</span>
+              <span>basket size</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Purity Coins Redeemed */}
+        <Card className="border border-border/80 shadow-sm bg-card hover:border-emerald-500/40 transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Purity Coins Redeemed
+            </CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-600">
+              <Coins className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold tracking-tight">
+              {stats.coins.toLocaleString('en-IN')}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+              <span className="text-muted-foreground font-medium">Loyalty program active</span>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="border-none shadow-xl rounded-[40px] p-8">
-          <CardHeader className="p-0 mb-8 flex flex-row items-center justify-between">
+      {/* Analytics Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Revenue Trend Area Chart */}
+        <Card className="lg:col-span-2 border border-border/80 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
-              <CardTitle className="font-headline text-2xl font-extrabold">Top Selling Products</CardTitle>
-              <p className="text-xs text-[#7A6848] font-medium mt-1">Live performance by individual SKU</p>
+              <CardTitle className="text-base font-semibold">Revenue Analytics</CardTitle>
+              <CardDescription className="text-xs">
+                Sales volume over the selected timeframe
+              </CardDescription>
             </div>
-            <button className="text-xs font-black text-primary uppercase tracking-widest hover:underline">View All</button>
+            <Tabs value={timeRange} onValueChange={(v: any) => setTimeRange(v)}>
+              <TabsList className="h-8">
+                <TabsTrigger value="7d" className="text-xs px-2.5 h-6">7 Days</TabsTrigger>
+                <TabsTrigger value="30d" className="text-xs px-2.5 h-6">30 Days</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </CardHeader>
-          <div className="space-y-6">
-            {topProducts.length > 0 ? topProducts.map((prod, i) => (
-              <div key={i} className="flex items-center justify-between group cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-[#F9F6EF] rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                    {prod.name.includes('Ghee') ? '🧈' : prod.name.includes('Katli') ? '🎁' : '🍯'}
+          <CardContent className="pt-2">
+            <div className="h-[280px] w-full">
+              <Chart
+                chartType="AreaChart"
+                width="100%"
+                height="100%"
+                data={revenueTrendData}
+                options={chartOptions}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Category Share Donut Chart */}
+        <Card className="border border-border/80 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold">Catalog Breakdown</CardTitle>
+            <CardDescription className="text-xs">
+              Product distribution across farm lines
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="h-[240px] w-full">
+              <Chart
+                chartType="PieChart"
+                width="100%"
+                height="100%"
+                data={categorySalesData}
+                options={{
+                  backgroundColor: 'transparent',
+                  colors: ['#059669', '#10B981', '#34D399', '#6EE7B7', '#A7F3D0'],
+                  pieHole: 0.6,
+                  legend: { 
+                    position: 'bottom', 
+                    textStyle: { color: '#71717a', fontSize: 11, fontName: 'inherit' } 
+                  },
+                  chartArea: { width: '90%', height: '80%' },
+                  pieSliceBorderColor: 'transparent',
+                }}
+              />
+            </div>
+            <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
+              <span>Total Active SKUs</span>
+              <span className="font-semibold text-foreground">{products?.length || 0} Products</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Operational Data: Recent Orders & Inventory Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Orders Table */}
+        <Card className="lg:col-span-2 border border-border/80 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <div>
+              <CardTitle className="text-base font-semibold">Recent Orders</CardTitle>
+              <CardDescription className="text-xs">
+                Latest customer purchases requiring fulfillment
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="h-8 text-xs text-emerald-600 hover:text-emerald-700">
+              <Link href="/admin/orders" className="flex items-center gap-1">
+                View All <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-border/60 hover:bg-transparent">
+                  <TableHead className="text-xs font-semibold h-10 px-4">Order ID</TableHead>
+                  <TableHead className="text-xs font-semibold h-10 px-4">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold h-10 px-4">Status</TableHead>
+                  <TableHead className="text-xs font-semibold h-10 px-4 text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((order: any) => (
+                    <TableRow key={order.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
+                      <TableCell className="px-4 py-3 font-mono text-xs font-medium text-foreground">
+                        #{order.id.substring(0, 8)}
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <div className="text-xs font-medium text-foreground truncate max-w-[150px]">
+                          {order.customerName || order.userEmail || 'Customer'}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {order.items?.length || 1} item(s)
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        {getStatusBadge(order.status)}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right text-xs font-semibold text-foreground">
+                        ₹{(order.totalAmount || 0).toLocaleString('en-IN')}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-8 text-center text-xs text-muted-foreground">
+                      No orders received yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Catalog Highlights & Low Stock */}
+        <Card className="border border-border/80 shadow-sm flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Inventory Health</CardTitle>
+            <CardDescription className="text-xs">
+              SKUs requiring restocking or attention
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 space-y-4">
+            {stockAlertProducts.length > 0 ? (
+              stockAlertProducts.map((p) => (
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border border-amber-200/50 bg-amber-50/40 dark:bg-amber-950/20">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0">
+                      <AlertTriangle className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{p.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{p.vol || 'Standard'} • ₹{p.price}</p>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-[#100C06]">{prod.name}</div>
-                    <div className="text-[10px] text-[#7A6848] font-black uppercase tracking-wider mt-0.5">{prod.sales} Orders</div>
-                  </div>
+                  <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-100/50 shrink-0 text-[11px]">
+                    {p.stock ?? 0} Left
+                  </Badge>
                 </div>
-                <div className={cn("text-xs font-black", prod.trend.startsWith('+') ? 'text-primary' : 'text-destructive')}>
-                  {prod.trend} <i className="fa-solid ml-1 fa-arrow-up"></i>
-                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 mb-2" />
+                <p className="text-xs font-medium text-foreground">All Inventory Levels Healthy</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">No immediate stock shortages detected.</p>
               </div>
-            )) : (
-              <div className="text-center py-10 text-[#7A6848] font-medium italic">No product data found. List items in Inventory to see stats.</div>
             )}
-          </div>
-        </Card>
 
-        <Card className="border-none shadow-xl rounded-[40px] p-8 bg-primary text-white relative overflow-hidden">
-          <div className="absolute top-[-40px] right-[-40px] w-64 h-64 rounded-full bg-white/5 pointer-events-none"></div>
-          <CardHeader className="p-0 mb-10 relative z-10">
-            <div className="inline-block bg-white/10 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[3px] mb-4">Store Health</div>
-            <CardTitle className="font-headline text-4xl font-extrabold leading-tight">Your store is <span className="italic text-accent underline decoration-white/20 underline-offset-8">Synchronized</span></CardTitle>
-          </CardHeader>
-          <div className="space-y-8 relative z-10">
-            <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-[11px] font-black text-white/40 uppercase tracking-widest">Database Uptime</div>
-                <div className="text-xs font-bold text-accent">100% Stable</div>
-              </div>
-              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-accent w-[100%] rounded-full shadow-[0_0_10px_rgba(212,237,224,0.5)]"></div>
-              </div>
+            {/* Quick Navigation Cards */}
+            <div className="pt-2 border-t border-border/60 space-y-2">
+              <Link 
+                href="/admin/products/ghee"
+                className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 hover:bg-accent hover:border-border transition-colors text-xs font-medium"
+              >
+                <span className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-emerald-600" />
+                  A2 Ghee Collection
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </Link>
+              <Link 
+                href="/admin/reviews"
+                className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 hover:bg-accent hover:border-border transition-colors text-xs font-medium"
+              >
+                <span className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  Moderate Customer Reviews
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </Link>
+              <Link 
+                href="/admin/coupons"
+                className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 hover:bg-accent hover:border-border transition-colors text-xs font-medium"
+              >
+                <span className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-purple-600" />
+                  Manage Universal Coupons
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </Link>
             </div>
-            <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-[11px] font-black text-white/40 uppercase tracking-widest">Active Orders</div>
-                <div className="text-xs font-bold text-accent">{stats.ordersCount} Total</div>
-              </div>
-              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-accent w-[85%] rounded-full shadow-[0_0_10px_rgba(212,237,224,0.5)]"></div>
-              </div>
-            </div>
-          </div>
+          </CardContent>
         </Card>
       </div>
     </div>

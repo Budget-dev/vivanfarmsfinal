@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { ShieldCheck, Lock, Mail, Sparkles, KeyRound } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, Loader2, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -29,7 +29,6 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (user && user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      // Sync admin role document to ensure Security Rules recognize the master account
       const adminRoleData = {
         email: ADMIN_EMAIL,
         role: 'admin',
@@ -38,7 +37,6 @@ export default function AdminLoginPage() {
 
       setDoc(doc(db, 'adminRoles', user.uid), adminRoleData, { merge: true })
         .catch(async () => {
-          // If this fails, it's likely a rules block. Emit the error for debugging.
           const permissionError = new FirestorePermissionError({
             path: `adminRoles/${user.uid}`,
             operation: 'write',
@@ -81,59 +79,108 @@ export default function AdminLoginPage() {
 
   if (isUserLoading) {
     return (
-      <div className="min-h-screen bg-[#F9F6EF] flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">Checking credentials...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F9F6EF] p-4">
-      <Card className="w-full max-w-md shadow-2xl border-none rounded-[32px] overflow-hidden">
-        <div className={`p-10 text-center text-white ${isSetupMode ? 'bg-secondary' : 'bg-primary'}`}>
-          <ShieldCheck className="w-12 h-12 mx-auto mb-4" />
-          <h1 className="font-headline text-3xl font-extrabold">{isSetupMode ? 'Admin Setup' : 'Admin Portal'}</h1>
-          <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-2">Vivan Farms Management</p>
-        </div>
-        
-        <CardContent className="p-8">
-          <form onSubmit={handleAuth} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase text-[#7A6848]">Authorized Email</label>
-              <Input type="email" value={ADMIN_EMAIL} disabled className="h-12 rounded-xl bg-[#F9F6EF] font-bold opacity-60" />
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50/70 dark:bg-zinc-950 p-4 font-sans antialiased text-foreground">
+      <Card className="w-full max-w-sm border border-border/80 shadow-lg bg-card">
+        <CardHeader className="text-center space-y-2 pb-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-900/20">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-bold tracking-tight">
+              {isSetupMode ? 'Setup Master Account' : 'Admin Console'}
+            </CardTitle>
+            <CardDescription className="text-xs mt-1">
+              {isSetupMode
+                ? 'Initialize super administrator password for Vivaan Farms.'
+                : 'Enter your administrator credentials to access the portal.'}
+            </CardDescription>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">Authorized Email</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
+                <Input
+                  type="email"
+                  value={ADMIN_EMAIL}
+                  disabled
+                  className="pl-9 h-9 text-xs bg-muted/50 font-mono text-muted-foreground cursor-not-allowed"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase text-[#7A6848]">{isSetupMode ? 'Create Password' : 'Password'}</label>
-              <Input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="h-12 rounded-xl bg-[#F9F6EF] border-transparent font-bold"
-                required
-              />
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                {isSetupMode ? 'Create Password' : 'Password'}
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-9 h-9 text-xs"
+                  required
+                />
+              </div>
             </div>
 
-            {error && <div className="p-3 bg-destructive/5 text-destructive rounded-xl text-xs font-bold text-center">{error}</div>}
+            {error && (
+              <div className="p-2.5 rounded-md bg-destructive/10 text-destructive text-xs font-medium text-center">
+                {error}
+              </div>
+            )}
 
-            <Button disabled={isLoading} className="w-full h-14 rounded-full font-black uppercase tracking-widest shadow-lg">
-              {isLoading ? 'Wait...' : (isSetupMode ? 'Initialize Admin' : 'Sign In')}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-9 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                  Verifying...
+                </>
+              ) : isSetupMode ? (
+                'Initialize Administrator'
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            {!isSetupMode ? (
-              <button onClick={() => setIsSetupMode(true)} className="text-[10px] font-black uppercase text-primary hover:underline">
-                First-time? Initialize Master Account
-              </button>
-            ) : (
-              <button onClick={() => setIsSetupMode(false)} className="text-[10px] font-black uppercase text-[#7A6848] hover:underline">
-                Back to Sign In
-              </button>
-            )}
-          </div>
         </CardContent>
+
+        <CardFooter className="pt-0 pb-6 flex justify-center border-t border-border/40 mt-2">
+          {!isSetupMode ? (
+            <button
+              type="button"
+              onClick={() => setIsSetupMode(true)}
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors mt-4"
+            >
+              First time setup? Initialize master account
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsSetupMode(false)}
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors mt-4"
+            >
+              Already configured? Back to sign in
+            </button>
+          )}
+        </CardFooter>
       </Card>
     </div>
   );

@@ -3,8 +3,10 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Toaster } from '@/components/ui/toaster';
 import { useUser } from '@/firebase';
+import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -21,15 +23,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (pathname === '/admin/login') {
     return (
-      <>
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans antialiased text-foreground">
         {children}
         <Toaster />
-      </>
+      </div>
     );
   }
 
   if (isUserLoading) {
-    return <div className="min-h-screen bg-[#F9F6EF] flex items-center justify-center font-headline text-3xl font-extrabold text-primary animate-pulse">Loading Dashboard...</div>;
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center font-sans gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">Initializing Admin Workspace...</p>
+      </div>
+    );
   }
 
   // Final gate check for authorized email
@@ -38,11 +45,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F9F6EF] font-body text-[#100C06]">
+    <div className="flex min-h-screen bg-zinc-50/70 dark:bg-zinc-950 font-sans antialiased text-zinc-900 dark:text-zinc-50">
       <AdminSidebar />
-      <main className="flex-1 p-6 md:p-10 lg:p-14 max-w-[1600px] mx-auto overflow-hidden">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col min-w-0">
+        <AdminHeader />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
+          {children}
+        </main>
+      </div>
       <Toaster />
     </div>
   );

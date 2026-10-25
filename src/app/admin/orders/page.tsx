@@ -1,31 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { 
   Truck, 
   Search, 
@@ -41,8 +17,49 @@ import {
   AlertCircle, 
   XCircle,
   Coins,
-  FileText
+  FileText,
+  Printer,
+  ChevronRight,
+  MoreVertical,
+  RotateCcw,
+  ShoppingBag,
+  IndianRupee,
+  Layers
 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function AdminOrdersPage() {
   const db = useFirestore();
@@ -51,7 +68,7 @@ export default function AdminOrdersPage() {
   const ordersRef = useMemoFirebase(() => collection(db, 'orders'), [db]);
   const { data: orders, isLoading } = useCollection(ordersRef);
 
-  const [filter, setFilter] = useState('All');
+  const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Tracking Modal State
@@ -63,15 +80,22 @@ export default function AdminOrdersPage() {
   // Order Details Modal State
   const [viewDetailsOrder, setViewDetailsOrder] = useState<any | null>(null);
 
-  const getStatusStyle = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Delivered': return 'bg-emerald-100 text-emerald-800';
-      case 'Pending': return 'bg-amber-100 text-amber-800';
-      case 'Processing': return 'bg-blue-100 text-blue-800';
-      case 'Shipped': return 'bg-purple-100 text-purple-800';
-      case 'Cancelled': return 'bg-red-100 text-red-800';
-      case 'RTO': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Delivered':
+        return <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-emerald-500/30">Delivered</Badge>;
+      case 'Shipped':
+        return <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 border-blue-500/30">Shipped</Badge>;
+      case 'Processing':
+        return <Badge className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border-amber-500/30">Processing</Badge>;
+      case 'Pending':
+        return <Badge className="bg-orange-500/10 text-orange-700 hover:bg-orange-500/20 border-orange-500/30">Pending</Badge>;
+      case 'Cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
+      case 'RTO':
+        return <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">RTO</Badge>;
+      default:
+        return <Badge variant="outline">{status || 'Pending'}</Badge>;
     }
   };
 
@@ -86,7 +110,6 @@ export default function AdminOrdersPage() {
     });
   };
 
-  // Open Tracking Modal
   const handleOpenTracking = (order: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setTrackingOrder(order);
@@ -95,7 +118,6 @@ export default function AdminOrdersPage() {
     setAutoMarkShipped(order.status !== 'Shipped' && order.status !== 'Delivered');
   };
 
-  // Save Tracking Details
   const handleSaveTracking = () => {
     if (!trackingOrder) return;
     const cleanAwb = awbInput.trim();
@@ -140,7 +162,7 @@ export default function AdminOrdersPage() {
     if (!orders) return [];
     return orders.filter(o => {
       // Status filter
-      if (filter !== 'All' && o.status !== filter) return false;
+      if (activeTab !== 'All' && o.status !== activeTab) return false;
 
       // Search filter
       if (searchTerm.trim()) {
@@ -152,19 +174,19 @@ export default function AdminOrdersPage() {
         const city = (o.shippingAddress?.city || '').toLowerCase();
         const tracking = (o.trackingId || '').toLowerCase();
 
-        const matches = id.includes(term) ||
+        return (
+          id.includes(term) ||
           customerName.includes(term) ||
           customerEmail.includes(term) ||
           customerPhone.includes(term) ||
           city.includes(term) ||
-          tracking.includes(term);
-
-        if (!matches) return false;
+          tracking.includes(term)
+        );
       }
 
       return true;
     });
-  }, [orders, filter, searchTerm]);
+  }, [orders, activeTab, searchTerm]);
 
   // Aggregate Metrics
   const orderMetrics = useMemo(() => {
@@ -172,7 +194,7 @@ export default function AdminOrdersPage() {
     return {
       total: orders.length,
       revenue: orders.reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0),
-      pending: orders.filter(o => !o.status || o.status === 'Pending').length,
+      pending: orders.filter(o => !o.status || o.status === 'Pending' || o.status === 'Processing').length,
       shipped: orders.filter(o => o.status === 'Shipped').length,
       delivered: orders.filter(o => o.status === 'Delivered').length,
       rto: orders.filter(o => o.status === 'RTO').length,
@@ -181,304 +203,241 @@ export default function AdminOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center font-headline text-2xl font-extrabold text-primary animate-pulse">
-        Synchronizing Orders...
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">Syncing orders data...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
         <div>
-          <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-[#100C06]">
-            Order Management & Tracking
-          </h1>
-          <p className="text-[#7A6848] text-sm mt-2 font-medium">
-            Monitor orders, assign NimbusPost tracking numbers, and view customer shipment details.
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Orders & Logistics</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Track customer orders, assign courier AWB labels, and manage delivery status.
           </p>
         </div>
-
-        {/* Search Input */}
-        <div className="relative w-full lg:w-[360px]">
-          <Search className="w-4 h-4 text-[#7A6848] absolute left-4 top-1/2 -translate-y-1/2" />
-          <Input 
-            placeholder="Search by ID, customer, phone, AWB..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-12 pl-11 rounded-2xl bg-white border-[#DDD0B5] focus-visible:ring-primary focus-visible:border-primary transition-all shadow-xs text-xs font-semibold"
-          />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="h-9 gap-1.5 text-xs font-medium">
+            <Printer className="w-3.5 h-3.5" />
+            <span>Print Report</span>
+          </Button>
         </div>
       </div>
 
-      {/* ── Status Tab Filter Strip ── */}
-      <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
-        {[
-          { id: 'All', label: 'All Orders' },
-          { id: 'Pending', label: 'Pending' },
-          { id: 'Processing', label: 'Processing' },
-          { id: 'Shipped', label: 'Shipped' },
-          { id: 'Delivered', label: 'Delivered' },
-          { id: 'Cancelled', label: 'Cancelled' },
-          { id: 'RTO', label: 'RTO' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setFilter(tab.id)}
-            className={cn(
-              "h-10 px-5 rounded-full text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer shadow-2xs",
-              filter === tab.id
-                ? "bg-primary text-white shadow-md scale-105"
-                : "bg-white text-[#7A6848] border border-[#DDD0B5]/60 hover:bg-gray-50"
-            )}
-          >
-            {tab.label} {tab.id === 'All' ? `(${orderMetrics.total})` : ''}
-          </button>
-        ))}
+      {/* KPI Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border border-border/80 shadow-sm p-4">
+          <div className="text-xs font-medium text-muted-foreground">Total Orders</div>
+          <div className="text-2xl font-bold mt-1">{orderMetrics.total}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">All time orders</div>
+        </Card>
+        <Card className="border border-border/80 shadow-sm p-4">
+          <div className="text-xs font-medium text-amber-600">Pending Fulfillment</div>
+          <div className="text-2xl font-bold mt-1 text-amber-700">{orderMetrics.pending}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Awaiting dispatch</div>
+        </Card>
+        <Card className="border border-border/80 shadow-sm p-4">
+          <div className="text-xs font-medium text-blue-600">In Transit</div>
+          <div className="text-2xl font-bold mt-1 text-blue-700">{orderMetrics.shipped}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">With courier partner</div>
+        </Card>
+        <Card className="border border-border/80 shadow-sm p-4">
+          <div className="text-xs font-medium text-emerald-600">Total Revenue</div>
+          <div className="text-2xl font-bold mt-1 text-emerald-700">₹{orderMetrics.revenue.toLocaleString('en-IN')}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Gross order value</div>
+        </Card>
       </div>
 
-      {/* ── Orders Content Grid ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        <div className="xl:col-span-3">
-          <Card className="border-none shadow-2xl rounded-[36px] overflow-hidden bg-white">
-            <Table>
-              <TableHeader className="bg-[#FAF7F0]">
-                <TableRow className="border-b-[#DDD0B5]/30">
-                  <TableHead className="py-5 px-6 text-[10px] font-black uppercase tracking-widest text-[#7A6848]">Order ID</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-[#7A6848]">Customer & Address</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-[#7A6848]">Status</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-[#7A6848]">Tracking (AWB)</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-[#7A6848]">Total</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-[#7A6848]">Date</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-[#7A6848] text-right pr-6">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.length > 0 ? filteredOrders.map((order) => {
-                  const customerName = order.shippingAddress?.name || order.userName || 'Customer';
-                  const city = order.shippingAddress?.city || '';
-                  const phone = order.shippingAddress?.phone || '';
+      {/* Filter and Search Bar */}
+      <Card className="border border-border/80 shadow-sm">
+        <CardContent className="p-3 sm:p-4 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by ID, customer, phone, AWB..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9 text-xs"
+            />
+          </div>
 
-                  return (
-                    <TableRow 
-                      key={order.id} 
-                      onClick={() => setViewDetailsOrder(order)}
-                      className="border-b-[#DDD0B5]/20 hover:bg-primary/[0.02] transition-colors cursor-pointer group"
-                    >
-                      {/* Order ID */}
-                      <TableCell className="py-4 px-6">
-                        <div className="font-headline font-black text-primary text-sm">
-                          #{order.id.substring(0, 8).toUpperCase()}
-                        </div>
-                        <div className="text-[10px] text-gray-400 font-medium mt-0.5">
-                          {order.paymentMethod || 'Prepaid'}
-                        </div>
-                      </TableCell>
+          <div className="overflow-x-auto w-full md:w-auto">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="h-9">
+                <TabsTrigger value="All" className="text-xs">All ({orderMetrics.total})</TabsTrigger>
+                <TabsTrigger value="Pending" className="text-xs">Pending</TabsTrigger>
+                <TabsTrigger value="Processing" className="text-xs">Processing</TabsTrigger>
+                <TabsTrigger value="Shipped" className="text-xs">Shipped</TabsTrigger>
+                <TabsTrigger value="Delivered" className="text-xs">Delivered</TabsTrigger>
+                <TabsTrigger value="Cancelled" className="text-xs">Cancelled</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </CardContent>
+      </Card>
 
-                      {/* Customer & Address */}
-                      <TableCell>
-                        <div className="min-w-0">
-                          <div className="text-sm font-extrabold text-[#100C06] truncate">
-                            {customerName}
-                          </div>
-                          <div className="text-[11px] text-gray-500 font-medium truncate flex items-center gap-1 mt-0.5">
-                            {city && <span>{city} · </span>}
-                            <span>{phone || 'No phone'}</span>
-                          </div>
-                        </div>
-                      </TableCell>
+      {/* Orders Table */}
+      <Card className="border border-border/80 shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b border-border/60 hover:bg-transparent">
+              <TableHead className="px-4 text-xs font-semibold">Order ID</TableHead>
+              <TableHead className="px-4 text-xs font-semibold">Customer & Address</TableHead>
+              <TableHead className="px-4 text-xs font-semibold">Status</TableHead>
+              <TableHead className="px-4 text-xs font-semibold">Tracking (AWB)</TableHead>
+              <TableHead className="px-4 text-xs font-semibold">Total Amount</TableHead>
+              <TableHead className="px-4 text-xs font-semibold">Date</TableHead>
+              <TableHead className="px-4 text-xs font-semibold text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => {
+                const customerName = order.shippingAddress?.name || order.userName || 'Customer';
+                const city = order.shippingAddress?.city || '';
+                const phone = order.shippingAddress?.phone || '';
 
-                      {/* Status */}
-                      <TableCell>
-                        <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider", getStatusStyle(order.status || 'Pending'))}>
-                          {order.status || 'Pending'}
-                        </span>
-                      </TableCell>
+                return (
+                  <TableRow 
+                    key={order.id} 
+                    className="border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer"
+                    onClick={() => setViewDetailsOrder(order)}
+                  >
+                    <TableCell className="px-4 py-3 font-mono text-xs font-medium text-foreground">
+                      #{order.id.substring(0, 8).toUpperCase()}
+                      <div className="text-[10px] text-muted-foreground font-sans mt-0.5">
+                        {order.paymentMethod || 'Online'}
+                      </div>
+                    </TableCell>
 
-                      {/* Tracking ID (AWB) */}
-                      <TableCell>
-                        {order.trackingId ? (
-                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                            <a
-                              href={order.trackingUrl || `https://ship.nimbuspost.com/shipping/tracking/${encodeURIComponent(order.trackingId)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-mono font-bold transition-colors border border-emerald-200"
-                              title="Click to track shipment"
-                            >
-                              <Truck className="w-3 h-3 text-emerald-600" />
-                              <span>{order.trackingId}</span>
-                              <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                            </a>
-                            <button
-                              type="button"
-                              onClick={(e) => handleOpenTracking(order, e)}
-                              className="text-[10px] text-gray-400 hover:text-gray-700 underline font-semibold"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenTracking(order, e)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                    <TableCell className="px-4 py-3">
+                      <div className="text-xs font-medium text-foreground truncate max-w-[180px]">
+                        {customerName}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {city ? `${city} • ` : ''}{phone || 'No phone'}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="px-4 py-3">
+                      {getStatusBadge(order.status || 'Pending')}
+                    </TableCell>
+
+                    <TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      {order.trackingId ? (
+                        <div className="flex items-center gap-1.5">
+                          <a
+                            href={order.trackingUrl || `https://ship.nimbuspost.com/shipping/tracking/${encodeURIComponent(order.trackingId)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 text-[11px] font-mono hover:bg-emerald-100 transition-colors"
                           >
-                            <Truck className="w-3 h-3" />
-                            <span>Add AWB</span>
-                          </button>
-                        )}
-                      </TableCell>
+                            <Truck className="w-3 h-3 text-emerald-600" />
+                            <span>{order.trackingId}</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                          </a>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleOpenTracking(order, e)}
+                            className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => handleOpenTracking(order, e)}
+                          className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        >
+                          <Truck className="w-3 h-3" />
+                          <span>Add AWB</span>
+                        </Button>
+                      )}
+                    </TableCell>
 
-                      {/* Total */}
-                      <TableCell className="text-sm font-black text-foreground">
-                        ₹{(order.totalAmount || 0).toLocaleString('en-IN')}
-                      </TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-semibold text-foreground">
+                      ₹{(order.totalAmount || 0).toLocaleString('en-IN')}
+                    </TableCell>
 
-                      {/* Date */}
-                      <TableCell className="text-xs font-medium text-[#7A6848]">
-                        {order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'N/A'}
-                      </TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-muted-foreground">
+                      {order.orderDate 
+                        ? new Date(order.orderDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : 'N/A'
+                      }
+                    </TableCell>
 
-                      {/* Actions */}
-                      <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="w-8 h-8 rounded-xl bg-[#F9F6EF] flex items-center justify-center text-[#7A6848] hover:bg-primary/10 hover:text-primary transition-all cursor-pointer">
-                              <i className="fa-solid fa-ellipsis-v text-xs"></i>
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-2xl p-2 bg-white border border-gray-100 shadow-2xl min-w-[190px]">
-                            <DropdownMenuItem 
-                              onClick={() => setViewDetailsOrder(order)} 
-                              className="rounded-xl py-2 px-3 text-xs font-bold cursor-pointer hover:bg-gray-100"
-                            >
-                              <FileText className="w-3.5 h-3.5 mr-2" /> View Order Details
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem 
-                              onClick={() => handleOpenTracking(order)} 
-                              className="rounded-xl py-2 px-3 text-xs font-bold cursor-pointer hover:bg-emerald-50 text-emerald-800"
-                            >
-                              <Truck className="w-3.5 h-3.5 mr-2" /> Assign Tracking / AWB
-                            </DropdownMenuItem>
-
-                            <div className="border-t border-gray-100 my-1" />
-
-                            <DropdownMenuItem onClick={() => updateStatus(order.id, 'Processing')} className="rounded-xl py-2 px-3 text-xs font-bold cursor-pointer hover:bg-blue-50 text-blue-700">
-                              <Clock className="w-3.5 h-3.5 mr-2" /> Mark Processing
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem onClick={() => updateStatus(order.id, 'Shipped')} className="rounded-xl py-2 px-3 text-xs font-bold cursor-pointer hover:bg-purple-50 text-purple-700">
-                              <Truck className="w-3.5 h-3.5 mr-2" /> Mark Shipped
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem onClick={() => updateStatus(order.id, 'Delivered')} className="rounded-xl py-2 px-3 text-xs font-bold cursor-pointer hover:bg-emerald-50 text-emerald-700">
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Mark Delivered
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem onClick={() => updateStatus(order.id, 'RTO')} className="rounded-xl py-2 px-3 text-xs font-bold cursor-pointer hover:bg-orange-50 text-orange-600">
-                              <AlertCircle className="w-3.5 h-3.5 mr-2" /> Mark RTO
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem onClick={() => updateStatus(order.id, 'Cancelled')} className="rounded-xl py-2 px-3 text-xs font-bold cursor-pointer hover:bg-red-50 text-red-600">
-                              <XCircle className="w-3.5 h-3.5 mr-2" /> Cancel Order
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                }) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="py-20 text-center text-[#7A6848] font-medium italic">
-                      No orders found matching the search and filter criteria.
+                    <TableCell className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 font-sans">
+                          <DropdownMenuLabel className="text-xs">Order Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => setViewDetailsOrder(order)} className="text-xs cursor-pointer">
+                            <FileText className="w-3.5 h-3.5 mr-2" /> View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenTracking(order)} className="text-xs cursor-pointer text-emerald-700">
+                            <Truck className="w-3.5 h-3.5 mr-2" /> Assign Tracking
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => updateStatus(order.id, 'Processing')} className="text-xs cursor-pointer">
+                            <Clock className="w-3.5 h-3.5 mr-2 text-blue-600" /> Mark Processing
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateStatus(order.id, 'Shipped')} className="text-xs cursor-pointer">
+                            <Truck className="w-3.5 h-3.5 mr-2 text-purple-600" /> Mark Shipped
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateStatus(order.id, 'Delivered')} className="text-xs cursor-pointer">
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Mark Delivered
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateStatus(order.id, 'Cancelled')} className="text-xs cursor-pointer text-destructive">
+                            <XCircle className="w-3.5 h-3.5 mr-2" /> Cancel Order
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        </div>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                  No orders found matching the filter criteria.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
 
-        {/* ── Right Column: Order Metrics & Summary ── */}
-        <div className="space-y-6">
-          <Card className="border-none shadow-xl rounded-[36px] p-6 sm:p-8 bg-white">
-            <CardHeader className="p-0 mb-6">
-              <CardTitle className="font-headline text-2xl font-extrabold text-[#100C06]">
-                Order Metrics
-              </CardTitle>
-            </CardHeader>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-gray-600">Total Orders</span>
-                <span className="font-extrabold text-gray-900">{orderMetrics.total}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-amber-700 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span> Pending Fulfillment
-                </span>
-                <span className="font-extrabold text-amber-800">{orderMetrics.pending}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-purple-700 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-purple-500"></span> In Transit / Shipped
-                </span>
-                <span className="font-extrabold text-purple-800">{orderMetrics.shipped}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-emerald-700 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Successfully Delivered
-                </span>
-                <span className="font-extrabold text-emerald-800">{orderMetrics.delivered}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-orange-700 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span> RTO (Returned)
-                </span>
-                <span className="font-extrabold text-orange-800">{orderMetrics.rto}</span>
-              </div>
-            </div>
-
-            <div className="mt-8 p-5 bg-[#FAF7F0] rounded-2xl text-center border border-[#EEE0BC]">
-              <div className="text-[10px] font-black text-[#7A6848] uppercase tracking-[2px] mb-1">
-                Total Revenue
-              </div>
-              <div className="font-headline text-3xl font-extrabold text-primary">
-                ₹{orderMetrics.revenue.toLocaleString('en-IN')}
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      {/* ── Assign / Edit Tracking Modal ── */}
+      {/* Assign Tracking Dialog */}
       <Dialog open={!!trackingOrder} onOpenChange={(open) => !open && setTrackingOrder(null)}>
-        <DialogContent className="max-w-md rounded-[36px] p-8 bg-white border-none shadow-2xl">
-          <DialogHeader className="mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-primary flex items-center justify-center mx-auto mb-2">
-              <Truck className="w-6 h-6 text-primary" />
-            </div>
-            <DialogTitle className="font-headline text-2xl font-extrabold text-center text-primary">
-              Assign Courier Tracking
+        <DialogContent className="max-w-md p-6 font-sans">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              <Truck className="w-5 h-5 text-emerald-600" />
+              Assign Tracking ID
             </DialogTitle>
-            <DialogDescription className="text-center text-xs text-gray-600">
-              Attach AWB or tracking ID for Order #{trackingOrder?.id?.substring(0, 8).toUpperCase()}
+            <DialogDescription className="text-xs">
+              Attach NimbusPost or courier AWB to Order #{trackingOrder?.id?.substring(0, 8).toUpperCase()}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Courier Partner */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-                Courier Partner *
-              </label>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">Courier Partner</label>
               <select
                 value={courierPartner}
                 onChange={(e) => setCourierPartner(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl bg-[#FAF8F5] border border-gray-200 text-xs font-bold text-gray-800 focus:outline-none focus:border-primary"
+                className="w-full h-9 px-3 rounded-md border border-input bg-background text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="NimbusPost">NimbusPost (Standard)</option>
                 <option value="Delhivery">Delhivery</option>
@@ -490,183 +449,158 @@ export default function AdminOrdersPage() {
               </select>
             </div>
 
-            {/* AWB Number Input */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-                AWB Number / Tracking ID *
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">AWB Number / Waybill ID</label>
               <Input
-                placeholder="Enter NimbusPost AWB (e.g. 143256789)..."
+                placeholder="e.g. 1432567890"
                 value={awbInput}
                 onChange={(e) => setAwbInput(e.target.value)}
-                className="h-12 rounded-xl bg-[#FAF8F5] border-gray-200 font-mono font-bold text-sm"
+                className="h-9 text-xs font-mono"
               />
             </div>
 
-            {/* Auto-mark Shipped Checkbox */}
-            <label className="flex items-center gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100 text-xs font-bold text-gray-700 cursor-pointer">
+            <div className="flex items-center gap-2 pt-1">
               <input
                 type="checkbox"
+                id="autoShip"
                 checked={autoMarkShipped}
                 onChange={(e) => setAutoMarkShipped(e.target.checked)}
-                className="w-4 h-4 rounded text-primary accent-primary"
+                className="rounded border-input text-emerald-600 focus:ring-emerald-500"
               />
-              <span>Automatically update order status to &quot;Shipped&quot;</span>
-            </label>
+              <label htmlFor="autoShip" className="text-xs text-muted-foreground cursor-pointer">
+                Automatically mark order status as &quot;Shipped&quot;
+              </label>
+            </div>
           </div>
 
-          <DialogFooter className="mt-5 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setTrackingOrder(null)}
-              className="flex-1 h-11 rounded-2xl text-xs font-bold"
-            >
+          <DialogFooter className="pt-4 border-t border-border/60">
+            <Button variant="outline" size="sm" onClick={() => setTrackingOrder(null)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleSaveTracking}
-              className="flex-1 h-11 rounded-2xl bg-primary hover:bg-[#14482D] text-white text-xs font-black uppercase tracking-wider"
-            >
+            <Button size="sm" onClick={handleSaveTracking} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               Save Tracking
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── Order Details Modal ── */}
+      {/* Order Details & Invoice Dialog */}
       <Dialog open={!!viewDetailsOrder} onOpenChange={(open) => !open && setViewDetailsOrder(null)}>
-        <DialogContent className="max-w-2xl rounded-[36px] p-8 bg-white border-none shadow-2xl max-h-[88vh] overflow-y-auto">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="font-headline text-2xl font-extrabold text-primary flex items-center justify-between">
-              <span>Order #{viewDetailsOrder?.id?.substring(0, 8).toUpperCase()}</span>
-              <span className={cn("px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider", getStatusStyle(viewDetailsOrder?.status || 'Pending'))}>
-                {viewDetailsOrder?.status || 'Pending'}
-              </span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-gray-500">
-              Placed on {viewDetailsOrder?.orderDate ? new Date(viewDetailsOrder.orderDate).toLocaleString('en-IN') : 'N/A'}
-            </DialogDescription>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 font-sans">
+          <DialogHeader className="border-b border-border/60 pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-lg font-bold">
+                  Order #{viewDetailsOrder?.id?.substring(0, 8).toUpperCase()}
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Placed on {viewDetailsOrder?.orderDate ? new Date(viewDetailsOrder.orderDate).toLocaleString('en-IN') : 'N/A'}
+                </DialogDescription>
+              </div>
+              <div>
+                {viewDetailsOrder && getStatusBadge(viewDetailsOrder.status || 'Pending')}
+              </div>
+            </div>
           </DialogHeader>
 
           {viewDetailsOrder && (
-            <div className="space-y-6">
-              {/* Shipping Address */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-gray-100">
-                <div className="text-[10px] font-black uppercase tracking-wider text-[#7A6848] mb-2 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-primary" /> Delivery Destination
-                </div>
-                <div className="text-sm font-extrabold text-gray-900">
-                  {viewDetailsOrder.shippingAddress?.name || viewDetailsOrder.userName || 'Customer'}
-                </div>
-                <div className="text-xs text-gray-600 mt-1 leading-relaxed">
-                  {viewDetailsOrder.shippingAddress?.address || 'Address not specified'}
-                </div>
-                <div className="text-xs text-gray-700 font-semibold mt-1">
-                  {[
-                    viewDetailsOrder.shippingAddress?.city,
-                    viewDetailsOrder.shippingAddress?.state,
-                    viewDetailsOrder.shippingAddress?.pincode
-                  ].filter(Boolean).join(', ')}
-                </div>
-                {viewDetailsOrder.shippingAddress?.phone && (
-                  <div className="text-xs text-primary font-bold mt-2 flex items-center gap-1">
-                    <Phone className="w-3 h-3" /> {viewDetailsOrder.shippingAddress.phone}
-                  </div>
-                )}
-              </div>
-
-              {/* Tracking Information */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-gray-100 flex items-center justify-between gap-3">
+            <div className="space-y-5 pt-2">
+              {/* Customer & Shipping Summary */}
+              <div className="grid grid-cols-2 gap-4 p-3 rounded-lg border border-border bg-muted/20 text-xs">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-wider text-[#7A6848] mb-1 flex items-center gap-1.5">
-                    <Truck className="w-3.5 h-3.5 text-secondary" /> Shipment & Tracking
-                  </div>
-                  {viewDetailsOrder.trackingId ? (
-                    <div className="text-xs font-mono font-bold text-gray-800">
-                      Carrier: {viewDetailsOrder.courierPartner || 'NimbusPost'} · AWB: {viewDetailsOrder.trackingId}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-gray-500 italic">No tracking number assigned yet.</div>
-                  )}
+                  <span className="font-semibold text-foreground block mb-1">Shipping Address:</span>
+                  <p className="font-medium text-foreground">{viewDetailsOrder.shippingAddress?.name || viewDetailsOrder.userName}</p>
+                  <p className="text-muted-foreground">{viewDetailsOrder.shippingAddress?.addressLine1}</p>
+                  <p className="text-muted-foreground">
+                    {viewDetailsOrder.shippingAddress?.city}, {viewDetailsOrder.shippingAddress?.state} - {viewDetailsOrder.shippingAddress?.pincode}
+                  </p>
+                  <p className="text-muted-foreground mt-1">Phone: {viewDetailsOrder.shippingAddress?.phone || 'N/A'}</p>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleOpenTracking(viewDetailsOrder)}
-                    className="h-8 rounded-xl text-xs font-bold"
-                  >
-                    {viewDetailsOrder.trackingId ? 'Edit AWB' : 'Add AWB'}
-                  </Button>
+                <div>
+                  <span className="font-semibold text-foreground block mb-1">Payment & Shipment:</span>
+                  <p className="text-muted-foreground">Method: <span className="font-medium text-foreground">{viewDetailsOrder.paymentMethod || 'Online'}</span></p>
+                  <p className="text-muted-foreground">Payment ID: <span className="font-mono text-foreground">{viewDetailsOrder.paymentId || 'N/A'}</span></p>
                   {viewDetailsOrder.trackingId && (
-                    <a
-                      href={viewDetailsOrder.trackingUrl || `https://ship.nimbuspost.com/shipping/tracking/${encodeURIComponent(viewDetailsOrder.trackingId)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 h-8 px-3 rounded-xl bg-primary text-white text-xs font-bold hover:bg-[#14482D]"
-                    >
-                      <span>Track</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <p className="text-muted-foreground mt-1">
+                      AWB: <span className="font-mono font-medium text-emerald-700">{viewDetailsOrder.trackingId}</span> ({viewDetailsOrder.courierPartner})
+                    </p>
                   )}
                 </div>
               </div>
 
-              {/* Items Breakdown */}
-              <div>
-                <div className="text-[10px] font-black uppercase tracking-wider text-[#7A6848] mb-3 flex items-center gap-1.5">
-                  <Package className="w-3.5 h-3.5 text-primary" /> Ordered Products ({viewDetailsOrder.items?.length || 0})
-                </div>
-                <div className="space-y-2 border border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-100">
-                  {Array.isArray(viewDetailsOrder.items) && viewDetailsOrder.items.length > 0 ? (
-                    viewDetailsOrder.items.map((item: any, i: number) => (
-                      <div key={i} className="p-3 flex items-center justify-between gap-3 text-xs bg-white">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-extrabold text-gray-900 truncate">{item.name}</div>
-                          <div className="text-[11px] text-gray-500">
-                            Volume: {item.vol || item.volume || 'Standard'} · Qty: {item.qty || 1}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-extrabold text-gray-900">
-                            ₹{((Number(item.price) || 0) * (Number(item.qty) || 1)).toLocaleString('en-IN')}
-                          </div>
-                          <div className="text-[10px] text-gray-400">₹{item.price} each</div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-xs text-gray-500 italic">No item list attached.</div>
-                  )}
+              {/* Items List */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-foreground">Purchased Items</span>
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-border/60 hover:bg-transparent">
+                        <TableHead className="text-xs h-8">Product</TableHead>
+                        <TableHead className="text-xs h-8">Size</TableHead>
+                        <TableHead className="text-xs h-8 text-center">Qty</TableHead>
+                        <TableHead className="text-xs h-8 text-right">Price</TableHead>
+                        <TableHead className="text-xs h-8 text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {viewDetailsOrder.items?.map((item: any, idx: number) => (
+                        <TableRow key={idx} className="border-b border-border/40">
+                          <TableCell className="py-2 text-xs font-medium text-foreground">
+                            {item.name}
+                          </TableCell>
+                          <TableCell className="py-2 text-xs text-muted-foreground">
+                            {item.vol || item.size || 'Standard'}
+                          </TableCell>
+                          <TableCell className="py-2 text-xs text-center text-foreground font-medium">
+                            {item.quantity || item.qty || 1}
+                          </TableCell>
+                          <TableCell className="py-2 text-xs text-right text-muted-foreground">
+                            ₹{item.price}
+                          </TableCell>
+                          <TableCell className="py-2 text-xs text-right font-medium text-foreground">
+                            ₹{(item.price || 0) * (item.quantity || item.qty || 1)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
 
-              {/* Payment & Financial Breakdown */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-gray-100 space-y-2 text-xs">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-bold text-gray-900">₹{(viewDetailsOrder.subtotal || viewDetailsOrder.totalAmount || 0).toLocaleString('en-IN')}</span>
+              {/* Pricing Breakdown */}
+              <div className="border-t border-border/60 pt-3 flex flex-col items-end space-y-1 text-xs">
+                <div className="flex justify-between w-48 text-muted-foreground">
+                  <span>Subtotal:</span>
+                  <span>₹{viewDetailsOrder.subtotal || viewDetailsOrder.totalAmount}</span>
                 </div>
-                {viewDetailsOrder.couponDiscount > 0 && (
-                  <div className="flex justify-between items-center text-emerald-700">
-                    <span>Coupon Discount ({viewDetailsOrder.couponCode || 'APPLIED'}):</span>
-                    <span className="font-bold">-₹{viewDetailsOrder.couponDiscount}</span>
+                {viewDetailsOrder.purityCoinsRedeemed > 0 && (
+                  <div className="flex justify-between w-48 text-emerald-600">
+                    <span>Coins Redeemed:</span>
+                    <span>-₹{viewDetailsOrder.purityCoinsRedeemed}</span>
                   </div>
                 )}
-                {viewDetailsOrder.coinsDiscount > 0 && (
-                  <div className="flex justify-between items-center text-amber-700">
-                    <span>Purity Coins Redeemed:</span>
-                    <span className="font-bold">-₹{viewDetailsOrder.coinsDiscount}</span>
+                {viewDetailsOrder.discountAmount > 0 && (
+                  <div className="flex justify-between w-48 text-emerald-600">
+                    <span>Discount:</span>
+                    <span>-₹{viewDetailsOrder.discountAmount}</span>
                   </div>
                 )}
-                <div className="pt-2 border-t border-gray-200 flex justify-between items-center text-sm font-extrabold text-primary">
-                  <span>Final Total Paid:</span>
-                  <span>₹{(viewDetailsOrder.totalAmount || 0).toLocaleString('en-IN')}</span>
+                <div className="flex justify-between w-48 font-bold text-foreground text-sm border-t border-border/60 pt-1">
+                  <span>Grand Total:</span>
+                  <span>₹{viewDetailsOrder.totalAmount}</span>
                 </div>
               </div>
             </div>
           )}
+
+          <DialogFooter className="pt-4 border-t border-border/60">
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="w-3.5 h-3.5 mr-1" /> Print Invoice
+            </Button>
+            <Button size="sm" onClick={() => setViewDetailsOrder(null)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
