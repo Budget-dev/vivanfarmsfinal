@@ -161,8 +161,33 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     }
   }, [address, onChange]);
 
-  // Reverse geocodes coordinates to complete Indian street address
+  // Reverse geocodes coordinates to complete Indian street address via /api/location/reverse-geocode
   const reverseGeocodeCoords = async (latitude: number, longitude: number) => {
+    // 1. Primary: Server API Route /api/location/reverse-geocode (Google Maps + Nominatim Fallback)
+    try {
+      const response = await fetch('/api/location/reverse-geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.address) {
+          return {
+            street: data.address.street || '',
+            city: data.address.city || '',
+            state: data.address.state || '',
+            pincode: data.address.postalCode || '',
+            apartment: data.address.apartment || '',
+            formattedAddress: data.address.formattedAddress || '',
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Server reverse-geocode notice, trying client fallback:', e);
+    }
+
     let road = '';
     let city = '';
     let state = '';
@@ -170,7 +195,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     let locality = '';
     let houseNumber = '';
 
-    // 1. Primary: BigDataCloud Reverse Geocode (Fast, accurate locality for India)
+    // 2. Client Fallback: BigDataCloud Reverse Geocode
     try {
       const bdcRes = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
@@ -192,7 +217,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
       console.warn('BigDataCloud geocode notice:', e);
     }
 
-    // 2. Secondary: OpenStreetMap Nominatim for street/building level detail
+    // 3. Client Fallback: OpenStreetMap Nominatim
     try {
       const nomRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
@@ -212,7 +237,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     }
 
     const fullStreet = [houseNumber, road, locality].filter(Boolean).join(', ');
-    return { street: fullStreet, city, state, pincode };
+    return { street: fullStreet, city, state, pincode, apartment: locality, formattedAddress: '' };
   };
 
   // Resilient multi-provider network IP geolocation fallback
@@ -274,12 +299,13 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
 
   /**
    * One-Click Auto-Fill: Fills ALL address fields (Street, City, State, PIN code) at once!
+   * Architecture: GPS -> /api/location/reverse-geocode -> Auto-fill Form
    */
   const handleUseCurrentLocation = useCallback(async (isSilent: boolean | unknown = false) => {
     const silent = isSilent === true;
     if (!silent) {
       setGeoState('detecting');
-      setGeoMessage('Detecting your live location...');
+      setGeoMessage('Getting your GPS location...');
     }
 
     const applyIPFallback = async (fallbackNotice?: string) => {
@@ -290,7 +316,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         let finalCity = ipResult.city || '';
         let finalState = ipResult.state || '';
 
-        // If postal code is missing but coords exist, reverse geocode to fetch 6-digit Indian PIN
+        // If postal code is missing but coords exist, reverse geocode via /api/location/reverse-geocode
         if ((!finalPincode || !finalStreet) && ipResult.lat && ipResult.lng) {
           try {
             const enriched = await reverseGeocodeCoords(ipResult.lat, ipResult.lng);
@@ -311,7 +337,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         });
 
         setGeoState('success');
-        setGeoMessage(`Address auto-filled: ${[finalCity, finalState, finalPincode].filter(Boolean).join(', ')}.`);
+        setGeoMessage(`Auto-filled: ${[finalCity, finalState].filter(Boolean).join(', ')}`);
 
         if (finalPincode && finalPincode.length === 6) {
           handlePincodeLookup(finalPincode);
@@ -334,7 +360,11 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
+        if (!silent) {
+          setGeoMessage('Resolving address...');
+        }
         try {
+          // Send coordinates to /api/location/reverse-geocode
           const geo = await reverseGeocodeCoords(latitude, longitude);
 
           if (geo.city || geo.state || geo.pincode || geo.street) {
@@ -353,7 +383,12 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             });
 
             setGeoState('success');
-            setGeoMessage(`Address auto-filled: ${[finalCity, finalState, finalPincode].filter(Boolean).join(', ')}.`);
+            setGeoMessage(`Auto-filled: ${[finalCity, finalState].filter(Boolean).join(', ')}`);
+
+            toast({
+              title: "Address Auto-Filled",
+              description: `Auto-filled: ${finalCity}, ${finalState}`,
+            });
 
             if (finalPincode && finalPincode.length === 6) {
               handlePincodeLookup(finalPincode);
@@ -368,15 +403,20 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
       },
       async (geoError) => {
         console.warn('GPS detection notice:', geoError.message);
-        await applyIPFallback(
-          geoError.code === geoError.PERMISSION_DENIED
-            ? 'GPS permission denied. Located via network — all fields auto-filled.'
-            : 'GPS timed out. Located via network — all fields auto-filled.'
-        );
+        if (geoError.code === geoError.PERMISSION_DENIED) {
+          await applyIPFallback('Location permission denied. Please enter address manually.');
+        } else {
+          await applyIPFallback('Unable to retrieve location. Please enter address manually.');
+        }
       },
-      { timeout: 4000, enableHighAccuracy: false, maximumAge: 60000 }
+      // Geolocation options:
+      {
+        enableHighAccuracy: true, // Use GPS / WiFi positioning instead of coarse IP
+        timeout: 15000,          // 15 seconds max wait
+        maximumAge: 60000,       // Accept cached location if less than 1 min old
+      }
     );
-  }, [address, handlePincodeLookup, onChange]);
+  }, [address, handlePincodeLookup, onChange, toast]);
 
   // Automatic location detection on mount if address fields are blank
   const hasAttemptedMountDetection = useRef(false);

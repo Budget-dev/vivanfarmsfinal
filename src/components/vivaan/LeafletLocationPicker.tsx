@@ -37,9 +37,35 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
   } | null>(null);
   const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
 
-  // Reverse geocode lat/lng to Indian address
+  // Reverse geocode lat/lng to Indian address via /api/location/reverse-geocode
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     setIsReverseGeocoding(true);
+
+    // 1. Primary: Server API Route /api/location/reverse-geocode
+    try {
+      const res = await fetch('/api/location/reverse-geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: lat, longitude: lng }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.address) {
+          const result = {
+            address: data.address.street || '',
+            city: data.address.city || '',
+            state: data.address.state || '',
+            pincode: data.address.postalCode || '',
+          };
+          setDetectedAddress(result);
+          setIsReverseGeocoding(false);
+          return result;
+        }
+      }
+    } catch (e) {
+      console.warn('Backend reverse-geocode notice in map picker:', e);
+    }
+
     let road = '';
     let city = '';
     let state = '';
@@ -48,7 +74,7 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
     let houseNumber = '';
 
     try {
-      // 1. BigDataCloud fast client geocoder
+      // 2. Client Fallback: BigDataCloud fast geocoder
       const bdcRes = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
       );
@@ -64,7 +90,7 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
     }
 
     try {
-      // 2. OpenStreetMap Nominatim reverse geocode
+      // 3. Client Fallback: OpenStreetMap Nominatim reverse geocode
       const nomRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
         { headers: { 'Accept-Language': 'en' } }
