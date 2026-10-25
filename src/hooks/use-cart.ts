@@ -102,6 +102,34 @@ export function useCart() {
     });
   }, []);
 
+  const setBuyNowItem = useCallback((product: Product, qty: number = 1) => {
+    // Mobile double-tap debounce
+    const now = Date.now();
+    if (now - lastTapRef.current < 200) {
+      return;
+    }
+    lastTapRef.current = now;
+
+    setCart(prev => {
+      // Find if this product (any variant) is already in the cart
+      const existingSameIdIndex = prev.findIndex(item => item.id === product.id);
+      let updated: CartItem[];
+      
+      if (existingSameIdIndex >= 0) {
+        // Replace existing line item with exact selected variant & specified quantity
+        updated = prev.map((item, idx) => 
+          idx === existingSameIdIndex
+            ? { ...product, qty: Math.max(1, qty) }
+            : item
+        );
+      } else {
+        updated = [...prev, { ...product, qty: Math.max(1, qty) }];
+      }
+      broadcastCart(updated);
+      return updated;
+    });
+  }, []);
+
   const updateQty = useCallback((id: string, vol: string, delta: number) => {
     // Mobile haptic vibration feedback
     if (typeof window !== 'undefined' && 'navigator' in window && typeof window.navigator.vibrate === 'function') {
@@ -135,5 +163,5 @@ export function useCart() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
 
-  return { cart, addToCart, updateQty, removeFromCart, clearCart, subtotal, totalQty, isLoaded };
+  return { cart, addToCart, setBuyNowItem, updateQty, removeFromCart, clearCart, subtotal, totalQty, isLoaded };
 }

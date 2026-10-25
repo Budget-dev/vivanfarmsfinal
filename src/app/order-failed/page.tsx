@@ -28,8 +28,11 @@ export default function OrderFailedPage() {
           <Button onClick={() => router.push('/payment')} className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 bg-primary hover:bg-secondary text-white rounded-full font-black uppercase tracking-[2px] sm:tracking-[3px] shadow-xl active:scale-95 transition-transform min-h-[48px]">
             Retry Payment <RefreshCcw className="w-5 h-5 ml-2" />
           </Button>
-          <Button onClick={() => router.push('/contact')} variant="outline" className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 rounded-full font-black uppercase tracking-[2px] sm:tracking-[3px] border-primary/20 hover:bg-primary/5 active:scale-95 transition-transform min-h-[48px]">
-            Contact Support
+          <Button onClick={() => router.push('/checkout')} variant="outline" className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 rounded-full font-black uppercase tracking-[2px] sm:tracking-[3px] border-primary/20 hover:bg-primary/5 active:scale-95 transition-transform min-h-[48px]">
+            Review Cart & Address
+          </Button>
+          <Button onClick={() => router.push('/')} variant="ghost" className="w-full sm:w-auto h-14 sm:h-16 px-6 rounded-full font-bold uppercase tracking-wider text-primary hover:bg-primary/5">
+            Back to Shop
           </Button>
         </div>
       </main>

@@ -73,21 +73,55 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Built-in promotional coupon dictionary
+  const PROMO_COUPONS: Record<string, { type: 'percentage' | 'flat', value: number, desc: string }> = {
+    'PURE15': { type: 'percentage', value: 15, desc: '15% OFF festive offer' },
+    'STAY20': { type: 'percentage', value: 20, desc: '20% OFF exclusive coupon' },
+    'VIVAAN10': { type: 'percentage', value: 10, desc: '10% OFF on all organic orders' },
+    'PURE100': { type: 'flat', value: 100, desc: '₹100 flat savings' },
+    'FARM50': { type: 'flat', value: 50, desc: '₹50 farm fresh discount' },
+    'WELCOME': { type: 'flat', value: 150, desc: '₹150 welcome purity gift' },
+  };
+
   // Coupon Logic
-  const handleApplyCoupon = () => {
-    if (!couponInput.trim()) return;
-    const input = couponInput.toUpperCase().trim();
+  const handleApplyCoupon = (overrideCode?: string) => {
+    const rawInput = typeof overrideCode === 'string' ? overrideCode : couponInput;
+    if (!rawInput.trim()) return;
+    const input = rawInput.toUpperCase().trim();
     
-    // 1. Check Universal Coupons
-    const universal = universalCoupons?.find(c => c.code === input && c.isActive && new Date(c.expiryDate) > new Date());
+    // 1. Check Built-in Promotional Codes
+    if (PROMO_COUPONS[input]) {
+      const promo = PROMO_COUPONS[input];
+      setAppliedCoupon({
+        code: input,
+        type: promo.type,
+        value: promo.value,
+        target: 'all',
+        description: promo.desc
+      });
+      setCouponInput(input);
+      toast({ title: "Coupon Applied!", description: `${input} applied (${promo.desc})` });
+      return;
+    }
+
+    // 2. Check Universal Coupons from Firestore
+    const universal = universalCoupons?.find(c => {
+      const codeMatch = (c.code || '').trim().toUpperCase() === input;
+      const isActive = c.isActive !== false;
+      // Allow end-of-day expiry grace period (inclusive)
+      const notExpired = !c.expiryDate || (new Date(c.expiryDate).getTime() + 86400000 >= Date.now());
+      return codeMatch && isActive && notExpired;
+    });
+
     if (universal) {
       setAppliedCoupon({ ...universal, target: 'all' });
+      setCouponInput(input);
       toast({ title: "Coupon Applied!", description: `Saved with ${input}` });
       return;
     }
 
-    // 2. Check Product-Specific Coupons
-    const productMatch = cart.find(item => item.productCoupon === input);
+    // 3. Check Product-Specific Coupons
+    const productMatch = cart.find(item => (item.productCoupon || '').trim().toUpperCase() === input);
     if (productMatch) {
       setAppliedCoupon({ 
         code: input, 
@@ -95,11 +129,12 @@ export default function CheckoutPage() {
         value: 100,
         target: productMatch.id 
       });
+      setCouponInput(input);
       toast({ title: "Coupon Applied!", description: `₹100 off applied on ${productMatch.name}` });
       return;
     }
 
-    toast({ variant: "destructive", title: "Invalid Coupon", description: "This coupon is either expired or invalid." });
+    toast({ variant: "destructive", title: "Invalid Coupon", description: "This coupon is either expired or invalid. Try 'PURE15'." });
   };
 
   // Calculations
@@ -313,16 +348,37 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <Button 
-                      onClick={handleApplyCoupon} 
+                      onClick={() => handleApplyCoupon()} 
                       variant="outline" 
-                      className="h-11 rounded-xl px-4 sm:px-6 border-primary/30 text-primary font-black text-[10px] uppercase tracking-wider cursor-pointer"
+                      className="h-11 rounded-xl px-4 sm:px-6 border-primary/30 text-primary font-black text-[10px] uppercase tracking-wider cursor-pointer hover:bg-primary hover:text-white"
                     >
                       Apply
                     </Button>
                   </div>
+
+                  {/* Quick-Apply Suggestion Pills */}
+                  {!appliedCoupon && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-[10px] font-bold text-[#7A6848]">Offers:</span>
+                      {['PURE15', 'VIVAAN10', 'PURE100'].map((code) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => handleApplyCoupon(code)}
+                          className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF7EF] border border-[#DDD0B5] text-[#0D3B2E] hover:bg-[#0D3B2E] hover:text-white transition-all cursor-pointer"
+                        >
+                          {code}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {appliedCoupon && (
                     <div className="flex items-center justify-between bg-primary/5 p-2.5 rounded-xl border border-primary/15">
-                      <span className="text-[10px] font-black text-primary uppercase">APPLIED: {appliedCoupon.code}</span>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="text-[10px] font-black text-primary uppercase">APPLIED: {appliedCoupon.code}</span>
+                      </div>
                       <button onClick={() => setAppliedCoupon(null)} className="text-[10px] text-destructive font-bold uppercase underline cursor-pointer">Remove</button>
                     </div>
                   )}

@@ -256,16 +256,9 @@ export default function VivaanFarms() {
     return [...mapped, ...fallbacksToAdd];
   }, [dbProducts]);
 
-  const handleSearch = async (queryStr: string) => {
+  const handleSearch = (queryStr: string) => {
     if (!queryStr.trim()) return;
-    try {
-      const res = await naturalLanguageProductSearch({ query: queryStr });
-      if (res.categories.length > 0) {
-        scrollToPantry();
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    router.push(`/category/all?q=${encodeURIComponent(queryStr.trim())}`);
   };
 
   const scrollToPantry = () => {

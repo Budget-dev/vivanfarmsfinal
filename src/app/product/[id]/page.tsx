@@ -58,13 +58,18 @@ export default function ProductDetailsPage() {
   const { data: dbProduct } = useDoc(productRef);
   
   // Cart & Wishlist hooks
-  const { cart, addToCart, updateQty, removeFromCart, totalQty } = useCart();
+  const { cart, addToCart, setBuyNowItem, updateQty, removeFromCart, totalQty } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+
+  // Pre-resolve catalog match for immediate correct variant initialization
+  const initialCatalogMatch = useMemo(() => getProductById(id as string), [id]);
+  const initialDefaultVar = initialCatalogMatch?.vars?.find((v: ProductVariant) => v.on) || initialCatalogMatch?.vars?.[0];
+  const initialVariantSize = initialDefaultVar?.s || initialCatalogMatch?.vol || 'Standard';
 
   // Interactive States
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [qty, setQty] = useState(1);
-  const [selectedSize, setSelectedSize] = useState<string>('500mL Glass Jar');
+  const [selectedSize, setSelectedSize] = useState<string>(initialVariantSize);
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
@@ -104,15 +109,18 @@ export default function ProductDetailsPage() {
     return DEFAULT_BUFFALO_GHEE_PRODUCT;
   }, [dbProduct, id]);
 
-  // Synchronize default variant and images
+  // Synchronize default variant and images when product loads or updates
   useEffect(() => {
-    if (product) {
-      const defaultVar = product.vars.find((v: ProductVariant) => v.on) || product.vars[0];
-      if (defaultVar) {
-        setSelectedSize(defaultVar.s);
+    if (product && product.vars && product.vars.length > 0) {
+      const matchExisting = product.vars.find((v: ProductVariant) => v.s === selectedSize);
+      if (!matchExisting) {
+        const defaultVar = product.vars.find((v: ProductVariant) => v.on) || product.vars[0];
+        if (defaultVar) {
+          setSelectedSize(defaultVar.s);
+        }
       }
     }
-  }, [product]);
+  }, [product, selectedSize]);
 
   // Active Variant & Pricing Calculations
   const getVariantPrice = (v?: ProductVariant): number => {
@@ -147,9 +155,9 @@ export default function ProductDetailsPage() {
     setIsCartOpen(true);
   };
 
-  // Buy Now handler
+  // Buy Now handler: cleanly sets product & variant in cart without adding unwanted duplicates on retry
   const handleBuyNow = () => {
-    addToCart({ 
+    setBuyNowItem({ 
       ...product, 
       price: displayPrice, 
       vol: selectedSize,

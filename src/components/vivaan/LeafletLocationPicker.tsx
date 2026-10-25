@@ -224,30 +224,52 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
 
           // Attempt IP geolocation fallback
           try {
-            const ipRes = await fetch('https://ipwho.is/');
-            if (ipRes.ok) {
-              const ipData = await ipRes.json();
-              if (ipData && ipData.latitude && ipData.longitude) {
-                const lat = ipData.latitude;
-                const lng = ipData.longitude;
-                map.setView([lat, lng], 13);
-                setCurrentCoords({ lat, lng });
+            let lat: number | null = null;
+            let lng: number | null = null;
+            let cityName = '';
 
-                const marker = L.marker([lat, lng], {
-                  icon: customPinIcon,
-                  draggable: true,
-                }).addTo(map);
-
-                marker.on('dragend', async () => {
-                  const newPos = marker.getLatLng();
-                  setCurrentCoords({ lat: newPos.lat, lng: newPos.lng });
-                  await reverseGeocode(newPos.lat, newPos.lng);
-                });
-
-                markerRef.current = marker;
-                await reverseGeocode(lat, lng);
-                setStatusMessage(`Network location: ${ipData.city || ''}. Move pin to exact doorstep.`);
+            try {
+              const bdcRes = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client');
+              if (bdcRes.ok) {
+                const bdc = await bdcRes.json();
+                if (bdc.latitude && bdc.longitude) {
+                  lat = bdc.latitude;
+                  lng = bdc.longitude;
+                  cityName = bdc.city || bdc.locality || '';
+                }
               }
+            } catch {}
+
+            if (!lat || !lng) {
+              const ipRes = await fetch('https://ipwho.is/');
+              if (ipRes.ok) {
+                const ipData = await ipRes.json();
+                if (ipData && ipData.latitude && ipData.longitude) {
+                  lat = ipData.latitude;
+                  lng = ipData.longitude;
+                  cityName = ipData.city || '';
+                }
+              }
+            }
+
+            if (lat && lng && isMounted) {
+              map.setView([lat, lng], 13);
+              setCurrentCoords({ lat, lng });
+
+              const marker = L.marker([lat, lng], {
+                icon: customPinIcon,
+                draggable: true,
+              }).addTo(map);
+
+              marker.on('dragend', async () => {
+                const newPos = marker.getLatLng();
+                setCurrentCoords({ lat: newPos.lat, lng: newPos.lng });
+                await reverseGeocode(newPos.lat, newPos.lng);
+              });
+
+              markerRef.current = marker;
+              await reverseGeocode(lat, lng);
+              setStatusMessage(`Network location: ${cityName}. Move pin to exact doorstep.`);
             }
           } catch {
             // Keep default
