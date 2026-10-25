@@ -200,35 +200,53 @@ export default function AdminOrdersPage() {
     setAwbInput('');
   };
 
-  // Filtered Orders
+  // Helper to extract timestamp ms safely from ISO string or Firestore Timestamp
+  const getOrderTimestamp = (o: any): number => {
+    if (o.orderDate) {
+      const ms = new Date(o.orderDate).getTime();
+      if (!isNaN(ms)) return ms;
+    }
+    if (o.createdAt) {
+      if (typeof o.createdAt.toMillis === 'function') return o.createdAt.toMillis();
+      if (typeof o.createdAt.toDate === 'function') return o.createdAt.toDate().getTime();
+      if (typeof o.createdAt.seconds === 'number') return o.createdAt.seconds * 1000;
+      const ms = new Date(o.createdAt).getTime();
+      if (!isNaN(ms)) return ms;
+    }
+    return 0;
+  };
+
+  // Filtered Orders (sorted newest to oldest)
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
-    return orders.filter(o => {
-      // Status filter
-      if (activeTab !== 'All' && o.status !== activeTab) return false;
+    return orders
+      .filter(o => {
+        // Status filter
+        if (activeTab !== 'All' && o.status !== activeTab) return false;
 
-      // Search filter
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase().trim();
-        const id = (o.id || '').toLowerCase();
-        const customerName = (o.shippingAddress?.name || o.userName || '').toLowerCase();
-        const customerEmail = (o.shippingAddress?.email || o.userEmail || '').toLowerCase();
-        const customerPhone = (o.shippingAddress?.phone || '').toLowerCase();
-        const city = (o.shippingAddress?.city || '').toLowerCase();
-        const tracking = (o.trackingId || '').toLowerCase();
+        // Search filter
+        if (searchTerm.trim()) {
+          const term = searchTerm.toLowerCase().trim();
+          const id = (o.id || '').toLowerCase();
+          const customerName = (o.shippingAddress?.name || o.userName || '').toLowerCase();
+          const customerEmail = (o.shippingAddress?.email || o.userEmail || '').toLowerCase();
+          const customerPhone = (o.shippingAddress?.phone || '').toLowerCase();
+          const city = (o.shippingAddress?.city || '').toLowerCase();
+          const tracking = (o.trackingId || '').toLowerCase();
 
-        return (
-          id.includes(term) ||
-          customerName.includes(term) ||
-          customerEmail.includes(term) ||
-          customerPhone.includes(term) ||
-          city.includes(term) ||
-          tracking.includes(term)
-        );
-      }
+          return (
+            id.includes(term) ||
+            customerName.includes(term) ||
+            customerEmail.includes(term) ||
+            customerPhone.includes(term) ||
+            city.includes(term) ||
+            tracking.includes(term)
+          );
+        }
 
-      return true;
-    });
+        return true;
+      })
+      .sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
   }, [orders, activeTab, searchTerm]);
 
   // Aggregate Metrics
@@ -427,11 +445,13 @@ export default function AdminOrdersPage() {
                       ₹{(order.totalAmount || 0).toLocaleString('en-IN')}
                     </TableCell>
 
-                    <TableCell className="px-4 py-3 text-xs text-muted-foreground">
-                      {order.orderDate 
-                        ? new Date(order.orderDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                        : 'N/A'
-                      }
+                    <TableCell className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      {(() => {
+                        const ms = getOrderTimestamp(order);
+                        return ms > 0
+                          ? new Date(ms).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                          : 'Recently';
+                      })()}
                     </TableCell>
 
                     <TableCell className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>

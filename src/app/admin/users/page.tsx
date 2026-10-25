@@ -94,11 +94,13 @@ export default function AdminUsersPage() {
       }
       stats[uid].count += 1;
       stats[uid].totalSpent += Number(o.totalAmount) || 0;
-      if (o.orderDate && (!stats[uid].lastOrderDate || new Date(o.orderDate) > new Date(stats[uid].lastOrderDate!))) {
-        stats[uid].lastOrderDate = o.orderDate;
+      const orderDateStr = o.orderDate || (o.createdAt?.toDate ? o.createdAt.toDate().toISOString() : (o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000).toISOString() : o.createdAt));
+      if (orderDateStr && (!stats[uid].lastOrderDate || new Date(orderDateStr) > new Date(stats[uid].lastOrderDate!))) {
+        stats[uid].lastOrderDate = orderDateStr;
       }
-      if (o.shippingAddress?.phone && !stats[uid].phone) {
-        stats[uid].phone = o.shippingAddress.phone;
+      const phone = o.customerPhone || o.shippingAddress?.phone;
+      if (phone && !stats[uid].phone) {
+        stats[uid].phone = phone;
       }
     });
 
@@ -167,7 +169,7 @@ export default function AdminUsersPage() {
   const metrics = useMemo(() => {
     const totalUsers = allKnownUsers.length;
     const totalCoinsCirculation = allKnownUsers.reduce((acc, u) => acc + (Number(u.purityCoins) || 0), 0);
-    const totalCoinsRedeemed = orders?.reduce((acc, o) => acc + (Number(o.purityCoinsRedeemed) || 0), 0) || 0;
+    const totalCoinsRedeemed = orders?.reduce((acc, o) => acc + (Number(o.coinsRedeemed || o.purityCoinsRedeemed) || 0), 0) || 0;
     const totalOrdersCount = orders?.length || 0;
     return {
       totalUsers,

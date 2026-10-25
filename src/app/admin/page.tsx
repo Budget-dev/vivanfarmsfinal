@@ -62,11 +62,27 @@ export default function AdminDashboard() {
     const revenue = orders.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
     const ordersCount = orders.length;
     const avgValue = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
-    const coins = orders.reduce((acc, curr) => acc + (curr.purityCoinsRedeemed || 0), 0);
+    const coins = orders.reduce((acc, curr) => acc + (curr.coinsRedeemed || curr.purityCoinsRedeemed || 0), 0);
     const pendingCount = orders.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
 
     return { revenue, ordersCount, avgValue, coins, pendingCount };
   }, [orders]);
+
+  // Helper to extract timestamp ms safely from ISO string or Firestore Timestamp
+  const getOrderTimestamp = (o: any): number => {
+    if (o.orderDate) {
+      const ms = new Date(o.orderDate).getTime();
+      if (!isNaN(ms)) return ms;
+    }
+    if (o.createdAt) {
+      if (typeof o.createdAt.toMillis === 'function') return o.createdAt.toMillis();
+      if (typeof o.createdAt.toDate === 'function') return o.createdAt.toDate().getTime();
+      if (typeof o.createdAt.seconds === 'number') return o.createdAt.seconds * 1000;
+      const ms = new Date(o.createdAt).getTime();
+      if (!isNaN(ms)) return ms;
+    }
+    return 0;
+  };
 
   // 2. Revenue Trend Data
   const revenueTrendData = useMemo(() => {
@@ -83,9 +99,9 @@ export default function AdminDashboard() {
       const dayTotal = orders
         ? orders
             .filter(o => {
-              if (!o.orderDate && !o.createdAt) return false;
-              const d = new Date(o.orderDate || o.createdAt);
-              return d.toDateString() === date.toDateString();
+              const ms = getOrderTimestamp(o);
+              if (!ms) return false;
+              return new Date(ms).toDateString() === date.toDateString();
             })
             .reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
         : 0;
@@ -106,7 +122,12 @@ export default function AdminDashboard() {
     }
     const data: (string | number)[][] = [["Category", "Products"]];
     categories.forEach((cat) => {
-      const count = products?.filter(p => (p.categoryId || '').toLowerCase() === cat.name.toLowerCase()).length || 1;
+      const catKey = (cat.id || cat.name || '').toLowerCase();
+      const catName = (cat.name || cat.id || '').toLowerCase();
+      const count = products?.filter(p => {
+        const pCat = (p.categoryId || p.cat || '').toLowerCase();
+        return pCat === catKey || pCat === catName || catName.includes(pCat);
+      }).length || 0;
       data.push([cat.name, count]);
     });
     return data;
@@ -116,7 +137,7 @@ export default function AdminDashboard() {
   const recentOrders = useMemo(() => {
     if (!orders) return [];
     return [...orders]
-      .sort((a, b) => new Date(b.orderDate || b.createdAt || 0).getTime() - new Date(a.orderDate || a.createdAt || 0).getTime())
+      .sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a))
       .slice(0, 6);
   }, [orders]);
 
