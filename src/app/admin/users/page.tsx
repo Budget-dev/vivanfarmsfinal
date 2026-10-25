@@ -51,7 +51,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -74,7 +74,7 @@ export default function AdminUsersPage() {
   const [filterType, setFilterType] = useState<'all' | 'high_coins' | 'has_orders' | 'zero_coins'>('all');
 
   // Coin Adjustment Modal State
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [selectedUser, setSelectedUser] = useState<(UserProfile & { source?: string }) | null>(null);
   const [adjustType, setAdjustType] = useState<'credit' | 'debit'>('credit');
   const [coinAmount, setCoinAmount] = useState<string>('100');
   const [reason, setReason] = useState<string>('');
@@ -105,9 +105,68 @@ export default function AdminUsersPage() {
     return stats;
   }, [orders]);
 
+  // Unified list of all registered accounts + all customers who placed orders
+  const allKnownUsers = useMemo(() => {
+    const list: (UserProfile & { source: 'registered' | 'guest_order'; orderCount: number; totalSpent: number })[] = [];
+    const seenIds = new Set<string>();
+    const seenEmails = new Set<string>();
+
+    // 1. Add all registered user profiles
+    if (users && Array.isArray(users)) {
+      users.forEach((u) => {
+        if (!u.id) return;
+        seenIds.add(u.id);
+        if (u.email) seenEmails.add(u.email.toLowerCase().trim());
+        const stats = userOrderStats[u.id] || { count: 0, totalSpent: 0 };
+        list.push({
+          ...u,
+          source: 'registered',
+          orderCount: stats.count,
+          totalSpent: stats.totalSpent,
+        });
+      });
+    }
+
+    // 2. Discover customers from orders who may not have a userProfiles doc
+    if (orders && Array.isArray(orders)) {
+      orders.forEach((o) => {
+        const uid = o.userId;
+        const email = (o.userEmail || '').toLowerCase().trim();
+        const hasKnownEmail = email && seenEmails.has(email) && !email.includes('@vivaanfarms.com');
+        const hasKnownUid = uid && seenIds.has(uid);
+
+        if (hasKnownUid || hasKnownEmail) return;
+
+        const effectiveId = uid || `order_customer_${o.id}`;
+        if (seenIds.has(effectiveId)) return;
+        seenIds.add(effectiveId);
+        if (email) seenEmails.add(email);
+
+        const stats = userOrderStats[uid || 'guest'] || { count: 1, totalSpent: Number(o.totalAmount) || 0 };
+        const nameParts = (o.customerName || o.shippingAddress?.name || 'Customer').trim().split(' ');
+
+        list.push({
+          id: effectiveId,
+          firstName: nameParts[0] || 'Customer',
+          lastName: nameParts.slice(1).join(' ') || '',
+          email: o.userEmail || (o.shippingAddress?.phone ? `${o.shippingAddress.phone} (Phone Order)` : 'Customer Order'),
+          phoneNumber: o.customerPhone || o.shippingAddress?.phone || '',
+          purityCoins: Number(o.coinsEarned) || 0,
+          createdAt: o.orderDate || (o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000).toISOString() : new Date().toISOString()),
+          updatedAt: o.orderDate || new Date().toISOString(),
+          source: 'guest_order',
+          orderCount: stats.count,
+          totalSpent: stats.totalSpent,
+        });
+      });
+    }
+
+    return list;
+  }, [users, orders, userOrderStats]);
+
   const metrics = useMemo(() => {
-    const totalUsers = users?.length || 0;
-    const totalCoinsCirculation = users?.reduce((acc, u) => acc + (Number(u.purityCoins) || 0), 0) || 0;
+    const totalUsers = allKnownUsers.length;
+    const totalCoinsCirculation = allKnownUsers.reduce((acc, u) => acc + (Number(u.purityCoins) || 0), 0);
     const totalCoinsRedeemed = orders?.reduce((acc, o) => acc + (Number(o.purityCoinsRedeemed) || 0), 0) || 0;
     const totalOrdersCount = orders?.length || 0;
     return {
@@ -116,11 +175,10 @@ export default function AdminUsersPage() {
       totalCoinsRedeemed,
       totalOrdersCount,
     };
-  }, [users, orders]);
+  }, [allKnownUsers, orders]);
 
   const filteredUsers = useMemo(() => {
-    if (!users) return [];
-    return users.filter((u) => {
+    return allKnownUsers.filter((u) => {
       const name = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
       const email = (u.email || '').toLowerCase();
       const id = (u.id || '').toLowerCase();
@@ -134,12 +192,12 @@ export default function AdminUsersPage() {
       const coins = Number(u.purityCoins) || 0;
 
       if (filterType === 'high_coins') return coins >= 500;
-      if (filterType === 'has_orders') return (userStats?.count || 0) > 0;
+      if (filterType === 'has_orders') return (userStats?.count || u.orderCount || 0) > 0;
       if (filterType === 'zero_coins') return coins === 0;
 
       return true;
     });
-  }, [users, searchTerm, filterType, userOrderStats]);
+  }, [allKnownUsers, searchTerm, filterType, userOrderStats]);
 
   const handleCoinAdjustment = () => {
     if (!selectedUser) return;
@@ -154,10 +212,15 @@ export default function AdminUsersPage() {
       ? currentCoins + delta 
       : Math.max(0, currentCoins - delta);
 
-    updateDocumentNonBlocking(doc(db, 'userProfiles', selectedUser.id), {
+    setDoc(doc(db, 'userProfiles', selectedUser.id), {
+      id: selectedUser.id,
+      firstName: selectedUser.firstName || '',
+      lastName: selectedUser.lastName || '',
+      email: selectedUser.email || '',
+      phoneNumber: selectedUser.phoneNumber || '',
       purityCoins: newCoins,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
 
     addDocumentNonBlocking(collection(db, 'coinTransactions'), {
       userId: selectedUser.id,
@@ -251,7 +314,7 @@ export default function AdminUsersPage() {
               onClick={() => setFilterType('all')}
               className={cn("px-3 py-1 rounded-md font-medium transition-colors", filterType === 'all' ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground")}
             >
-              All ({users?.length || 0})
+              All ({allKnownUsers.length})
             </button>
             <button
               onClick={() => setFilterType('high_coins')}
@@ -293,7 +356,7 @@ export default function AdminUsersPage() {
               filteredUsers.map((u) => {
                 const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Valued Shopper';
                 const initials = fullName.substring(0, 2).toUpperCase();
-                const stats = userOrderStats[u.id] || { count: 0, totalSpent: 0 };
+                const stats = userOrderStats[u.id] || { count: u.orderCount || 0, totalSpent: u.totalSpent || 0 };
                 const coins = Number(u.purityCoins) || 0;
 
                 return (
@@ -306,8 +369,19 @@ export default function AdminUsersPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold text-xs text-foreground">{fullName}</p>
-                          <p className="text-[11px] text-muted-foreground truncate max-w-[150px]">{u.email}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-xs text-foreground">{fullName}</p>
+                            {u.source === 'registered' ? (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Registered
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                Order Customer
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate max-w-[180px]">{u.email}</p>
                         </div>
                       </div>
                     </TableCell>

@@ -12,7 +12,8 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   updateProfile,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  getAdditionalUserInfo
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -47,15 +48,19 @@ function LoginContent() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  const syncProfile = (u: any) => {
-    setDoc(doc(db, 'userProfiles', u.uid), {
+  const syncProfile = (u: any, isNewUser = false) => {
+    const profileData: any = {
       id: u.uid,
       firstName: u.displayName?.split(' ')[0] || (name ? name.split(' ')[0] : ''),
       lastName: u.displayName?.split(' ').slice(1).join(' ') || (name ? name.split(' ').slice(1).join(' ') : ''),
       email: u.email?.toLowerCase().trim(),
-      purityCoins: 500,
       updatedAt: new Date().toISOString()
-    }, { merge: true }).catch((err: any) => {
+    };
+    if (isNewUser) {
+      profileData.purityCoins = 500;
+      profileData.createdAt = new Date().toISOString();
+    }
+    setDoc(doc(db, 'userProfiles', u.uid), profileData, { merge: true }).catch((err: any) => {
       console.warn("Background profile sync notice:", err);
     });
   };
@@ -102,7 +107,7 @@ function LoginContent() {
         if (name) {
           updateProfile(result.user, { displayName: name }).catch(console.warn);
         }
-        syncProfile(result.user);
+        syncProfile(result.user, true);
         toast({ title: "Welcome!", description: "Account created successfully." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -130,7 +135,8 @@ function LoginContent() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      syncProfile(result.user);
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
+      syncProfile(result.user, isNewUser);
       toast({ title: "Welcome!", description: `Signed in as ${result.user.displayName || result.user.email}` });
       router.push(returnTo);
     } catch (err: any) {

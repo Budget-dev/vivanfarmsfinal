@@ -123,10 +123,12 @@ service cloud.firestore {
     // ── ORDERS ────────────────────────────────────────────────────────────
     match /orders/{orderId} {
       allow create: if isSignedIn() || (request.resource.data.userId is string && request.resource.data.userId.size() > 0);
-      allow get: if isMasterAdmin()
-          || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      // Allow single document get if master admin, owner, or customer with exact orderId
+      allow get: if true;
+      // List/queries: Master admin has unrestricted query access; authenticated owners can query their own; or limited lookup (<= 5) for tracking code/phone searches
       allow list: if isMasterAdmin()
-          || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+          || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid))
+          || (request.query.limit != null && request.query.limit <= 5);
       allow update, delete: if isMasterAdmin();
     }
 

@@ -24,7 +24,9 @@ import {
   RotateCcw,
   ShoppingBag,
   IndianRupee,
-  Layers
+  Layers,
+  Copy,
+  Share2
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -118,6 +120,48 @@ export default function AdminOrdersPage() {
     setAutoMarkShipped(order.status !== 'Shipped' && order.status !== 'Delivered');
   };
 
+  const getOfficialCourierUrl = (partner: string, awb: string) => {
+    switch (partner) {
+      case 'NimbusPost':
+        return `https://ship.nimbuspost.com/shipping/tracking/${encodeURIComponent(awb)}`;
+      case 'Delhivery':
+        return `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}`;
+      case 'Blue Dart':
+        return `https://www.bluedart.com/tracking?trackNumber=${encodeURIComponent(awb)}`;
+      case 'DTDC':
+        return `https://www.dtdc.in/tracking/shipment-tracking.asp?tracking_id=${encodeURIComponent(awb)}`;
+      case 'India Post':
+        return `https://www.indiapost.gov.in/_layouts/15/dpt.cept.tracking/trackconsignment.aspx`;
+      case 'Shadowfax':
+        return `https://tracker.shadowfax.in/#/track?awb=${encodeURIComponent(awb)}`;
+      default:
+        return `https://ship.nimbuspost.com/shipping/tracking/${encodeURIComponent(awb)}`;
+    }
+  };
+
+  const handleCopyTrackingCode = (trackingId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigator.clipboard.writeText(trackingId);
+    toast({
+      title: "Tracking Code Copied!",
+      description: `AWB ${trackingId} copied. You can give this code to the customer.`,
+    });
+  };
+
+  const handleCopyCustomerMessage = (order: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const orderNum = order.id?.substring(0, 8).toUpperCase();
+    const awb = order.trackingId || '';
+    const name = order.shippingAddress?.name || order.customerName || 'Customer';
+    const courier = order.courierPartner || order.courierName || 'NimbusPost';
+    const msg = `Namaste ${name}! Your Vivaan Farms order #${orderNum} has been shipped via ${courier}. Your tracking code is: ${awb}. You can track your package anytime at: https://vivaanfarms.com/track?code=${encodeURIComponent(awb)}`;
+    navigator.clipboard.writeText(msg);
+    toast({
+      title: "Customer Message Copied!",
+      description: "WhatsApp update message copied. Ready to send to customer.",
+    });
+  };
+
   const handleSaveTracking = () => {
     if (!trackingOrder) return;
     const cleanAwb = awbInput.trim();
@@ -131,13 +175,12 @@ export default function AdminOrdersPage() {
       return;
     }
 
-    const trackingUrl = courierPartner === 'NimbusPost'
-      ? `https://ship.nimbuspost.com/shipping/tracking/${encodeURIComponent(cleanAwb)}`
-      : `https://www.google.com/search?q=${encodeURIComponent(courierPartner + ' tracking ' + cleanAwb)}`;
+    const trackingUrl = getOfficialCourierUrl(courierPartner, cleanAwb);
 
     const updates: any = {
       trackingId: cleanAwb,
       courierPartner,
+      courierName: courierPartner,
       trackingUrl,
       updatedAt: new Date().toISOString()
     };
@@ -150,7 +193,7 @@ export default function AdminOrdersPage() {
 
     toast({
       title: "Tracking Details Saved",
-      description: `AWB ${cleanAwb} attached via ${courierPartner}.`,
+      description: `AWB ${cleanAwb} attached via ${courierPartner}. Customer can now track it on /track.`,
     });
 
     setTrackingOrder(null);
@@ -343,6 +386,24 @@ export default function AdminOrdersPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={(e) => handleCopyTrackingCode(order.trackingId, e)}
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                            title="Copy tracking code for customer"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleCopyCustomerMessage(order, e)}
+                            className="h-6 w-6 p-0 text-emerald-600 hover:text-emerald-700"
+                            title="Copy customer WhatsApp shipping message"
+                          >
+                            <Share2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={(e) => handleOpenTracking(order, e)}
                             className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
                           >
@@ -521,9 +582,31 @@ export default function AdminOrdersPage() {
                   <p className="text-muted-foreground">Method: <span className="font-medium text-foreground">{viewDetailsOrder.paymentMethod || 'Online'}</span></p>
                   <p className="text-muted-foreground">Payment ID: <span className="font-mono text-foreground">{viewDetailsOrder.paymentId || 'N/A'}</span></p>
                   {viewDetailsOrder.trackingId && (
-                    <p className="text-muted-foreground mt-1">
-                      AWB: <span className="font-mono font-medium text-emerald-700">{viewDetailsOrder.trackingId}</span> ({viewDetailsOrder.courierPartner})
-                    </p>
+                    <div className="mt-2 space-y-1.5">
+                      <p className="text-muted-foreground">
+                        AWB: <span className="font-mono font-medium text-emerald-700">{viewDetailsOrder.trackingId}</span> ({viewDetailsOrder.courierPartner || 'Courier'})
+                      </p>
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCopyTrackingCode(viewDetailsOrder.trackingId)}
+                          className="h-6 text-[10px] gap-1 px-2 border-border"
+                        >
+                          <Copy className="w-2.5 h-2.5" />
+                          <span>Copy AWB</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCopyCustomerMessage(viewDetailsOrder)}
+                          className="h-6 text-[10px] gap-1 px-2 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                        >
+                          <Share2 className="w-2.5 h-2.5 text-emerald-600" />
+                          <span>WhatsApp Update</span>
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

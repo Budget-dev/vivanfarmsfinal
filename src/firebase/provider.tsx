@@ -5,6 +5,7 @@ import type { FirebaseApp } from '@firebase/app';
 import type { Firestore } from '@firebase/firestore';
 import type { Auth, User } from '@firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
 interface FirebaseProviderProps {
@@ -81,6 +82,28 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       (firebaseUser: any) => { // Auth state determined
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+
+        // Ensure user is recorded in userProfiles collection so admin sees all signed users
+        if (firebaseUser?.uid && firestore) {
+          try {
+            const userDocRef = doc(firestore, 'userProfiles', firebaseUser.uid);
+            const nameParts = (firebaseUser.displayName || '').trim().split(' ');
+            const syncData: any = {
+              id: firebaseUser.uid,
+              email: (firebaseUser.email || '').toLowerCase().trim(),
+              updatedAt: new Date().toISOString()
+            };
+            if (nameParts[0]) syncData.firstName = nameParts[0];
+            if (nameParts.slice(1).join(' ')) syncData.lastName = nameParts.slice(1).join(' ');
+            if (firebaseUser.phoneNumber) syncData.phoneNumber = firebaseUser.phoneNumber;
+
+            setDoc(userDocRef, syncData, { merge: true }).catch((err: any) => {
+              console.warn("Background userProfile sync notice:", err);
+            });
+          } catch (syncErr) {
+            console.warn("User profile sync error:", syncErr);
+          }
+        }
       },
       (error: any) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
@@ -88,7 +111,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     );
     return () => unsubscribe(); // Cleanup
-  }, [auth]); // Depends on the auth instance
+  }, [auth, firestore]); // Depends on the auth and firestore instances
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
