@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
 import Image from 'next/image';
 import { 
   ChevronRight,
@@ -229,7 +230,12 @@ export default function ProductDetailsPage() {
       />
 
       {/* 3. MAIN PRODUCT SHOWCASE CONTAINER */}
-      <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
+      <motion.main 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8"
+      >
         
         {/* Dynamic Category Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap no-scrollbar">
@@ -285,7 +291,7 @@ export default function ProductDetailsPage() {
 
         </div>
 
-      </main>
+      </motion.main>
 
       {/* 4. 9:16 INSTAGRAM REELS & BEHIND-THE-SCENES VIDEO */}
       <ProductInstagramReelSection 

@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'motion/react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { 
   Star, 
@@ -502,11 +503,17 @@ function CategoryDetailPageContent() {
                     const inCart = cartIds.includes(p.id);
 
                     return (
-                      <Link
+                      <motion.div
                         key={p.id}
-                        href={`/product/${p.id}`}
-                        className="group bg-white rounded-xl sm:rounded-2xl border border-[#EAE3D2] overflow-hidden flex flex-col hover:shadow-md transition-all duration-300 relative"
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, delay: Math.min(idx * 0.03, 0.24) }}
+                        className="h-full flex flex-col"
                       >
+                        <Link
+                          href={`/product/${p.id}`}
+                          className="h-full group bg-white rounded-xl sm:rounded-2xl border border-[#EAE3D2] overflow-hidden flex flex-col hover:shadow-md transition-all duration-300 relative"
+                        >
                         {/* Top Image Container */}
                         <div className="relative w-full aspect-square bg-[#FAF7F2] overflow-hidden p-2 sm:p-4 flex items-center justify-center">
                           {/* Discount Pill Badge */}
@@ -646,6 +653,7 @@ function CategoryDetailPageContent() {
                           </div>
                         </div>
                       </Link>
+                    </motion.div>
                     );
                   })}
                 </div>

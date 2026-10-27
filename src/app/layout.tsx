@@ -38,7 +38,10 @@ export default function RootLayout({
     <html lang="en" className={`${oswald.variable}`} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/images/logo.png" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+        <link rel="preconnect" href="https://vivanfa.sirv.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://vivanfa.sirv.com" />
+        <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>

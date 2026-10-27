@@ -1,9 +1,7 @@
 "use client";
 
 import React from "react";
-const motion = {
-  span: ({ children, className }: any) => <span className={className}>{children}</span>,
-};
+import { motion } from "motion/react";
 
 interface VerticalCutRevealProps {
   children: string;

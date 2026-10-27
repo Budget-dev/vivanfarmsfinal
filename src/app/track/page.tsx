@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'motion/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
@@ -394,7 +395,12 @@ function TrackOrderContent() {
 
         {/* ── 2. Live Searched Order Result Card ── */}
         {searchedOrder && (
-          <div className="bg-white rounded-[24px] sm:rounded-[36px] border-2 border-primary/20 shadow-xl overflow-hidden mb-8 sm:mb-10 animate-in fade-in zoom-in-95 duration-200">
+          <motion.div 
+            initial={{ opacity: 0, y: 12, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25 }}
+            className="bg-white rounded-[24px] sm:rounded-[36px] border-2 border-primary/20 shadow-xl overflow-hidden mb-8 sm:mb-10"
+          >
             {/* Top Header */}
             <div className="bg-primary/5 p-5 sm:p-7 border-b border-primary/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
@@ -735,7 +741,7 @@ function TrackOrderContent() {
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* ── 3. Search Error / External Fallback ── */}
@@ -808,13 +814,19 @@ function TrackOrderContent() {
                 Your Order History ({orders.length})
               </h2>
             </div>
-            {orders.map((order) => {
+            {orders.map((order, idx) => {
               const trackingUrl = order.trackingUrl || (order.trackingId 
                 ? getCourierUrl(order.courierPartner || 'Vivaan Express', order.trackingId)
                 : null);
 
               return (
-                <div key={order.id} className="bg-white rounded-[22px] sm:rounded-[32px] overflow-hidden border border-primary/5 shadow-md hover:shadow-xl transition-all">
+                <motion.div 
+                  key={order.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: idx * 0.04 }}
+                  className="bg-white rounded-[22px] sm:rounded-[32px] overflow-hidden border border-primary/5 shadow-md hover:shadow-xl transition-all"
+                >
                   <div className="p-4 sm:p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
                     <div className="flex items-start md:items-center gap-3.5 sm:gap-5">
                       <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#F9F6EF] rounded-xl sm:rounded-2xl flex items-center justify-center text-primary group-hover:scale-105 transition-transform shrink-0">
@@ -905,7 +917,7 @@ function TrackOrderContent() {
                       )}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

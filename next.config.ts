@@ -3,6 +3,11 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: ['genkit', '@genkit-ai/googleai', '@genkit-ai/core', '@genkit-ai/flow'],
+  poweredByHeader: false,
+  compress: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns', 'clsx', 'tailwind-merge', 'motion'],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

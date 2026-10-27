@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
 import { Ticker } from '@/components/vivaan/Ticker';
@@ -35,9 +36,13 @@ export default function AboutPage() {
         />
       </div>
 
-      <main>
+      <motion.main
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
         <AboutSection3 />
-      </main>
+      </motion.main>
 
       <Footer />
       

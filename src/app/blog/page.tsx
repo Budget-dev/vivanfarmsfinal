@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
 import { Ticker } from '@/components/vivaan/Ticker';
@@ -106,8 +107,14 @@ export default function BlogPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10">
-            {BLOG_POSTS.map((post) => (
-              <article key={post.id} className="group cursor-pointer">
+            {BLOG_POSTS.map((post, idx) => (
+              <motion.article 
+                key={post.id} 
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: Math.min(idx * 0.06, 0.24) }}
+                className="group cursor-pointer"
+              >
                 <div className="relative aspect-[16/10] rounded-[24px] overflow-hidden mb-6 shadow-lg">
                   <Image 
                     src={post.image} 
@@ -134,7 +141,7 @@ export default function BlogPage() {
                     Read Journal <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>
-              </article>
+              </motion.article>
             ))}
           </div>
         </div>

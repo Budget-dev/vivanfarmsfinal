@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { Play } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export const VideoSection: React.FC = () => {
@@ -48,7 +49,7 @@ export const VideoSection: React.FC = () => {
                   
                   <div className="flex justify-center mt-2 md:mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-white/30 backdrop-blur-xl border border-white/50 flex items-center justify-center text-white">
-                      <i className="fa-solid fa-play ml-1 text-[8px] md:text-xs"></i>
+                      <Play className="w-3.5 h-3.5 md:w-5 md:h-5 fill-white text-white ml-0.5" />
                     </div>
                   </div>
                 </div>
@@ -56,7 +57,7 @@ export const VideoSection: React.FC = () => {
 
               <div className="absolute top-3 right-3 md:hidden">
                 <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-[8px] border border-white/10">
-                  <i className="fa-solid fa-play ml-0.5"></i>
+                  <Play className="w-3 h-3 fill-white text-white ml-0.5" />
                 </div>
               </div>
             </div>

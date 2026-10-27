@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
 import { Ticker } from '@/components/vivaan/Ticker';
@@ -41,7 +42,12 @@ export default function ContactPage() {
       <main className="py-6 sm:py-12 md:py-24">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-16 md:gap-24">
-            <div className="space-y-6 sm:space-y-12">
+            <motion.div 
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6 sm:space-y-12"
+            >
               <div className="space-y-3 sm:space-y-6">
                 <span className="text-[10px] font-black text-primary tracking-[3px] uppercase px-3.5 py-1.5 bg-primary/5 rounded-full inline-block">Contact Us</span>
                 <h1 className="font-headline text-2xl sm:text-5xl md:text-7xl font-extrabold text-primary leading-tight">Reach the Farm.</h1>
@@ -89,9 +95,14 @@ export default function ContactPage() {
                   Chat on WhatsApp
                 </a>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white p-6 sm:p-8 md:p-12 rounded-[28px] sm:rounded-[40px] shadow-xl border border-primary/5">
+            <motion.div 
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.08 }}
+              className="bg-white p-6 sm:p-8 md:p-12 rounded-[28px] sm:rounded-[40px] shadow-xl border border-primary/5"
+            >
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -140,7 +151,7 @@ export default function ContactPage() {
                   Send Message <Send className="w-4 h-4" />
                 </Button>
               </form>
-            </div>
+            </motion.div>
           </div>
         </div>
       </main>
