@@ -27,13 +27,7 @@ interface ProductPurchasePaneProps {
   onOpenCart?: () => void;
 }
 
-export const VIVAAN_BUFFALO_VARIANTS: ProductVariant[] = [
-  { s: '500mL Glass Jar', p: 1099, mrp: 1299, on: true },
-  { s: '1L Glass Jar', p: 2149, mrp: 2499, on: false },
-  { s: '2L (2 × 1L Glass Jars)', p: 4279, mrp: 4998, on: false },
-  { s: '5L Steel Dolchi', p: 9499, mrp: 10999, on: false },
-  { s: '15L Tin', p: 23999, mrp: 27999, on: false },
-];
+export const VIVAAN_BUFFALO_VARIANTS: ProductVariant[] = [];
 
 export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
   product,
@@ -51,18 +45,18 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
   // Use configured variants or reference defaults
   const vars: ProductVariant[] = Array.isArray(product?.vars) && product.vars.length > 0
     ? product.vars
-    : VIVAAN_BUFFALO_VARIANTS;
+    : [{ s: product?.vol || 'Standard', p: product?.price || 0, mrp: product?.mrpPrice || product?.price || 0, on: true }];
 
   // Helper to resolve variant price with fallback to product base price
   const getVariantPrice = (v?: ProductVariant): number => {
-    if (!v) return product.price > 0 ? product.price : (product.basePrice || 1099);
+    if (!v) return product?.price || (product as any)?.basePrice || 0;
     const vp = Number(v.p);
     if (vp > 0) return vp;
     const legacyPrice = Number((v as any).price);
     if (legacyPrice > 0) return legacyPrice;
-    if (product.price > 0) return product.price;
-    if (product.basePrice && product.basePrice > 0) return product.basePrice;
-    return 1099;
+    if (product?.price > 0) return product.price;
+    if ((product as any)?.basePrice && (product as any).basePrice > 0) return (product as any).basePrice;
+    return 0;
   };
 
   const currentVar: ProductVariant = vars.find((v: ProductVariant) => v.s === selectedSize) || vars[0];

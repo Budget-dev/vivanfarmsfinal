@@ -14,93 +14,6 @@ interface HealthyCombosSectionProps {
   cartIds?: (string | number)[];
 }
 
-const DEFAULT_COMBOS: Product[] = [
-  {
-    id: 'combo-ghee-twin-pack',
-    name: 'A2 Desi Gir Cow Ghee Twin Value Pack (2 x 500ml)',
-    cat: 'combo',
-    vol: '1000 ml (2 Jars)',
-    price: 1750,
-    mrpPrice: 2300,
-    rating: 5.0,
-    reviewCount: 520,
-    purityCoins: 175,
-    soldCountLabel: '2.4k sold',
-    stock: 60,
-    statusBadge: 'Save ₹550',
-    badges: ['Value Gift Pack'],
-    pi: 0,
-    imageUrls: ['/images/products/combo_pack.jpg'],
-    vars: [
-      { s: '2 x 500ml Jars', p: 1750, mrp: 2300, on: true }
-    ],
-    description: 'Double the goodness. Two premium glass jars of Vedic Bilona A2 Gir Cow Ghee at our lowest combo price.'
-  },
-  {
-    id: 'combo-oil-trio-pack',
-    name: 'Daily Cooking Wood-Pressed Oil Trio (Mustard + Groundnut + Sesame)',
-    cat: 'combo',
-    vol: '3 x 1 L Bottles',
-    price: 1399,
-    mrpPrice: 1750,
-    rating: 4.9,
-    reviewCount: 380,
-    purityCoins: 140,
-    soldCountLabel: '1.8k sold',
-    stock: 50,
-    statusBadge: 'Save ₹351',
-    badges: ['Chef Choice'],
-    pi: 1,
-    imageUrls: ['/images/products/mustard_oil.jpg'],
-    vars: [
-      { s: '3 x 1 L Set', p: 1399, mrp: 1750, on: true }
-    ],
-    description: 'Complete unrefined kitchen oil solution. Healthy monounsaturated fats extracted cold on wooden press.'
-  },
-  {
-    id: 'combo-immunity-duo',
-    name: 'Ayurvedic Immunity Duo (A2 Gir Ghee + Wild Forest Honey)',
-    cat: 'combo',
-    vol: '500ml + 450g',
-    price: 1450,
-    mrpPrice: 1850,
-    rating: 5.0,
-    reviewCount: 460,
-    purityCoins: 145,
-    soldCountLabel: '3.1k sold',
-    stock: 75,
-    statusBadge: 'Save ₹400',
-    badges: ['Immunity Special'],
-    pi: 2,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: 'Standard Set', p: 1450, mrp: 1850, on: true }
-    ],
-    description: 'Ancient Ayurvedic Rasayana: Pure A2 cultured ghee paired with raw wild unpasteurized forest honey.'
-  },
-  {
-    id: 'combo-master-pantry-box',
-    name: 'Vivaan Vedic Master Pantry Hamper (Ghee + 5L Oil + Honey)',
-    cat: 'combo',
-    vol: 'Family Hamper',
-    price: 3899,
-    mrpPrice: 4800,
-    rating: 4.9,
-    reviewCount: 210,
-    purityCoins: 390,
-    soldCountLabel: '940+ sold',
-    stock: 30,
-    statusBadge: 'Save ₹901',
-    badges: ['Mega Saver'],
-    pi: 3,
-    imageUrls: ['/images/products/groundnut_can.jpg'],
-    vars: [
-      { s: 'Full Pantry Hamper', p: 3899, mrp: 4800, on: true }
-    ],
-    description: 'Everything your family needs for a month of authentic, 100% pure chemical-free Vedic cooking.'
-  }
-];
-
 export const HealthyCombosSection: React.FC<HealthyCombosSectionProps> = ({
   products,
   onAddToCart,
@@ -113,10 +26,14 @@ export const HealthyCombosSection: React.FC<HealthyCombosSectionProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const comboProducts = React.useMemo(() => {
-    const fromProps = products.filter(p => p.cat === 'combo' || p.name.toLowerCase().includes('combo') || p.name.toLowerCase().includes('pack'));
-    if (fromProps.length >= 4) return fromProps;
-    return [...fromProps, ...DEFAULT_COMBOS.slice(fromProps.length)];
+    return products.filter(p => {
+      const cat = (p.cat || (p as any).categoryId || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      return cat === 'combo' || cat === 'combos' || name.includes('combo') || name.includes('pack') || name.includes('hamper');
+    });
   }, [products]);
+
+  if (comboProducts.length === 0) return null;
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

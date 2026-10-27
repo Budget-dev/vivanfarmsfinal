@@ -15,120 +15,6 @@ interface FocusOilsSectionProps {
   cartIds?: (string | number)[];
 }
 
-const DEFAULT_OILS: Product[] = [
-  {
-    id: 'oil-mustard-yellow',
-    name: 'Wood Pressed Yellow Mustard Oil (Kachi Ghani)',
-    cat: 'oils',
-    vol: '500 ml',
-    price: 360,
-    mrpPrice: 450,
-    rating: 4.9,
-    reviewCount: 420,
-    purityCoins: 36,
-    soldCountLabel: '2.8k sold',
-    stock: 50,
-    statusBadge: 'Cold-Pressed < 40°C',
-    badges: ['Bestseller'],
-    pi: 0,
-    imageUrls: ['/images/products/mustard_oil.jpg'],
-    vars: [
-      { s: '500 ml', p: 360, mrp: 450, on: true },
-      { s: '1 L', p: 680, mrp: 850, on: false },
-      { s: '5 L Can', p: 3200, mrp: 3900, on: false },
-    ],
-    description: 'Slow-pressed from indigenous yellow mustard seeds. Rich pungent aroma and natural golden color.'
-  },
-  {
-    id: 'oil-groundnut-cold',
-    name: 'Wood Pressed Groundnut Oil (Peanut Oil)',
-    cat: 'oils',
-    vol: '5 L Can',
-    price: 1850,
-    mrpPrice: 2200,
-    rating: 4.9,
-    reviewCount: 310,
-    purityCoins: 185,
-    soldCountLabel: '1.9k sold',
-    stock: 40,
-    statusBadge: 'Zero Palm Oil',
-    badges: ['Value Pack'],
-    pi: 1,
-    imageUrls: ['/images/products/groundnut_can.jpg'],
-    vars: [
-      { s: '1 L', p: 390, mrp: 480, on: false },
-      { s: '5 L Can', p: 1850, mrp: 2200, on: true },
-    ],
-    description: 'Heart-healthy cooking oil extracted from handpicked Saurashtra peanuts on traditional wooden kolhu.'
-  },
-  {
-    id: 'oil-mustard-black',
-    name: 'Cold Pressed Black Mustard Oil (Kachi Ghani)',
-    cat: 'oils',
-    vol: '1 L',
-    price: 340,
-    mrpPrice: 420,
-    rating: 4.8,
-    reviewCount: 280,
-    purityCoins: 34,
-    soldCountLabel: '3.4k sold',
-    stock: 65,
-    statusBadge: 'High Pungency',
-    badges: ['Tradition'],
-    pi: 2,
-    imageUrls: ['/images/products/mustard_oil.jpg'],
-    vars: [
-      { s: '500 ml', p: 180, mrp: 220, on: false },
-      { s: '1 L', p: 340, mrp: 420, on: true },
-    ],
-    description: 'Authentic bold pungent black mustard oil, stone-filtered with zero chemicals or artificial color.'
-  },
-  {
-    id: 'oil-virgin-coconut',
-    name: 'Extra Virgin Cold Pressed Coconut Oil',
-    cat: 'oils',
-    vol: '500 ml',
-    price: 490,
-    mrpPrice: 590,
-    rating: 5.0,
-    reviewCount: 195,
-    purityCoins: 49,
-    soldCountLabel: '980+ sold',
-    stock: 35,
-    statusBadge: 'Raw & Centrifuged',
-    badges: ['Multipurpose'],
-    pi: 3,
-    imageUrls: ['/images/products/mustard_oil.jpg'],
-    vars: [
-      { s: '500 ml', p: 490, mrp: 590, on: true },
-      { s: '1 L', p: 920, mrp: 1100, on: false },
-    ],
-    description: 'Prepared from fresh mature coconut kernel milk. Suitable for dietary consumption, oil pulling, and skin.'
-  },
-  {
-    id: 'oil-sesame-wood-pressed',
-    name: 'Wood Pressed Black Sesame Oil (Til Oil / Gingelly)',
-    cat: 'oils',
-    vol: '500 ml',
-    price: 440,
-    mrpPrice: 520,
-    rating: 4.9,
-    reviewCount: 230,
-    purityCoins: 44,
-    soldCountLabel: '1.4k sold',
-    stock: 55,
-    statusBadge: 'Vedic Cold-Pressed',
-    badges: ['Pure Gingelly'],
-    pi: 4,
-    imageUrls: ['/images/products/mustard_oil.jpg'],
-    vars: [
-      { s: '500 ml', p: 440, mrp: 520, on: true },
-      { s: '1 L', p: 850, mrp: 990, on: false },
-    ],
-    description: 'Cold-pressed from natural unpolished black sesame seeds on wooden churner. Rich in sesamol, zinc, and heart-healthy antioxidants.'
-  }
-];
-
 export const FocusOilsSection: React.FC<FocusOilsSectionProps> = ({
   products,
   onAddToCart,
@@ -144,14 +30,16 @@ export const FocusOilsSection: React.FC<FocusOilsSectionProps> = ({
 
   // Merge real oil products with default display products & filter by selected icon
   const oilProducts = React.useMemo(() => {
-    let pool = products.filter(p => p.cat === 'oils' || p.name.toLowerCase().includes('oil'));
-    if (pool.length < 5) {
-      pool = [...pool, ...DEFAULT_OILS.slice(pool.length)];
-    }
+    let pool = products.filter(p => {
+      const cat = (p.cat || (p as any).categoryId || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      return cat === 'oils' || cat === 'oil' || name.includes('oil');
+    });
     if (filterType === 'all') return pool;
-    const filtered = pool.filter(p => p.name.toLowerCase().includes(filterType) || p.id.includes(filterType));
-    return filtered.length > 0 ? filtered : pool;
+    return pool.filter(p => p.name.toLowerCase().includes(filterType) || p.id.includes(filterType));
   }, [products, filterType]);
+
+  if (oilProducts.length === 0) return null;
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

@@ -11,7 +11,6 @@ import {
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Product, ProductVariant } from '@/types';
-import { getProductById } from '@/lib/catalog';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
 import { Ticker } from '@/components/vivaan/Ticker';
@@ -19,8 +18,8 @@ import { CartSidebar } from '@/components/vivaan/CartSidebar';
 import { useCart } from '@/hooks/use-cart';
 import { useWishlist } from '@/hooks/use-wishlist';
 import { ProductReviewsSection } from '@/components/vivaan/ProductReviewsSection';
-import { ProductGallery, BUFFALO_GHEE_IMAGES } from '@/components/product/ProductGallery';
-import { ProductPurchasePane, VIVAAN_BUFFALO_VARIANTS } from '@/components/product/ProductPurchasePane';
+import { ProductGallery } from '@/components/product/ProductGallery';
+import { ProductPurchasePane } from '@/components/product/ProductPurchasePane';
 import { PurityGuaranteeSection } from '@/components/product/PurityGuaranteeSection';
 import { ComparisonSection } from '@/components/product/ComparisonSection';
 import { FarmJourneySection } from '@/components/product/FarmJourneySection';
@@ -29,85 +28,67 @@ import { StickyMobileBar } from '@/components/product/StickyMobileBar';
 import { ProductInstagramReelSection } from '@/components/product/ProductInstagramReelSection';
 import { cn } from '@/lib/utils';
 
-const DEFAULT_BUFFALO_GHEE_PRODUCT: Product = {
-  id: 'a2-desi-buffalo-ghee',
-  name: 'A2 Desi Buffalo Ghee',
-  cat: 'ghee',
-  price: 1099,
-  mrpPrice: 1299,
-  stock: 50,
-  purityCoins: 110,
-  rating: 4.9,
-  reviewCount: 1420,
-  soldCountLabel: '12.4k+ delivered',
-  statusBadge: 'Creamy',
-  vol: '500mL Glass Jar',
-  vars: VIVAAN_BUFFALO_VARIANTS,
-  imageUrls: BUFFALO_GHEE_IMAGES,
-  badges: ['Creamy', '100% Vedic Bilona', 'Double Lab Tested'],
-  description: 'Experience the richest, most satisfying ghee India has ever produced.',
-};
-
 export default function ProductDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const db = useFirestore();
 
-  // Firestore Live Query for real-time document overrides
+  // Firestore Live Query for real-time document
   const productRef = useMemoFirebase(() => id ? doc(db, 'products', id as string) : null, [db, id]);
-  const { data: dbProduct } = useDoc(productRef);
+  const { data: dbProduct, isLoading } = useDoc(productRef);
   
   // Cart & Wishlist hooks
   const { cart, addToCart, setBuyNowItem, updateQty, removeFromCart, totalQty } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
-  // Pre-resolve catalog match for immediate correct variant initialization
-  const initialCatalogMatch = useMemo(() => getProductById(id as string), [id]);
-  const initialDefaultVar = initialCatalogMatch?.vars?.find((v: ProductVariant) => v.on) || initialCatalogMatch?.vars?.[0];
-  const initialVariantSize = initialDefaultVar?.s || initialCatalogMatch?.vol || 'Standard';
+  // Resolve pure Firestore product data
+  const product: Product | null = useMemo(() => {
+    if (!dbProduct) return null;
+
+    const basePrice = Number(dbProduct.basePrice) || Number(dbProduct.price) || 0;
+    const mrpPrice = Number(dbProduct.mrpPrice) || basePrice;
+    const cat = (dbProduct.categoryId || dbProduct.cat || 'products').toLowerCase();
+
+    const rawVars: ProductVariant[] = Array.isArray(dbProduct.vars) && dbProduct.vars.length > 0
+      ? dbProduct.vars
+      : [{
+          s: dbProduct.vol || (dbProduct.volumeValue ? `${dbProduct.volumeValue}${dbProduct.volumeUnit || ''}` : 'Standard'),
+          p: basePrice,
+          mrp: mrpPrice,
+          on: true
+        }];
+
+    const imageUrls: string[] = Array.isArray(dbProduct.imageUrls) && dbProduct.imageUrls.length > 0
+      ? dbProduct.imageUrls.filter(Boolean)
+      : ['/images/products/ghee_tin.jpg'];
+
+    return {
+      ...dbProduct,
+      id: dbProduct.id || (id as string),
+      name: dbProduct.name || 'Product',
+      cat: cat,
+      price: basePrice,
+      mrpPrice: mrpPrice,
+      stock: dbProduct.stockQuantity !== undefined ? Number(dbProduct.stockQuantity) : (dbProduct.stock !== undefined ? Number(dbProduct.stock) : 50),
+      purityCoins: dbProduct.purityCoins ? Number(dbProduct.purityCoins) : Math.round(basePrice * 0.1),
+      rating: Number(dbProduct.rating) || 4.9,
+      reviewCount: Number(dbProduct.reviewCount) || 120,
+      soldCountLabel: dbProduct.soldCountLabel || 'Pure & Natural',
+      statusBadge: dbProduct.statusBadge || 'Farm Fresh',
+      vol: dbProduct.vol || rawVars[0]?.s || 'Standard',
+      vars: rawVars,
+      imageUrls: imageUrls,
+      badges: Array.isArray(dbProduct.badges) ? dbProduct.badges : [],
+      description: dbProduct.description || '',
+    } as Product;
+  }, [dbProduct, id]);
 
   // Interactive States
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [qty, setQty] = useState(1);
-  const [selectedSize, setSelectedSize] = useState<string>(initialVariantSize);
+  const [selectedSize, setSelectedSize] = useState<string>('Standard');
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-
-  // Instant zero-delay resolution from catalog, with seamless Firestore overrides
-  const product: Product = useMemo(() => {
-    const catalogMatch = getProductById(id as string);
-
-    if (dbProduct) {
-      const basePrice = Number(dbProduct.basePrice) || Number(dbProduct.price) || (catalogMatch?.price ?? 1099);
-      const rawVars = Array.isArray(dbProduct.vars) && dbProduct.vars.length > 0 
-        ? dbProduct.vars 
-        : (catalogMatch?.vars ?? VIVAAN_BUFFALO_VARIANTS);
-
-      return {
-        ...DEFAULT_BUFFALO_GHEE_PRODUCT,
-        ...(catalogMatch || {}),
-        ...dbProduct,
-        id: dbProduct.id || (id as string),
-        name: dbProduct.name || catalogMatch?.name || 'A2 Desi Buffalo Ghee',
-        price: basePrice,
-        vars: rawVars,
-        imageUrls: Array.isArray(dbProduct.imageUrls) && dbProduct.imageUrls.length > 0
-          ? dbProduct.imageUrls
-          : (catalogMatch?.imageUrls ?? BUFFALO_GHEE_IMAGES)
-      } as Product;
-    }
-
-    if (catalogMatch) {
-      return {
-        ...DEFAULT_BUFFALO_GHEE_PRODUCT,
-        ...catalogMatch,
-        id: catalogMatch.id || (id as string),
-      } as Product;
-    }
-
-    // Default authentic Vivaan product representation
-    return DEFAULT_BUFFALO_GHEE_PRODUCT;
-  }, [dbProduct, id]);
 
   // Synchronize default variant and images when product loads or updates
   useEffect(() => {
@@ -124,20 +105,45 @@ export default function ProductDetailsPage() {
 
   // Active Variant & Pricing Calculations
   const getVariantPrice = (v?: ProductVariant): number => {
-    if (!v) return product.price > 0 ? product.price : (product.basePrice || 1099);
+    if (!product) return 0;
+    if (!v) return product.price > 0 ? product.price : ((product as any).basePrice || 0);
     const vp = Number(v.p);
     if (vp > 0) return vp;
     const legacyPrice = Number((v as any).price);
     if (legacyPrice > 0) return legacyPrice;
     if (product.price > 0) return product.price;
-    if (product.basePrice && product.basePrice > 0) return product.basePrice;
-    return 1099;
+    if ((product as any).basePrice && (product as any).basePrice > 0) return (product as any).basePrice;
+    return 0;
   };
 
-  const currentVar: ProductVariant = product.vars.find((v: ProductVariant) => v.s === selectedSize) || product.vars[0];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex flex-col justify-center items-center">
+        <div className="w-12 h-12 border-4 border-[#0D3B2E]/20 border-t-[#0D3B2E] rounded-full animate-spin mb-4" />
+        <p className="text-sm font-medium text-[#0D3B2E] tracking-wider uppercase">Loading product...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex flex-col justify-center items-center px-4 text-center">
+        <h2 className="font-serif text-2xl font-bold text-[#0D3B2E] mb-2">Product Not Found</h2>
+        <p className="text-sm text-gray-600 mb-6">The product you are looking for does not exist or is currently unavailable.</p>
+        <button
+          onClick={() => router.push('/category/all')}
+          className="px-6 py-2.5 bg-[#0D3B2E] text-white rounded-full font-bold text-xs uppercase tracking-wider hover:bg-[#124e3f] transition-all cursor-pointer"
+        >
+          Browse All Products
+        </button>
+      </div>
+    );
+  }
+
+  const currentVar: ProductVariant = (product.vars && product.vars.find((v: ProductVariant) => v.s === selectedSize)) || (product.vars && product.vars[0]) || { s: 'Standard', p: product.price, on: true };
   const displayPrice = getVariantPrice(currentVar);
   const isWishlisted = isInWishlist(product.id);
-  const galleryImages = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : BUFFALO_GHEE_IMAGES;
+  const galleryImages = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : ['/images/products/ghee_tin.jpg'];
   const activeImageSrc = galleryImages[selectedImgIndex] || galleryImages[0];
 
   // Cart quantity count for this specific product & size
@@ -217,14 +223,14 @@ export default function ProductDetailsPage() {
       {/* 3. MAIN PRODUCT SHOWCASE CONTAINER */}
       <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
         
-        {/* Breadcrumb Navigation */}
+        {/* Dynamic Category Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap no-scrollbar">
           <span className="cursor-pointer hover:text-[#0D3B2E] transition-colors" onClick={() => router.push('/')}>
             Home
           </span>
           <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-          <span className="cursor-pointer hover:text-[#0D3B2E] transition-colors uppercase">
-            A2 Ghee
+          <span className="cursor-pointer hover:text-[#0D3B2E] transition-colors uppercase" onClick={() => router.push(`/category/${product.cat}`)}>
+            {product.cat}
           </span>
           <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
           <span className="text-[#0D3B2E] font-extrabold truncate max-w-[200px] sm:max-w-none">

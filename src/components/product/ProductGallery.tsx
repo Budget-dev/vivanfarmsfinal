@@ -5,16 +5,7 @@ import Image from 'next/image';
 import { Heart, Share2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export const BUFFALO_GHEE_IMAGES = [
-  '/products/buffalo-ghee/1_hero.jpg',
-  '/products/buffalo-ghee/2_why_choose.jpg',
-  '/products/buffalo-ghee/3_farm_to_doorstep.jpg',
-  '/products/buffalo-ghee/4_how_made.jpg',
-  '/products/buffalo-ghee/5_health_benefits.jpg',
-  '/products/buffalo-ghee/6_founder_story.jpg',
-  '/products/buffalo-ghee/7_comparison.jpg',
-  '/products/buffalo-ghee/8_customer_reviews.jpg',
-];
+export const BUFFALO_GHEE_IMAGES: string[] = ['/images/products/ghee_tin.jpg'];
 
 interface ProductGalleryProps {
   images?: string[];
@@ -47,7 +38,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
 }) => {
   const displayImages = images && images.length > 0 && images.some(img => !!img) 
     ? images.filter(Boolean) 
-    : BUFFALO_GHEE_IMAGES;
+    : ['/images/products/ghee_tin.jpg'];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const touchStartXRef = useRef<number | null>(null);

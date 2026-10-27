@@ -77,14 +77,14 @@ function CategoryDetailPageContent() {
   const { cart, addToCart, updateQty, removeFromCart, totalQty } = useCart();
   const cartIds = useMemo(() => cart.map(c => c.id), [cart]);
 
-  // Merge Firestore products with rich default catalog
+  // Live Firestore products only
   const masterProducts = useMemo(() => {
-    if (!dbProducts || dbProducts.length === 0) return ALL_PRODUCTS;
-    const mapped = dbProducts
+    if (!dbProducts || dbProducts.length === 0) return [];
+    return dbProducts
       .filter(p => p.isLive !== false)
       .map((p, i) => {
-        const catId = (p.categoryId || 'uncategorized').toLowerCase();
-        const basePrice = Number(p.basePrice) || 0;
+        const catId = (p.categoryId || p.cat || 'uncategorized').toLowerCase();
+        const basePrice = Number(p.basePrice) || Number(p.price) || 0;
         return {
           ...p,
           cat: catId,
@@ -101,13 +101,9 @@ function CategoryDetailPageContent() {
           imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0 ? p.imageUrls : ['/images/products/ghee_tin.jpg'],
           vars: Array.isArray(p.vars) && p.vars.length > 0 
             ? p.vars 
-            : [{ s: 'Standard', p: basePrice, on: true }]
+            : [{ s: 'Standard', p: basePrice, mrp: Number(p.mrpPrice) || basePrice, on: true }]
         } as Product;
       });
-
-    const existingIds = new Set(mapped.map(m => m.id));
-    const fallbacks = ALL_PRODUCTS.filter(d => !existingIds.has(d.id));
-    return [...mapped, ...fallbacks];
   }, [dbProducts]);
 
   // Find active category metadata
@@ -452,7 +448,7 @@ function CategoryDetailPageContent() {
                     {searchQuery && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#0D3B2E]/10 text-[#0D3B2E] font-bold text-[11px]">
                         <Search className="w-3 h-3" />
-                        <span>"{searchQuery}"</span>
+                        <span>&ldquo;{searchQuery}&rdquo;</span>
                         <button 
                           onClick={clearSearch} 
                           className="hover:text-red-600 transition-colors cursor-pointer ml-0.5"

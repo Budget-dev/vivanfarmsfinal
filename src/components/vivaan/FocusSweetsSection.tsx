@@ -14,121 +14,6 @@ interface FocusSweetsSectionProps {
   cartIds?: (string | number)[];
 }
 
-const DEFAULT_SWEETS: Product[] = [
-  {
-    id: 'sweets-handmade-ladoo',
-    name: 'Home made sweets (Artisanal Bilona Ghee Laddus)',
-    cat: 'sweets',
-    vol: '500 g',
-    price: 450,
-    mrpPrice: 550,
-    rating: 4.9,
-    reviewCount: 120,
-    purityCoins: 45,
-    soldCountLabel: '1.2k sold',
-    stock: 55,
-    statusBadge: 'Freshly Prepared',
-    badges: ['Bestseller', 'No Refined Sugar'],
-    pi: 4,
-    imageUrls: ['/images/products/sweets.jpg'],
-    vars: [
-      { s: '250 g', p: 240, mrp: 290, on: false },
-      { s: '500 g', p: 450, mrp: 550, on: true },
-      { s: '1 kg (1000g)', p: 850, mrp: 1050, on: false },
-    ],
-    description: 'Traditional slow-roasted besan and dry fruit gond laddus made strictly with our in-house A2 Gir Bilona Ghee and organic dhaga mishri.'
-  },
-  {
-    id: 'sweets-motichoor-peda',
-    name: 'Vedic Mathura Peda & Dry Fruit Barfi Assortment',
-    cat: 'sweets',
-    vol: '500 g',
-    price: 520,
-    mrpPrice: 620,
-    rating: 5.0,
-    reviewCount: 95,
-    purityCoins: 52,
-    soldCountLabel: '850+ sold',
-    stock: 40,
-    statusBadge: 'A2 Gir Khoya Base',
-    badges: ['Festive Pick'],
-    pi: 5,
-    imageUrls: ['/images/products/sweets.jpg'],
-    vars: [
-      { s: '250 g', p: 280, mrp: 330, on: false },
-      { s: '500 g', p: 520, mrp: 620, on: true },
-      { s: '1 kg', p: 980, mrp: 1190, on: false },
-    ],
-    description: 'Prepared by simmering whole A2 Gir milk on iron kadhai. Naturally flavored with crushed green cardamom and Kashmiri saffron.'
-  },
-  {
-    id: 'sweets-gond-laddu',
-    name: 'Pure A2 Gir Bilona Ghee Gond Dry-Fruit Laddu',
-    cat: 'sweets',
-    vol: '500 g',
-    price: 480,
-    mrpPrice: 580,
-    rating: 4.9,
-    reviewCount: 160,
-    purityCoins: 48,
-    soldCountLabel: '980+ sold',
-    stock: 45,
-    statusBadge: 'Winter Vitality',
-    badges: ['Artisanal Batch'],
-    pi: 6,
-    imageUrls: ['/images/products/sweets.jpg'],
-    vars: [
-      { s: '250 g', p: 260, mrp: 310, on: false },
-      { s: '500 g', p: 480, mrp: 580, on: true },
-      { s: '1 kg', p: 920, mrp: 1120, on: false },
-    ],
-    description: 'Immunity-rich gond, California almonds, cashew nuts, and organic jaggery slow-churned in fresh A2 Bilona Ghee.'
-  },
-  {
-    id: 'sweets-kaju-katli',
-    name: 'Vedic Jaggery Kaju Katli (Pure A2 Ghee Touch)',
-    cat: 'sweets',
-    vol: '400 g',
-    price: 640,
-    mrpPrice: 760,
-    rating: 5.0,
-    reviewCount: 210,
-    purityCoins: 64,
-    soldCountLabel: '1.4k sold',
-    stock: 35,
-    statusBadge: 'Silver Vark Free',
-    badges: ['No Refined Sugar'],
-    pi: 7,
-    imageUrls: ['/images/products/sweets.jpg'],
-    vars: [
-      { s: '400 g', p: 640, mrp: 760, on: true },
-      { s: '800 g', p: 1250, mrp: 1480, on: false },
-    ],
-    description: 'Crafted with premium whole Goa cashews and natural jaggery syrup. 100% vegetarian, chemical-free and meltingly tender.'
-  },
-  {
-    id: 'sweets-festive-hamper',
-    name: 'Royal Heritage A2 Ghee Sweets Celebration Hamper',
-    cat: 'sweets',
-    vol: '1 kg Box',
-    price: 990,
-    mrpPrice: 1250,
-    rating: 5.0,
-    reviewCount: 340,
-    purityCoins: 99,
-    soldCountLabel: '2.1k sold',
-    stock: 50,
-    statusBadge: 'Gift Pack',
-    badges: ['Festive Bestseller'],
-    pi: 8,
-    imageUrls: ['/images/products/sweets.jpg'],
-    vars: [
-      { s: '1 kg Box', p: 990, mrp: 1250, on: true },
-    ],
-    description: 'An exquisite curation of handcrafted Bilona Ghee Laddus, Mathura Peda, and Kaju dry fruit sweets in a luxury gift box.'
-  }
-];
-
 export const FocusSweetsSection: React.FC<FocusSweetsSectionProps> = ({
   products,
   onAddToCart,
@@ -142,23 +27,17 @@ export const FocusSweetsSection: React.FC<FocusSweetsSectionProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const sweetsProducts = useMemo(() => {
-    const isSweet = (p: Product) => {
-      const cat = p.cat?.toLowerCase() || '';
-      const name = p.name?.toLowerCase() || '';
-      const id = p.id?.toLowerCase() || '';
-      return cat === 'sweets' || name.includes('sweet') || name.includes('ladoo') || 
+    return products.filter(p => {
+      const cat = (p.cat || (p as any).categoryId || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const id = (p.id || '').toLowerCase();
+      return cat === 'sweets' || cat === 'sweet' || name.includes('sweet') || name.includes('ladoo') || 
              name.includes('laddu') || name.includes('peda') || name.includes('barfi') || 
              name.includes('katli') || id.includes('sweet');
-    };
-
-    let pool = products.filter(isSweet);
-    if (pool.length < 5) {
-      const existingIds = new Set(pool.map(p => p.id));
-      const fallbacks = DEFAULT_SWEETS.filter(d => !existingIds.has(d.id));
-      pool = [...pool, ...fallbacks];
-    }
-    return pool;
+    });
   }, [products]);
+
+  if (sweetsProducts.length === 0) return null;
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

@@ -14,94 +14,6 @@ interface SuperfoodsSectionProps {
   cartIds?: (string | number)[];
 }
 
-const DEFAULT_SUPERFOODS: Product[] = [
-  {
-    id: 'honey-wild-forest',
-    name: 'Raw Unprocessed Wild Forest Honey',
-    cat: 'honey',
-    vol: '450 g',
-    price: 490,
-    mrpPrice: 590,
-    rating: 5.0,
-    reviewCount: 780,
-    purityCoins: 49,
-    soldCountLabel: '4.8k sold',
-    stock: 90,
-    statusBadge: 'Unpasteurized & Raw',
-    badges: ['Wild Harvest'],
-    pi: 0,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '450 g', p: 490, mrp: 590, on: true },
-      { s: '1 kg', p: 950, mrp: 1150, on: false }
-    ],
-    description: 'Ethically harvested from wild bee colonies in Gujarat and Himachal deciduous forests. Rich pollen enzymes.'
-  },
-  {
-    id: 'honey-multifloral-raw',
-    name: 'Raw Multifloral Blossom Honey',
-    cat: 'honey',
-    vol: '500 g',
-    price: 440,
-    mrpPrice: 520,
-    rating: 4.9,
-    reviewCount: 390,
-    purityCoins: 44,
-    soldCountLabel: '2.1k sold',
-    stock: 70,
-    statusBadge: 'Nectar Rich',
-    badges: ['Pure Forest'],
-    pi: 1,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '500 g', p: 440, mrp: 520, on: true }
-    ],
-    description: 'Collected from mustard, acacia, and wild berry blossom meadows. Light amber hue with delicate floral sweetness.'
-  },
-  {
-    id: 'superfood-jaggery-powder',
-    name: 'Organic Vedic Desi Jaggery Powder (Shakkar)',
-    cat: 'staples',
-    vol: '1 kg',
-    price: 180,
-    mrpPrice: 240,
-    rating: 4.8,
-    reviewCount: 460,
-    purityCoins: 18,
-    soldCountLabel: '6.2k sold',
-    stock: 150,
-    statusBadge: 'Zero Sulphur',
-    badges: ['Everyday Essential'],
-    pi: 2,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '1 kg', p: 180, mrp: 240, on: true }
-    ],
-    description: 'Made from certified organic single-origin sugarcane. Natural mineral-dense sweetener with zero chemical bleaching.'
-  },
-  {
-    id: 'superfood-khandsari-sugar',
-    name: 'Traditional Desi Bilona Khandsari Sugar',
-    cat: 'staples',
-    vol: '1 kg',
-    price: 210,
-    mrpPrice: 280,
-    rating: 4.9,
-    reviewCount: 310,
-    purityCoins: 21,
-    soldCountLabel: '3.4k sold',
-    stock: 85,
-    statusBadge: 'Unrefined Crystal',
-    badges: ['Heritage Sugar'],
-    pi: 3,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '1 kg', p: 210, mrp: 280, on: true }
-    ],
-    description: 'Artisanal unrefined raw sugar crystallized naturally without bone char, chemicals, or synthetic clarifiers.'
-  }
-];
-
 export const SuperfoodsSection: React.FC<SuperfoodsSectionProps> = ({
   products,
   onAddToCart,
@@ -114,10 +26,14 @@ export const SuperfoodsSection: React.FC<SuperfoodsSectionProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const superfoodProducts = React.useMemo(() => {
-    const fromProps = products.filter(p => p.cat === 'honey' || p.cat === 'staples' || p.cat === 'superfoods' || p.name.toLowerCase().includes('honey'));
-    if (fromProps.length >= 4) return fromProps;
-    return [...fromProps, ...DEFAULT_SUPERFOODS.slice(fromProps.length)];
+    return products.filter(p => {
+      const cat = (p.cat || (p as any).categoryId || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      return cat === 'honey' || cat === 'staples' || cat === 'superfoods' || name.includes('honey');
+    });
   }, [products]);
+
+  if (superfoodProducts.length === 0) return null;
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

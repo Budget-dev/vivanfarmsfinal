@@ -14,99 +14,6 @@ interface FocusGheeSectionProps {
   cartIds?: (string | number)[];
 }
 
-const DEFAULT_GHEE: Product[] = [
-  {
-    id: 'ghee-gir-tin-1l',
-    name: 'A2 Desi Gir Cow Cultured Bilona Ghee (Heritage Tin)',
-    cat: 'ghee',
-    vol: '1000 ml (1 L)',
-    price: 1850,
-    mrpPrice: 2200,
-    rating: 5.0,
-    reviewCount: 940,
-    purityCoins: 185,
-    soldCountLabel: '5.2k sold',
-    stock: 80,
-    statusBadge: 'Traditional Metal Tin',
-    badges: ['Top Rated'],
-    pi: 0,
-    imageUrls: ['/images/products/ghee_tin.jpg'],
-    vars: [
-      { s: '500 ml', p: 980, mrp: 1150, on: false },
-      { s: '1000 ml (1 L)', p: 1850, mrp: 2200, on: true },
-      { s: '5000 ml (5 L)', p: 8900, mrp: 10500, on: false },
-    ],
-    description: 'Slow-cooked over slow wood fire in earthen pots, made from cultured A2 Gir curd using the two-way wooden bilona.'
-  },
-  {
-    id: 'ghee-gir-jar-500ml',
-    name: 'A2 Desi Gir Cow Cultured Bilona Ghee (Glass Jar)',
-    cat: 'ghee',
-    vol: '500 ml',
-    price: 980,
-    mrpPrice: 1150,
-    rating: 4.9,
-    reviewCount: 1420,
-    purityCoins: 98,
-    soldCountLabel: '8.4k sold',
-    stock: 120,
-    statusBadge: 'Golden Granular Danedar',
-    badges: ['Bestseller'],
-    pi: 1,
-    imageUrls: ['/images/products/ghee_jar.jpg'],
-    vars: [
-      { s: '250 ml', p: 520, mrp: 600, on: false },
-      { s: '500 ml', p: 980, mrp: 1150, on: true },
-      { s: '1000 ml (1 L)', p: 1850, mrp: 2200, on: false },
-    ],
-    description: 'Golden granular texture with intoxicating nutty aroma. High in natural CLA, butyric acid, and fat-soluble vitamins.'
-  },
-  {
-    id: 'ghee-buffalo-murrah-1l',
-    name: 'Vedic Pure Desi Murrah Buffalo Ghee (Bilona)',
-    cat: 'ghee',
-    vol: '1000 ml (1 L)',
-    price: 1350,
-    mrpPrice: 1600,
-    rating: 4.9,
-    reviewCount: 680,
-    purityCoins: 135,
-    soldCountLabel: '3.1k sold',
-    stock: 90,
-    statusBadge: 'High Smoke Point',
-    badges: ['Heritage'],
-    pi: 2,
-    imageUrls: ['/images/products/ghee_tin.jpg'],
-    vars: [
-      { s: '500 ml', p: 720, mrp: 850, on: false },
-      { s: '1000 ml (1 L)', p: 1350, mrp: 1600, on: true },
-    ],
-    description: 'Handcrafted from grass-fed Murrah buffalo whole milk curd. Creamy white granular texture with deep richness.'
-  },
-  {
-    id: 'ghee-hallikar-cow-500ml',
-    name: 'Native Hallikar Cow Vedic Ghee (Rare Breed)',
-    cat: 'ghee',
-    vol: '500 ml',
-    price: 1150,
-    mrpPrice: 1350,
-    rating: 4.9,
-    reviewCount: 290,
-    purityCoins: 115,
-    soldCountLabel: '1.1k sold',
-    stock: 45,
-    statusBadge: 'Rare Indigenous Breed',
-    badges: ['Artisanal'],
-    pi: 3,
-    imageUrls: ['/images/products/ghee_jar.jpg'],
-    vars: [
-      { s: '500 ml', p: 1150, mrp: 1350, on: true },
-      { s: '1000 ml (1 L)', p: 2150, mrp: 2500, on: false },
-    ],
-    description: 'Sourced from agile indigenous Hallikar cows grazing on wild herbal shrubs. Intense therapeutic qualities.'
-  }
-];
-
 export const FocusGheeSection: React.FC<FocusGheeSectionProps> = ({
   products,
   onAddToCart,
@@ -121,14 +28,17 @@ export const FocusGheeSection: React.FC<FocusGheeSectionProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const gheeProducts = React.useMemo(() => {
-    let pool = products.filter(p => p.cat === 'ghee' || p.name.toLowerCase().includes('ghee'));
-    if (pool.length < 5) {
-      pool = [...pool, ...DEFAULT_GHEE.slice(pool.length)];
-    }
+    let pool = products.filter(p => {
+      const cat = (p.cat || (p as any).categoryId || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const id = (p.id || '').toLowerCase();
+      return cat === 'ghee' || name.includes('ghee') || id.includes('ghee');
+    });
     if (filterType === 'all') return pool;
-    const filtered = pool.filter(p => p.name.toLowerCase().includes(filterType) || p.id.includes(filterType));
-    return filtered.length > 0 ? filtered : pool;
+    return pool.filter(p => p.name.toLowerCase().includes(filterType) || p.id.includes(filterType));
   }, [products, filterType]);
+
+  if (gheeProducts.length === 0) return null;
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

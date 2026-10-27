@@ -14,121 +14,6 @@ interface FocusHoneySectionProps {
   cartIds?: (string | number)[];
 }
 
-const DEFAULT_HONEY: Product[] = [
-  {
-    id: 'honey-wild-forest',
-    name: 'Raw Unprocessed Wild Forest Honey (Ethical Hive Harvest)',
-    cat: 'honey',
-    vol: '500 ml',
-    price: 850,
-    mrpPrice: 999,
-    rating: 4.9,
-    reviewCount: 120,
-    purityCoins: 85,
-    soldCountLabel: '4.8k sold',
-    stock: 90,
-    statusBadge: 'Selling Fast',
-    badges: ['15% OFF', 'Unpasteurized & Raw'],
-    pi: 6,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '250 g', p: 450, mrp: 520, on: false },
-      { s: '500 ml', p: 850, mrp: 999, on: true },
-      { s: '1 kg', p: 1550, mrp: 1850, on: false },
-    ],
-    description: 'Ethically harvested from wild bee colonies in Gujarat and Himachal deciduous forests. Rich in pollen enzymes and natural minerals.'
-  },
-  {
-    id: 'honey-jamun-raw',
-    name: 'Raw Organic Jamun Monofloral Honey',
-    cat: 'honey',
-    vol: '500 g',
-    price: 540,
-    mrpPrice: 650,
-    rating: 4.8,
-    reviewCount: 310,
-    purityCoins: 54,
-    soldCountLabel: '1.7k sold',
-    stock: 50,
-    statusBadge: 'Low Glycemic Index',
-    badges: ['Single Origin'],
-    pi: 7,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '500 g', p: 540, mrp: 650, on: true },
-      { s: '1 kg', p: 990, mrp: 1200, on: false },
-    ],
-    description: 'Gathered by honeybees foraging exclusively on flowering Indian Blackberry (Jamun) trees. Deep amber color with herbal undertones.'
-  },
-  {
-    id: 'honey-multiflora-himalayan',
-    name: 'Pure Himalayan Multiflora Raw Forest Honey',
-    cat: 'honey',
-    vol: '500 g',
-    price: 490,
-    mrpPrice: 590,
-    rating: 4.9,
-    reviewCount: 230,
-    purityCoins: 49,
-    soldCountLabel: '2.3k sold',
-    stock: 75,
-    statusBadge: 'High Pollen Count',
-    badges: ['Wild Harvest'],
-    pi: 8,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '250 g', p: 270, mrp: 330, on: false },
-      { s: '500 g', p: 490, mrp: 590, on: true },
-      { s: '1 kg', p: 940, mrp: 1140, on: false },
-    ],
-    description: 'Collected from wildflower pastures of the pristine lower Himalayan belt. Golden hue with a delicate floral bouquet.'
-  },
-  {
-    id: 'honey-eucalyptus-neem',
-    name: 'Raw Wild Eucalyptus & Neem Flora Honey',
-    cat: 'honey',
-    vol: '500 g',
-    price: 580,
-    mrpPrice: 690,
-    rating: 4.9,
-    reviewCount: 180,
-    purityCoins: 58,
-    soldCountLabel: '1.5k sold',
-    stock: 60,
-    statusBadge: 'Ayurvedic Tonic',
-    badges: ['Naturally Antibacterial'],
-    pi: 9,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '500 g', p: 580, mrp: 690, on: true },
-      { s: '1 kg', p: 1080, mrp: 1290, on: false },
-    ],
-    description: 'Infused with therapeutic nectar from indigenous Eucalyptus and medicinal Neem blooms. Deep woodsy taste and potent bio-activity.'
-  },
-  {
-    id: 'honey-acacia-blossom',
-    name: 'Rare Kashmir White Acacia Blossom Honey',
-    cat: 'honey',
-    vol: '500 g',
-    price: 650,
-    mrpPrice: 780,
-    rating: 5.0,
-    reviewCount: 140,
-    purityCoins: 65,
-    soldCountLabel: '920+ sold',
-    stock: 40,
-    statusBadge: 'Ultra Pure & Clear',
-    badges: ['Rare Reserve'],
-    pi: 10,
-    imageUrls: ['/images/products/honey_jar.jpg'],
-    vars: [
-      { s: '500 g', p: 650, mrp: 780, on: true },
-      { s: '1 kg', p: 1200, mrp: 1450, on: false },
-    ],
-    description: 'Exceptionally light and mild acacia nectar harvested during early spring blossom. Doesn’t crystallize easily and retains fresh sweet undertones.'
-  }
-];
-
 export const FocusHoneySection: React.FC<FocusHoneySectionProps> = ({
   products,
   onAddToCart,
@@ -142,21 +27,15 @@ export const FocusHoneySection: React.FC<FocusHoneySectionProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const honeyProducts = useMemo(() => {
-    const isHoney = (p: Product) => {
-      const cat = p.cat?.toLowerCase() || '';
-      const name = p.name?.toLowerCase() || '';
-      const id = p.id?.toLowerCase() || '';
+    return products.filter(p => {
+      const cat = (p.cat || (p as any).categoryId || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const id = (p.id || '').toLowerCase();
       return cat === 'honey' || name.includes('honey') || id.includes('honey');
-    };
-
-    let pool = products.filter(isHoney);
-    if (pool.length < 5) {
-      const existingIds = new Set(pool.map(p => p.id));
-      const fallbacks = DEFAULT_HONEY.filter(d => !existingIds.has(d.id));
-      pool = [...pool, ...fallbacks];
-    }
-    return pool;
+    });
   }, [products]);
+
+  if (honeyProducts.length === 0) return null;
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
