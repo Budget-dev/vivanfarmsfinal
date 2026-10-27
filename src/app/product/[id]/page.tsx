@@ -65,7 +65,8 @@ export default function ProductDetailsPage() {
     return {
       ...dbProduct,
       id: dbProduct.id || (id as string),
-      name: dbProduct.name || 'Product',
+      name: dbProduct.name || dbProduct.title || 'Product',
+      title: dbProduct.title || dbProduct.name || 'Product',
       cat: cat,
       price: basePrice,
       mrpPrice: mrpPrice,
@@ -78,9 +79,16 @@ export default function ProductDetailsPage() {
       vol: dbProduct.vol || rawVars[0]?.s || 'Standard',
       vars: rawVars,
       imageUrls: imageUrls,
+      reels: Array.isArray(dbProduct.reels) ? dbProduct.reels : [],
+      videoUrl: dbProduct.videoUrl || (dbProduct.reels?.[0]?.videoUrl || ''),
       badges: Array.isArray(dbProduct.badges) ? dbProduct.badges : [],
       description: dbProduct.description || '',
-    } as Product;
+      ingredients: Array.isArray(dbProduct.ingredients) ? dbProduct.ingredients : (dbProduct.ingredients ? [dbProduct.ingredients] : []),
+      benefits: Array.isArray(dbProduct.benefits) ? dbProduct.benefits : (dbProduct.benefits ? [dbProduct.benefits] : []),
+      howMade: dbProduct.howMade || '',
+      cookingCare: dbProduct.cookingCare || '',
+      isLive: dbProduct.isLive !== false,
+    } as any;
   }, [dbProduct, id]);
 
   // Interactive States

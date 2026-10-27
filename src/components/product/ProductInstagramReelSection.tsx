@@ -48,48 +48,78 @@ export const ProductInstagramReelSection: React.FC<ProductInstagramReelSectionPr
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Curate 9:16 reels for this product
-  const reels: ReelItem[] = [
-    {
-      id: 'bilona-churning',
-      title: 'Sacred Bilona Churning',
-      subtitle: 'Gujarat Organic Farm',
-      videoUrl: product.videoUrl || DEFAULT_VIDEO_URL,
-      posterUrl: product.imageUrls?.[0] || '/images/products/ghee_tin.jpg',
-      caption: `Slow-churning whole cultured dahi with wooden bilona in earthen mitti pots over gentle firewood 🔥🏺 100% natural aroma & golden granules. Experience the authentic Vedic nutrition!`,
-      likesCount: 4892,
-      commentsCount: 184,
-      sharesCount: 521,
-      viewsLabel: '28.4k',
-      tag: product.name || 'A2 Desi Ghee'
-    },
-    {
-      id: 'ethical-milking',
-      title: 'Ethical Open Pasture Grazing',
-      subtitle: 'Happy Indigenous Cattle',
-      videoUrl: DEFAULT_VIDEO_URL,
-      posterUrl: product.imageUrls?.[1] || product.imageUrls?.[0] || '/images/products/ghee_tin.jpg',
-      caption: `Our Murrah buffaloes and Gir cows graze in lush chemical-free open pastures. Calves are nurtured first before milking by hand with unconditional love 🌾🐄`,
-      likesCount: 3640,
-      commentsCount: 112,
-      sharesCount: 389,
-      viewsLabel: '19.7k',
-      tag: '100% Cruelty-Free'
-    },
-    {
-      id: 'golden-crystals',
-      title: 'Danedar Golden Crystals',
-      subtitle: 'Unfiltered Purity',
-      videoUrl: DEFAULT_VIDEO_URL,
-      posterUrl: product.imageUrls?.[2] || product.imageUrls?.[0] || '/images/products/ghee_tin.jpg',
-      caption: `Notice the golden granulations (danedar texture) that liquefy at natural body temperature. Zero palm oil, zero chemical bleaching. Certified double-tested purity in every jar 💛✨`,
-      likesCount: 6120,
-      commentsCount: 265,
-      sharesCount: 840,
-      viewsLabel: '34.2k',
-      tag: 'Lab Certified 100%'
+  // Curate 9:16 reels for this product - prioritized from admin configuration
+  const reels: ReelItem[] = React.useMemo(() => {
+    if (Array.isArray((product as any).reels) && (product as any).reels.length > 0) {
+      return (product as any).reels.map((r: any, idx: number) => {
+        // Ensure reel title matches product as requested by user
+        const baseTitle = r.title || 'In Action';
+        const prodName = product.name || 'Product';
+        const reelTitle = baseTitle.toLowerCase().includes(prodName.toLowerCase()) 
+          ? baseTitle 
+          : `${prodName} — ${baseTitle}`;
+
+        return {
+          id: r.id || `reel-${idx}`,
+          title: reelTitle,
+          subtitle: r.subtitle || 'Farm Fresh & Authentic',
+          videoUrl: r.videoUrl || product.videoUrl || DEFAULT_VIDEO_URL,
+          posterUrl: r.posterUrl || product.imageUrls?.[idx % (product.imageUrls?.length || 1)] || '/images/products/ghee_tin.jpg',
+          caption: r.caption || `Experience authentic farm-direct ${product.name}. 100% pure ingredients crafted with traditional love and care.`,
+          likesCount: Number(r.likesCount) || (3500 + idx * 850),
+          commentsCount: Number(r.commentsCount) || (120 + idx * 45),
+          sharesCount: Number(r.sharesCount) || (250 + idx * 70),
+          viewsLabel: r.viewsLabel || `${(18.5 + idx * 6.2).toFixed(1)}k`,
+          tag: r.tag || product.name
+        };
+      });
     }
-  ];
+
+    const primaryImg = product.imageUrls?.[0] || '/images/products/ghee_tin.jpg';
+    const prodName = product.name || 'A2 Desi Farm Product';
+
+    return [
+      {
+        id: 'reel-1',
+        title: `${prodName} — Sacred Process`,
+        subtitle: 'Gujarat Organic Farm',
+        videoUrl: product.videoUrl || DEFAULT_VIDEO_URL,
+        posterUrl: primaryImg,
+        caption: `Slow-crafted with pure dedication and authentic farm tradition. Experience the genuine nutrition and natural richness of ${prodName}! 🔥🌿`,
+        likesCount: 4892,
+        commentsCount: 184,
+        sharesCount: 521,
+        viewsLabel: '28.4k',
+        tag: prodName
+      },
+      {
+        id: 'reel-2',
+        title: `${prodName} — Purity Tested`,
+        subtitle: '100% Cruelty-Free',
+        videoUrl: DEFAULT_VIDEO_URL,
+        posterUrl: product.imageUrls?.[1] || primaryImg,
+        caption: `Every batch of ${prodName} is double lab tested for 100% purity with zero artificial chemicals or adulteration. Certified farm fresh! 🌾🐄`,
+        likesCount: 3640,
+        commentsCount: 112,
+        sharesCount: 389,
+        viewsLabel: '19.7k',
+        tag: prodName
+      },
+      {
+        id: 'reel-3',
+        title: `${prodName} — Kitchen Fresh`,
+        subtitle: 'Unfiltered Goodness',
+        videoUrl: DEFAULT_VIDEO_URL,
+        posterUrl: product.imageUrls?.[2] || primaryImg,
+        caption: `Hand-packed in food-grade packaging and delivered straight from our farm to your kitchen in record time. Pure heritage goodness for your family 💛✨`,
+        likesCount: 6120,
+        commentsCount: 265,
+        sharesCount: 840,
+        viewsLabel: '34.2k',
+        tag: prodName
+      }
+    ];
+  }, [product]);
 
   const scrollLeft = () => {
     if (scrollRef.current) {

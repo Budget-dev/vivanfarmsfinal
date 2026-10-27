@@ -13,6 +13,20 @@ export interface ProductVariant {
   on?: boolean; // default selected
 }
 
+export interface ProductReel {
+  id: string;
+  title: string;
+  subtitle?: string;
+  videoUrl: string;
+  posterUrl?: string;
+  caption?: string;
+  likesCount?: number;
+  commentsCount?: number;
+  sharesCount?: number;
+  viewsLabel?: string;
+  tag?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -43,6 +57,11 @@ export interface Product {
   videoUrl?: string;
   ingredients?: string[];
   benefits?: string[];
+  reels?: ProductReel[];
+  howMade?: string;
+  cookingCare?: string;
+  isLive?: boolean;
+  stockQuantity?: number;
 }
 
 export interface UniversalCoupon {

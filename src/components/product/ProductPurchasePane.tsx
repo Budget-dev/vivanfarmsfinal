@@ -89,12 +89,18 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
       title: 'WHY IT TASTES BETTER',
       content: (
         <div className="space-y-2 text-xs sm:text-sm text-gray-700 leading-relaxed">
-          <p>
-            Traditional Bilona ghee has a naturally sweet, nutty aroma and a distinct golden granular (danedar) texture that factory machine-made ghee can never duplicate.
-          </p>
-          <p>
-            Because we slow-simmer hand-churned makkhan over gentle firewood in small batches, the milk solids caramelize organically, developing an irresistible rich flavor that elevates every dal, roti, and sweet.
-          </p>
+          {product.description ? (
+            <p className="whitespace-pre-line">{product.description}</p>
+          ) : (
+            <>
+              <p>
+                Traditional Bilona ghee has a naturally sweet, nutty aroma and a distinct golden granular (danedar) texture that factory machine-made ghee can never duplicate.
+              </p>
+              <p>
+                Because we slow-simmer hand-churned makkhan over gentle firewood in small batches, the milk solids caramelize organically, developing an irresistible rich flavor.
+              </p>
+            </>
+          )}
         </div>
       )
     },
@@ -103,12 +109,20 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
       title: 'WHAT’S INSIDE',
       content: (
         <div className="space-y-2 text-xs sm:text-sm text-gray-700 leading-relaxed">
-          <ul className="list-disc pl-5 space-y-1">
-            <li><strong>100% Pure Cultured Milk Fat</strong> derived exclusively from A2 indigenous buffalo milk.</li>
-            <li><strong>Rich in Butyric Acid</strong> — a potent short-chain fatty acid that repairs gut lining and aids digestion.</li>
-            <li><strong>Natural Fat-Soluble Vitamins</strong>: High concentrations of natural Vitamins A, D, E, and K2.</li>
-            <li><strong>Zero Additives</strong>: No palm oil, no chemical preservatives, no synthetic colorants.</li>
-          </ul>
+          {Array.isArray((product as any).ingredients) && (product as any).ingredients.length > 0 ? (
+            <ul className="list-disc pl-5 space-y-1">
+              {(product as any).ingredients.map((ing: string, i: number) => (
+                <li key={i}><strong>{ing}</strong></li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>100% Pure Cultured Milk Fat</strong> derived exclusively from indigenous milk.</li>
+              <li><strong>Rich in Butyric Acid</strong> — a potent short-chain fatty acid that repairs gut lining.</li>
+              <li><strong>Natural Fat-Soluble Vitamins</strong>: High concentrations of natural Vitamins A, D, E, and K2.</li>
+              <li><strong>Zero Additives</strong>: No palm oil, no chemical preservatives, no synthetic colorants.</li>
+            </ul>
+          )}
         </div>
       )
     },
@@ -117,14 +131,20 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
       title: 'HOW IT’S MADE',
       content: (
         <div className="space-y-2 text-xs sm:text-sm text-gray-700 leading-relaxed">
-          <p>We preserve the sacred 5-step Vedic Bilona process:</p>
-          <ol className="list-decimal pl-5 space-y-1.5 font-medium">
-            <li><strong>Ethical Milking</strong>: Buffaloes graze freely in open pastures and are milked by hand with care.</li>
-            <li><strong>Boiling & Culturing</strong>: Fresh milk is boiled gently and cultured overnight in mitti pots into whole-curd dahi.</li>
-            <li><strong>Bi-directional Churning</strong>: Cultured curd is churned with wooden bilona to separate raw makkhan.</li>
-            <li><strong>Slow Firewood Simmering</strong>: The makkhan is slow-cooked over firewood until clear golden ghee crystals form.</li>
-            <li><strong>Airtight Glass Packing</strong>: Strained through fine muslin cloth directly into food-grade glass jars.</li>
-          </ol>
+          {(product as any).howMade ? (
+            <p className="whitespace-pre-line">{(product as any).howMade}</p>
+          ) : (
+            <>
+              <p>We preserve the sacred Vedic process:</p>
+              <ol className="list-decimal pl-5 space-y-1.5 font-medium">
+                <li><strong>Ethical Milking</strong>: Pasture-fed cattle raised with calf-first ethical care.</li>
+                <li><strong>Boiling & Culturing</strong>: Milk is boiled and cultured overnight in earthen pots.</li>
+                <li><strong>Bi-directional Churning</strong>: Cultured curd churned with wooden bilona.</li>
+                <li><strong>Slow Firewood Simmering</strong>: Simmered over firewood until clear golden aroma forms.</li>
+                <li><strong>Airtight Glass Packing</strong>: Sealed in sterilized food-grade packaging.</li>
+              </ol>
+            </>
+          )}
         </div>
       )
     },
@@ -133,12 +153,20 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
       title: 'RESULTS YOU’LL NOTICE',
       content: (
         <div className="space-y-2 text-xs sm:text-sm text-gray-700 leading-relaxed">
-          <ul className="list-disc pl-5 space-y-1">
-            <li><strong>Smooth, Easy Digestion</strong>: Extremely gentle on the stomach without post-meal lethargy.</li>
-            <li><strong>Sustained Daily Stamina</strong>: Clean healthy fats fuel deep brain function and cellular energy.</li>
-            <li><strong>Enhanced Nutrient Bioavailability</strong>: Fat-soluble nutrients from spices and herbs absorb up to 3x better.</li>
-            <li><strong>Glowing Skin & Joint Lubrication</strong>: Natural Ayurvedic lubrication from within.</li>
-          </ul>
+          {Array.isArray((product as any).benefits) && (product as any).benefits.length > 0 ? (
+            <ul className="list-disc pl-5 space-y-1">
+              {(product as any).benefits.map((ben: string, i: number) => (
+                <li key={i}><strong>{ben}</strong></li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Smooth, Easy Digestion</strong>: Extremely gentle on the stomach without post-meal lethargy.</li>
+              <li><strong>Sustained Daily Stamina</strong>: Clean healthy fats fuel deep brain function and cellular energy.</li>
+              <li><strong>Enhanced Nutrient Bioavailability</strong>: Fat-soluble nutrients absorb up to 3x better.</li>
+              <li><strong>Glowing Skin & Joint Lubrication</strong>: Natural Ayurvedic lubrication from within.</li>
+            </ul>
+          )}
         </div>
       )
     },
@@ -147,15 +175,15 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
       title: 'COOKING & CARE',
       content: (
         <div className="space-y-2 text-xs sm:text-sm text-gray-700 leading-relaxed">
-          <p>
-            <strong>Storage</strong>: Store at room temperature in a dry place. Always use a clean, dry spoon. Does not require refrigeration.
-          </p>
-          <p>
-            <strong>High Smoke Point</strong>: Smoke point of 250°C (482°F) makes it ideal for roasting, sautéing, tadka, and frying without smoke or oxidation.
-          </p>
-          <p>
-            <strong>Granular Texture</strong>: Naturally granulates in cooler conditions and liquefies in warmth — proof of 100% pure authentic bilona ghee.
-          </p>
+          {(product as any).cookingCare ? (
+            <p className="whitespace-pre-line">{(product as any).cookingCare}</p>
+          ) : (
+            <>
+              <p><strong>Storage</strong>: Store at room temperature in a dry place. Always use a clean, dry spoon. Does not require refrigeration.</p>
+              <p><strong>High Smoke Point</strong>: Smoke point of 250°C (482°F) makes it ideal for roasting, sautéing, tadka, and frying without smoke.</p>
+              <p><strong>Granular Texture</strong>: Naturally granulates in cooler conditions and liquefies in warmth — proof of 100% pure authentic bilona process.</p>
+            </>
+          )}
         </div>
       )
     }
@@ -167,7 +195,7 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
       {/* 1. Pill Badge & Title & Price (Exact match to reference screenshots) */}
       <div>
         <span className="inline-block bg-[#F8D279] text-[#1E293B] font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-          Creamy
+          {product.statusBadge || (product.badges && product.badges[0]) || 'Pure & Authentic'}
         </span>
 
         <h1 className="font-serif font-black text-2xl sm:text-3xl md:text-4xl text-[#B93826] tracking-tight leading-tight capitalize">
