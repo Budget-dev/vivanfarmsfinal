@@ -217,6 +217,15 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cart,
             >
               Proceed to Checkout <ArrowRight className="w-4 h-4" />
             </Button>
+
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="w-full mt-3 h-12 border border-[#DDD0B5] hover:border-[#0D3520] bg-transparent hover:bg-[#F9F6EF] text-[#0D3520] rounded-full text-xs md:text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all shadow-xs"
+            >
+              Keep Shopping
+            </Button>
           </div>
         )}
       </div>

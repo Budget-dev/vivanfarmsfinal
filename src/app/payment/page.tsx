@@ -221,7 +221,7 @@ export default function PaymentPage() {
         currency: order.currency || 'INR',
         name: "Vivaan Farms",
         description: "Vedic A2 Organic Farm Direct Order",
-        image: "https://vivanfa.sirv.com/Group%2066%20(2).png",
+        image: "/images/logo.png",
         order_id: order.id,
         handler: async function (response: any) {
           try {

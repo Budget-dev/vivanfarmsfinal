@@ -29,7 +29,7 @@ import { StickyMobileBar } from '@/components/product/StickyMobileBar';
 import { ProductInstagramReelSection } from '@/components/product/ProductInstagramReelSection';
 import { cn } from '@/lib/utils';
 
-export const DEFAULT_BUFFALO_GHEE_PRODUCT: Product = {
+const DEFAULT_BUFFALO_GHEE_PRODUCT: Product = {
   id: 'a2-desi-buffalo-ghee',
   name: 'A2 Desi Buffalo Ghee',
   cat: 'ghee',
@@ -141,8 +141,29 @@ export default function ProductDetailsPage() {
   const activeImageSrc = galleryImages[selectedImgIndex] || galleryImages[0];
 
   // Cart quantity count for this specific product & size
-  const cartItem = cart.find(c => c.id === product.id && (c.vol === selectedSize || !c.vol));
+  const normalizeSize = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const selectedNorm = normalizeSize(selectedSize);
+
+  const cartItem = cart.find(c => {
+    if (c.id !== product.id) return false;
+    if (!c.vol || !selectedSize) return true;
+    return normalizeSize(c.vol) === selectedNorm;
+  }) || cart.find(c => c.id === product.id);
+
   const cartCountForThisProduct = cartItem ? cartItem.qty : 0;
+
+  const handleUpdateCartQty = (delta: number) => {
+    if (!cartItem) {
+      if (delta > 0) handleAddToCart();
+      return;
+    }
+    const newQty = cartItem.qty + delta;
+    if (newQty <= 0) {
+      removeFromCart(cartItem.id, cartItem.vol);
+    } else {
+      updateQty(cartItem.id, cartItem.vol, delta);
+    }
+  };
 
   // Add to Cart handler
   const handleAddToCart = () => {
@@ -243,6 +264,7 @@ export default function ProductDetailsPage() {
                 cartCountForThisProduct={cartCountForThisProduct}
                 onAddToCart={handleAddToCart}
                 onBuyNow={handleBuyNow}
+                onOpenCart={() => setIsCartOpen(true)}
               />
             </div>
           </div>
@@ -285,8 +307,11 @@ export default function ProductDetailsPage() {
         selectedSize={selectedSize}
         qty={qty}
         pricePerUnit={displayPrice}
+        cartCount={cartCountForThisProduct}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
+        onUpdateCartQty={handleUpdateCartQty}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       {/* 10. FULLSCREEN LIGHTBOX MODAL */}

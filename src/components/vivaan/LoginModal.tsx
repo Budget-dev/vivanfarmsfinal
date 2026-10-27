@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { X, Mail, Lock, LogIn, User as UserIcon } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
 import { 
@@ -176,8 +177,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white mb-4 sm:mb-6 shadow-lg shadow-opacity-5 border border-gray-100">
-          <LogIn className="w-6 h-6 sm:w-7 sm:h-7 text-black" />
+        <div className="relative w-36 h-10 mb-4">
+          <Image
+            src="/images/logo.png"
+            alt="Vivaan Farms"
+            fill
+            className="object-contain"
+          />
         </div>
 
         <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-center">

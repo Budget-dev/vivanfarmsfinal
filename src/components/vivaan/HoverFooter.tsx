@@ -48,9 +48,9 @@ export const HoverFooter: React.FC = () => {
           {/* Brand section */}
           <div className="flex flex-col space-y-6">
             <div className="flex items-center space-x-3">
-              <div className="w-44 h-14 relative brightness-0 invert">
+              <div className="w-44 h-14 relative">
                 <Image 
-                  src="https://vivanfa.sirv.com/Group%2066%20(2).png"
+                  src="/images/logo-white.png"
                   alt="Vivaan Farms Logo"
                   fill
                   className="object-contain object-left"

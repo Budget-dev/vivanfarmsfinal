@@ -41,7 +41,14 @@ import { useToast } from '@/hooks/use-toast';
 import { LoginModal } from './LoginModal';
 import { cn } from '@/lib/utils';
 import { ErrorCard } from '@/components/ui/ErrorCard';
-import { format } from 'date-fns';
+const formatDate = (val: string | number | Date) => {
+  try {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return '';
+  }
+};
 
 interface ProductReviewsSectionProps {
   productId: string;
@@ -675,7 +682,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
                       </div>
 
                       <span className="text-[10px] font-bold text-[#7A6848]/60 uppercase tracking-wider shrink-0">
-                        {format(new Date(rev.createdAt), 'MMM d, yyyy')}
+                        {formatDate(rev.createdAt)}
                       </span>
                     </div>
 

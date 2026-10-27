@@ -95,19 +95,18 @@ export const AdminSidebarContent: React.FC<AdminSidebarContentProps> = ({ isMobi
     <div className="flex flex-col h-full bg-zinc-950 text-zinc-100 select-none">
       {/* Brand Header */}
       <div className="p-6 pb-4 border-b border-zinc-900/80">
-        <Link href="/admin" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-950 flex items-center justify-center p-2 text-white shadow-lg shadow-emerald-900/30 ring-1 ring-emerald-500/20 group-hover:scale-105 transition-transform">
-            <ShieldCheck className="w-6 h-6 text-emerald-300" />
+        <Link href="/admin" className="flex items-center justify-between gap-3 group">
+          <div className="relative h-8 w-36">
+            <Image
+              src="/images/logo-white.png"
+              alt="Vivaan Farms"
+              fill
+              className="object-contain object-left"
+            />
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm tracking-tight text-white">Vivaan Farms</span>
-              <Badge variant="outline" className="text-[10px] uppercase font-mono tracking-wider border-emerald-500/30 text-emerald-400 bg-emerald-500/10 px-1.5 py-0 h-4">
-                Admin
-              </Badge>
-            </div>
-            <span className="text-[11px] text-zinc-400 font-medium">Control Center</span>
-          </div>
+          <Badge variant="outline" className="text-[10px] uppercase font-mono tracking-wider border-emerald-500/30 text-emerald-400 bg-emerald-500/10 px-1.5 py-0 h-4 shrink-0">
+            Admin
+          </Badge>
         </Link>
       </div>
 

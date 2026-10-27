@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
             {/* Brand Logo */}
             <div className="relative h-9 sm:h-11 md:h-13 w-[120px] sm:w-[145px] md:w-[170px] flex items-center">
               <Image
-                src="https://vivanfa.sirv.com/Group%2066%20(2).png"
+                src="/images/logo.png"
                 alt="Vivaan Farms"
                 fill
                 priority
@@ -285,14 +285,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
               <div className="absolute top-[-30px] right-[-30px] w-32 h-32 rounded-full bg-white/5 pointer-events-none"></div>
               <div className="flex items-center gap-3 mb-4 relative z-10">
                 {/* Mobile Menu Brand Signature */}
-                <div className="w-40 h-12 relative brightness-0 invert">
+                <Link href="/" onClick={() => setMobileMenuOpen(false)} className="w-40 h-12 relative block">
                    <Image 
-                    src="https://vivanfa.sirv.com/Group%2066%20(2).png"
+                    src="/images/logo-white.png"
                     alt="Vivaan Farms"
                     fill
+                    priority
                     className="object-contain object-left"
                   />
-                </div>
+                </Link>
               </div>
               
               {user ? (

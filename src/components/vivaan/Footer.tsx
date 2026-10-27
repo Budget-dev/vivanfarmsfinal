@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Phone, 
   Mail, 
@@ -37,22 +38,14 @@ export const Footer: React.FC = () => {
           
           {/* Column 1: Brand & Contact */}
           <div className="lg:col-span-2 space-y-3 md:space-y-4">
-            <div className="flex items-center gap-2.5 md:gap-3">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#144D3D] border border-[#8CD790]/30 flex items-center justify-center text-white font-serif font-black shadow-xs shrink-0">
-                <svg viewBox="0 0 40 40" className="w-5 h-5 md:w-6 md:h-6 text-[#8CD790]" fill="currentColor">
-                  <path d="M20 5 C28 5 35 12 35 20 C35 28 28 35 20 35 C12 35 5 28 5 20 C5 12 12 5 20 5 Z M20 9 C14 9 9 14 9 20 C9 26 14 31 20 31 C26 31 31 26 31 20 C31 14 26 9 20 9 Z" fill="#F8D279" />
-                  <path d="M20 12 C23 15 25 18 24 22 C23 26 19 28 16 26 C13 24 13 20 16 17 C18 15 19 13 20 12 Z" fill="#0D3B2E" />
-                </svg>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-serif font-black text-lg md:text-xl text-white tracking-tight leading-none">
-                  VIVAAN
-                </span>
-                <span className="text-[8px] md:text-[9px] font-black text-[#F8D279] tracking-[2.5px] uppercase mt-0.5">
-                  ORGANIC FARMS
-                </span>
-              </div>
-            </div>
+            <Link href="/" className="inline-block relative h-12 w-48 mb-1">
+              <Image
+                src="/images/logo-white.png"
+                alt="Vivaan Farms"
+                fill
+                className="object-contain object-left"
+              />
+            </Link>
 
             <p className="text-[11px] md:text-sm text-emerald-100/80 leading-relaxed max-w-sm">
               Reviving authentic Vedic food traditions from our native soil to your table. Handcrafted A2 Gir Cow Bilona Ghee, cold wood-pressed unrefined oils, and raw forest honey with zero chemicals.

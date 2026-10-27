@@ -7,7 +7,9 @@ import {
   ChevronDown, 
   Truck, 
   ShieldCheck, 
-  CreditCard
+  CreditCard,
+  Check,
+  ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -22,6 +24,7 @@ interface ProductPurchasePaneProps {
   cartCountForThisProduct: number;
   onAddToCart: () => void;
   onBuyNow: () => void;
+  onOpenCart?: () => void;
 }
 
 export const VIVAAN_BUFFALO_VARIANTS: ProductVariant[] = [
@@ -40,7 +43,8 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
   onQtyChange,
   cartCountForThisProduct,
   onAddToCart,
-  onBuyNow
+  onBuyNow,
+  onOpenCart
 }) => {
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
@@ -309,14 +313,38 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
           </div>
 
           {/* Add to Cart button */}
-          <Button
-            type="button"
-            onClick={onAddToCart}
-            className="flex-1 h-[48px] bg-white border-2 border-[#0D3B2E] text-[#0D3B2E] hover:bg-[#0D3B2E] hover:text-white rounded-xl font-extrabold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-xs"
-          >
-            ADD TO CART
-          </Button>
+          {cartCountForThisProduct > 0 ? (
+            <Button
+              type="button"
+              onClick={onAddToCart}
+              className="flex-1 h-[48px] bg-[#EBF5EE] border-2 border-[#2D6A4F] text-[#0D3B2E] hover:bg-[#0D3B2E] hover:text-white rounded-xl font-extrabold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+            >
+              <Check className="w-4 h-4 text-emerald-700 stroke-[3]" />
+              <span>{cartCountForThisProduct} IN CART • ADD MORE</span>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={onAddToCart}
+              className="flex-1 h-[48px] bg-white border-2 border-[#0D3B2E] text-[#0D3B2E] hover:bg-[#0D3B2E] hover:text-white rounded-xl font-extrabold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-xs"
+            >
+              ADD TO CART
+            </Button>
+          )}
         </div>
+
+        {cartCountForThisProduct > 0 && onOpenCart && (
+          <div className="flex justify-end pt-0.5">
+            <button
+              type="button"
+              onClick={onOpenCart}
+              className="text-xs font-bold text-[#0D3B2E] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>View In Cart ({cartCountForThisProduct} added) →</span>
+            </button>
+          </div>
+        )}
 
         {/* BUY NOW Button with Payment Icons */}
         <button

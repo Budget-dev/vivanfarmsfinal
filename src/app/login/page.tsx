@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
@@ -167,8 +168,13 @@ function LoginContent() {
 
   return (
     <div className="w-full max-w-sm bg-gradient-to-b from-sky-50/50 to-white rounded-3xl shadow-xl shadow-opacity-10 p-8 flex flex-col items-center border border-blue-100 text-black">
-      <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white mb-6 shadow-lg shadow-opacity-5 border border-gray-100">
-        <LogIn className="w-7 h-7 text-black" />
+      <div className="relative w-40 h-11 mb-5">
+        <Image
+          src="/images/logo.png"
+          alt="Vivaan Farms"
+          fill
+          className="object-contain"
+        />
       </div>
 
       <h2 className="text-2xl font-semibold mb-2 text-center">
