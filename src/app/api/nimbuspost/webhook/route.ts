@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, arrayUnion, setDoc, addDoc, collection, increment } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 /**
@@ -81,6 +81,37 @@ export async function POST(req: NextRequest) {
         // Only promote status forward (e.g. don't demote Delivered)
         if (orderSnap.data().status !== 'Delivered') {
           updateData.status = mappedOrderStatus;
+        }
+
+        // Credit purity coins if status is Delivered and not yet credited
+        const currentData = orderSnap.data();
+        if (
+          mappedOrderStatus === 'Delivered' && 
+          !currentData.coinsCredited && 
+          Number(currentData.coinsEarned) > 0 && 
+          currentData.userId
+        ) {
+          updateData.coinsCredited = true;
+          updateData.coinsCreditedAt = new Date().toISOString();
+
+          try {
+            const userProfileRef = doc(db, 'userProfiles', currentData.userId);
+            await setDoc(userProfileRef, {
+              purityCoins: increment(Number(currentData.coinsEarned)),
+              updatedAt: new Date().toISOString(),
+            }, { merge: true });
+
+            await addDoc(collection(db, 'coinTransactions'), {
+              userId: currentData.userId,
+              orderId: targetOrderId,
+              type: 'credit',
+              amount: Number(currentData.coinsEarned),
+              description: `Purity Coins reward for NimbusPost delivered order #${targetOrderId.substring(0, 8).toUpperCase()}`,
+              createdAt: new Date().toISOString()
+            });
+          } catch (coinErr) {
+            console.error('[NimbusPost Webhook] Error crediting coins to user:', coinErr);
+          }
         }
 
         await updateDoc(orderRef, updateData);

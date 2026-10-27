@@ -25,8 +25,11 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cart,
   const [appliedCoupon, setAppliedCoupon] = useState('');
 
   const subtotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
-  const coinsDiscount = cart.length > 0 ? 200 : 0;
-  const total = Math.max(0, subtotal - discount - coinsDiscount);
+  const coinsReward = cart.reduce((sum, item) => {
+    const itemReward = Number(item.purityCoins) || Number(item.rewardCoins) || Math.round((Number(item.price) || 0) * 0.1);
+    return sum + (itemReward * (Number(item.qty) || 1));
+  }, 0);
+  const total = Math.max(0, subtotal - discount);
 
   const applyCoupon = () => {
     const code = coupon.toUpperCase().trim();
@@ -148,7 +151,13 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cart,
                   </div>
                   <div className="flex-1 min-w-0 pr-6">
                     <h4 className="font-headline text-sm md:text-base font-bold text-foreground truncate capitalize">{item.name}</h4>
-                    <p className="text-[10px] text-[#7A6848] font-bold uppercase tracking-wider mb-2">{item.vol}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-[#7A6848] font-bold uppercase tracking-wider mb-2">
+                      <span>{item.vol}</span>
+                      <span>•</span>
+                      <span className="text-amber-800 dark:text-amber-400 font-semibold">
+                        🪙 {Number(item.purityCoins) || Number(item.rewardCoins) || Math.round((Number(item.price) || 0) * 0.1)} coins on delivery
+                      </span>
+                    </div>
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-base md:text-lg text-primary">₹{(item.price * item.qty).toLocaleString('en-IN')}</div>
                       
@@ -199,10 +208,15 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cart,
                   <span>−₹{discount.toLocaleString('en-IN')}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xs font-bold text-[#7A6848]">
-                <span>Purity Coins Reward</span>
-                <span className="text-primary font-black">+200 Coins</span>
-              </div>
+              {coinsReward > 0 && (
+                <div className="flex justify-between items-center text-xs font-bold text-[#7A6848] bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                  <span className="flex items-center gap-1.5 text-amber-900 dark:text-amber-300 font-bold">
+                    <span>🪙</span>
+                    <span>Purity Coins (Earned on Delivery)</span>
+                  </span>
+                  <span className="text-emerald-800 dark:text-emerald-400 font-black">+{coinsReward} Coins</span>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-between items-center pt-3 border-t border-[#F9F6EF] mb-4">

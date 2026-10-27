@@ -125,21 +125,30 @@ export default function PaymentPage() {
         coinsEarned: checkoutState?.earnedCoins || 0,
         coinsRedeemed: checkoutState?.coinsRedeemed || 0,
         couponApplied: checkoutState?.appliedCoupon || null,
+        coinsCredited: false, // Coins are credited ONLY when order is delivered!
       };
 
       await setDoc(doc(db, 'orders', finalOrderId), orderData);
 
-      // 3. Update Purity Coins in User Profile if user is logged in
-      if (user?.uid) {
+      // 3. Deduct Redeemed Purity Coins from User Profile (Do NOT credit earned coins at checkout!)
+      if (user?.uid && (checkoutState?.coinsRedeemed || 0) > 0) {
         try {
           const userProfileRef = doc(db, 'userProfiles', user.uid);
-          const netCoinsDelta = (checkoutState?.earnedCoins || 0) - (checkoutState?.coinsRedeemed || 0);
           await setDoc(userProfileRef, {
-            purityCoins: increment(netCoinsDelta),
+            purityCoins: increment(-Number(checkoutState.coinsRedeemed)),
             updatedAt: new Date().toISOString()
           }, { merge: true });
+
+          await addDoc(collection(db, 'coinTransactions'), {
+            userId: user.uid,
+            orderId: finalOrderId,
+            type: 'debit',
+            amount: Number(checkoutState.coinsRedeemed),
+            description: `Redeemed on Order #${finalOrderId.substring(0, 8).toUpperCase()}`,
+            createdAt: new Date().toISOString()
+          });
         } catch (coinsErr) {
-          console.warn('Coins update error:', coinsErr);
+          console.warn('Coins debit error:', coinsErr);
         }
       }
 

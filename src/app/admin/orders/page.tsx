@@ -68,7 +68,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, arrayUnion } from 'firebase/firestore';
+import { collection, doc, arrayUnion, setDoc, addDoc, updateDoc, increment } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -150,11 +150,62 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const updateStatus = (orderId: string, newStatus: string) => {
-    updateDocumentNonBlocking(doc(db, 'orders', orderId), {
+  // Helper to credit purity coins into the customer's wallet upon delivery
+  const creditPurityCoinsOnDelivery = async (targetOrder: any) => {
+    if (!targetOrder || targetOrder.coinsCredited) return;
+    const coins = Number(targetOrder.coinsEarned) || 0;
+    const uid = targetOrder.userId;
+    if (!uid || coins <= 0) return;
+
+    try {
+      const userProfileRef = doc(db, 'userProfiles', uid);
+      await setDoc(userProfileRef, {
+        purityCoins: increment(coins),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      await addDoc(collection(db, 'coinTransactions'), {
+        userId: uid,
+        orderId: targetOrder.id,
+        type: 'credit',
+        amount: coins,
+        description: `Purity Coins reward for Order #${targetOrder.id.substring(0, 8).toUpperCase()} delivered`,
+        createdAt: new Date().toISOString()
+      });
+
+      await updateDoc(doc(db, 'orders', targetOrder.id), {
+        coinsCredited: true,
+        coinsCreditedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      toast({
+        title: "Purity Coins Credited! 🪙",
+        description: `+${coins} Purity Coins successfully credited to customer wallet.`,
+      });
+    } catch (err: any) {
+      console.error("Failed to credit purity coins:", err);
+    }
+  };
+
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    const targetOrder = orders?.find((o: any) => o.id === orderId);
+    const updates: any = {
       status: newStatus,
       updatedAt: new Date().toISOString()
-    });
+    };
+
+    if (newStatus === 'Delivered' && targetOrder && !targetOrder.coinsCredited && Number(targetOrder.coinsEarned) > 0) {
+      updates.coinsCredited = true;
+      updates.coinsCreditedAt = new Date().toISOString();
+    }
+
+    updateDocumentNonBlocking(doc(db, 'orders', orderId), updates);
+
+    if (newStatus === 'Delivered' && targetOrder) {
+      await creditPurityCoinsOnDelivery(targetOrder);
+    }
+
     toast({
       title: "Order Status Updated",
       description: `Order marked as ${newStatus}.`,
@@ -445,6 +496,14 @@ export default function AdminOrdersPage() {
       updatedAt: new Date().toISOString(),
       trackingCheckpoints: arrayUnion(newCheckpoint),
     };
+
+    if (statusInput === 'Delivered' && trackingOrder) {
+      if (!trackingOrder.coinsCredited && Number(trackingOrder.coinsEarned) > 0) {
+        updates.coinsCredited = true;
+        updates.coinsCreditedAt = new Date().toISOString();
+      }
+      creditPurityCoinsOnDelivery(trackingOrder);
+    }
 
     updateDocumentNonBlocking(doc(db, 'orders', trackingOrder.id), updates);
 
@@ -776,7 +835,20 @@ export default function AdminOrdersPage() {
                     </TableCell>
 
                     <TableCell className="px-4 py-3 text-xs font-semibold text-foreground">
-                      ₹{(order.totalAmount || 0).toLocaleString('en-IN')}
+                      <div>₹{(order.totalAmount || 0).toLocaleString('en-IN')}</div>
+                      {Number(order.coinsEarned) > 0 && (
+                        <div className="text-[10px] mt-0.5 font-medium">
+                          {order.coinsCredited || order.status === 'Delivered' ? (
+                            <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
+                              🪙 +{order.coinsEarned} (Credited)
+                            </span>
+                          ) : (
+                            <span className="text-amber-700 flex items-center gap-0.5">
+                              🪙 +{order.coinsEarned} (On Delivery)
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
 
                     <TableCell className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
@@ -1312,6 +1384,14 @@ export default function AdminOrdersPage() {
                   <span>Grand Total:</span>
                   <span>₹{viewDetailsOrder.totalAmount}</span>
                 </div>
+                {Number(viewDetailsOrder.coinsEarned) > 0 && (
+                  <div className="flex justify-between w-64 text-amber-800 dark:text-amber-400 font-semibold pt-1 border-t border-border/40 text-[11px]">
+                    <span>Purity Coins Reward:</span>
+                    <span>
+                      +{viewDetailsOrder.coinsEarned} Coins {viewDetailsOrder.coinsCredited || viewDetailsOrder.status === 'Delivered' ? ' (Credited ✓)' : ' (On Delivery)'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}

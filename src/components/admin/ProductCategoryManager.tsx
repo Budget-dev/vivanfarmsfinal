@@ -489,7 +489,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
     setIsLiveProduct(p.isLive !== false);
     setUploadedImages(p.imageUrls || []);
     setProductCoupon(p.productCoupon || '');
-    setRewardCoins(String(p.rewardCoins || '50'));
+    setRewardCoins(String(p.purityCoins ?? p.rewardCoins ?? Math.round((Number(p.basePrice || p.price) || 0) * 0.1)));
 
     if (p.volumeUnit) setVolumeUnit(p.volumeUnit as VolumeUnit);
     
@@ -632,8 +632,8 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
       howMade: howMadeText.trim(),
       cookingCare: cookingCareText.trim(),
       productCoupon: productCoupon.toUpperCase().trim(),
-      rewardCoins: Number(rewardCoins) || 50,
-      purityCoins: Number(rewardCoins) || Math.round(finalBasePrice * 0.1),
+      rewardCoins: !isNaN(Number(rewardCoins)) && rewardCoins !== '' ? Number(rewardCoins) : Math.round(finalBasePrice * 0.1),
+      purityCoins: !isNaN(Number(rewardCoins)) && rewardCoins !== '' ? Number(rewardCoins) : Math.round(finalBasePrice * 0.1),
       updatedAt: new Date().toISOString()
     };
 
@@ -1037,11 +1037,16 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
                             </span>
                           )}
                         </div>
-                        {hasDiscount && (
-                          <span className="text-[9px] text-emerald-600 font-bold">
-                            {discountPct}% OFF
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          {hasDiscount && (
+                            <span className="text-[9px] text-emerald-600 font-bold">
+                              {discountPct}% OFF
+                            </span>
+                          )}
+                          <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                            🪙 {p.purityCoins ?? p.rewardCoins ?? Math.round((p.basePrice || p.price || 0) * 0.1)} coins
                           </span>
-                        )}
+                        </div>
                       </TableCell>
 
                       {/* Variants */}
@@ -1221,7 +1226,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-foreground">Category *</label>
                     <select
@@ -1257,6 +1262,20 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
                       onChange={(e) => setMrpPrice(e.target.value)} 
                       placeholder="e.g. 1299"
                       className="h-9 text-xs font-mono" 
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-1">
+                      <span>🪙</span>
+                      <span>Purity Coins (Delivery)</span>
+                    </label>
+                    <Input 
+                      type="number"
+                      value={rewardCoins} 
+                      onChange={(e) => setRewardCoins(e.target.value)} 
+                      placeholder="e.g. 110"
+                      className="h-9 text-xs font-mono border-amber-300 dark:border-amber-700 bg-amber-50/40 dark:bg-amber-950/20 font-bold" 
                     />
                   </div>
                 </div>

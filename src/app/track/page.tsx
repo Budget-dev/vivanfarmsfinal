@@ -653,6 +653,43 @@ function TrackOrderContent() {
               )}
             </div>
 
+            {/* Purity Coins Loyalty Card */}
+            {Number(searchedOrder.coinsEarned) > 0 && (
+              <div className="p-5 sm:p-6 bg-gradient-to-r from-amber-50/80 via-white to-emerald-50/80 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-white shadow-xs border border-amber-200/80 flex items-center justify-center text-xl shrink-0">
+                    🪙
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-amber-900">
+                      Purity Coins Loyalty Reward
+                    </div>
+                    <div className="text-sm font-extrabold text-gray-900">
+                      +{searchedOrder.coinsEarned} Purity Coins
+                    </div>
+                    <div className="text-[11px] text-gray-600 font-medium">
+                      {searchedOrder.coinsCredited || searchedOrder.status === 'Delivered'
+                        ? 'Successfully credited into your wallet.'
+                        : 'Will be credited automatically to your wallet upon successful delivery.'}
+                    </div>
+                  </div>
+                </div>
+                <div className="self-start sm:self-auto">
+                  {searchedOrder.coinsCredited || searchedOrder.status === 'Delivered' ? (
+                    <Badge className="bg-emerald-600 text-white font-bold text-xs py-1 px-3 gap-1 shadow-xs">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Credited to Wallet ✓</span>
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-900 font-bold text-xs py-1 px-3 gap-1 shadow-xs">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Credited Upon Delivery</span>
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Delivery Address & Items Summary */}
             {!searchedOrder.isDirectCarrierResult && (
               <div className="p-5 sm:p-8 bg-white grid grid-cols-1 md:grid-cols-2 gap-6">

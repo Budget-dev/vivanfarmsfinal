@@ -155,7 +155,10 @@ export default function CheckoutPage() {
     const coinsDiscount = useCoins ? Math.min(coinsAvailable, subtotal - couponDiscount) : 0;
     
     const finalTotal = Math.max(0, subtotal - couponDiscount - coinsDiscount);
-    const earnedCoins = cart.reduce((acc, item) => acc + ((item.rewardCoins || 0) * item.qty), 0);
+    const earnedCoins = cart.reduce((acc, item) => {
+      const itemCoins = Number(item.purityCoins) || Number(item.rewardCoins) || Math.round((Number(item.price) || 0) * 0.1);
+      return acc + (itemCoins * (Number(item.qty) || 1));
+    }, 0);
 
     return { couponDiscount, coinsDiscount, finalTotal, earnedCoins };
   }, [subtotal, appliedCoupon, useCoins, userProfile, cart]);
@@ -317,7 +320,9 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-headline text-sm sm:text-base font-bold text-gray-900 truncate capitalize">{item.name}</h3>
-                      <p className="text-[10px] text-[#7A6848] font-bold uppercase tracking-wider">{item.vol} · {item.rewardCoins || 0} Coins</p>
+                      <p className="text-[10px] text-[#7A6848] font-bold uppercase tracking-wider">
+                        {item.vol} · 🪙 {Number(item.purityCoins) || Number(item.rewardCoins) || Math.round((Number(item.price) || 0) * 0.1)} Coins on Delivery
+                      </p>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs font-bold text-gray-500">Qty: {item.qty}</span>
                         <span className="text-sm sm:text-base font-black text-primary">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
@@ -438,13 +443,16 @@ export default function CheckoutPage() {
               </div>
 
               {/* Earned Coins Alert */}
-              <div className="bg-[#EBF5EE] p-3.5 rounded-2xl border border-primary/10 flex items-center gap-3 mb-5">
-                <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-lg shadow-2xs shrink-0">🌱</div>
-                <div>
-                  <div className="text-[9px] font-black text-primary uppercase tracking-wider">Earned Today</div>
-                  <div className="text-xs font-black text-primary">+{calculations.earnedCoins} Purity Coins</div>
+              {calculations.earnedCoins > 0 && (
+                <div className="bg-[#EBF5EE] p-3.5 rounded-2xl border border-primary/10 flex items-center gap-3 mb-5">
+                  <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-lg shadow-2xs shrink-0">🪙</div>
+                  <div>
+                    <div className="text-[9px] font-black text-primary uppercase tracking-wider">Purity Coins Reward</div>
+                    <div className="text-xs font-black text-primary">+{calculations.earnedCoins} Purity Coins</div>
+                    <div className="text-[10px] text-[#556950] font-medium">Credited to your wallet once order is delivered</div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-primary/70 mb-4">
                 <ShieldCheck className="w-4 h-4 text-secondary" />
