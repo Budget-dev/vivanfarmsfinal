@@ -197,7 +197,12 @@ export default function AdminCategoriesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {categories && categories.length > 0 ? (
           categories.map((cat) => {
-            const count = products?.filter(p => (p.categoryId || '').toLowerCase() === cat.name.toLowerCase()).length || 0;
+            const count = products?.filter(p => {
+              const pCat = (p.categoryId || p.cat || '').toLowerCase();
+              const catName = (cat.name || '').toLowerCase();
+              const catId = (cat.id || '').toLowerCase();
+              return pCat === catId || pCat === catName || catName.includes(pCat) || (pCat && catId.includes(pCat));
+            }).length || 0;
             return (
               <Card key={cat.id} className="border border-border/80 shadow-sm p-4 bg-card hover:border-emerald-500/40 transition-colors">
                 <div className="flex items-start justify-between">
@@ -235,7 +240,12 @@ export default function AdminCategoriesPage() {
           <TableBody>
             {categories && categories.length > 0 ? (
               categories.map((cat) => {
-                const count = products?.filter(p => (p.categoryId || '').toLowerCase() === cat.name.toLowerCase()).length || 0;
+                const count = products?.filter(p => {
+              const pCat = (p.categoryId || p.cat || '').toLowerCase();
+              const catName = (cat.name || '').toLowerCase();
+              const catId = (cat.id || '').toLowerCase();
+              return pCat === catId || pCat === catName || catName.includes(pCat) || (pCat && catId.includes(pCat));
+            }).length || 0;
 
                 return (
                   <TableRow key={cat.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">

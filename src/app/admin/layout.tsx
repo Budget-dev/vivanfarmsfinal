@@ -5,18 +5,27 @@ import { useRouter, usePathname } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Toaster } from '@/components/ui/toaster';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
+  const db = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
 
   const ADMIN_EMAIL = 'vivanfarmsnatural@gmail.com';
+  const adminRoleRef = useMemoFirebase(() => user ? doc(db, 'adminRoles', user.uid) : null, [db, user]);
+  const { data: adminRoleDoc, isLoading: isRoleLoading } = useDoc(adminRoleRef);
+
+  const isAuthorized = user && (
+    (user.email && user.email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase()) ||
+    adminRoleDoc?.role === 'admin'
+  );
 
   useEffect(() => {
-    if (!isUserLoading && (!user || user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) && pathname !== '/admin/login') {
+    if (!isUserLoading && !isRoleLoading && !isAuthorized && pathname !== '/admin/login') {
       router.push('/admin/login');
     }
   }, [user, isUserLoading, router, pathname]);
@@ -30,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || (user && !isAuthorized && isRoleLoading)) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center font-sans gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
@@ -39,9 +48,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Final gate check for authorized email
-  if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-    return null; // The useEffect will handle redirect
+  // Final gate check for authorized email or role
+  if (!isAuthorized) {
+    return null;
   }
 
   return (

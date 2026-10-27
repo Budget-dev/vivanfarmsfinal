@@ -125,7 +125,8 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
     if (!allProducts) return [];
     const targetCat = category.toLowerCase();
     return allProducts.filter(p => {
-      const matchesCat = (p.categoryId || '').toLowerCase() === targetCat;
+      const pCat = (p.categoryId || p.cat || '').toLowerCase();
+      const matchesCat = pCat === targetCat || (targetCat === 'ghee' && pCat.includes('ghee')) || (targetCat === 'sweets' && (pCat.includes('sweet') || pCat.includes('ladoo'))) || (targetCat === 'honey' && pCat.includes('honey'));
       const matchesSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase());
       const stockQty = p.stockQuantity ?? p.stock ?? 10;
       

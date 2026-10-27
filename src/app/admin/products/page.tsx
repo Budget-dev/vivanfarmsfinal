@@ -75,10 +75,11 @@ export default function AdminProductsPage() {
     if (!allProducts) return stats;
 
     allProducts.forEach(p => {
-      const cat = (p.categoryId || '').toLowerCase();
+      const cat = (p.categoryId || p.cat || '').toLowerCase();
       if (stats[cat]) {
         stats[cat].count++;
-        if ((p.stock ?? 10) <= 5) stats[cat].lowStock++;
+        const stockQty = p.stockQuantity ?? p.stock ?? 10;
+        if (stockQty <= 5) stats[cat].lowStock++;
       }
     });
     return stats;
