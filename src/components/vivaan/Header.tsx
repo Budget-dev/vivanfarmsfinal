@@ -332,7 +332,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
                       href={item.href}
                       prefetch={true}
                       onClick={() => {
-                        onFilter?.(item.slug);
                         setMobileMenuOpen(false);
                       }}
                       className="w-full flex items-center justify-between py-3 px-4 rounded-2xl hover:bg-primary/5 transition-all group cursor-pointer"

@@ -79,18 +79,7 @@ export default function VivaanFarms() {
   };
 
   const handleCategoryFilter = (catId: string) => {
-    if (catId === 'ghee') {
-      const el = document.getElementById('focus-ghee') || document.getElementById('cleanest-pantry');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else if (catId === 'sweets') {
-      const el = document.getElementById('focus-sweets') || document.getElementById('cleanest-pantry');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else if (catId === 'honey') {
-      const el = document.getElementById('focus-honey') || document.getElementById('cleanest-pantry');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      scrollToPantry();
-    }
+    router.push(`/category/${catId}`);
   };
 
   const handleTabChange = (tab: string) => {

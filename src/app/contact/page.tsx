@@ -34,7 +34,7 @@ export default function ContactPage() {
         <Header 
           onOpenCart={() => setIsCartOpen(true)} 
           cartCount={totalQty}
-          onFilter={() => router.push('/')}
+          onFilter={(cat) => router.push(`/category/${cat}`)}
           onSearch={() => router.push('/')}
         />
       </div>

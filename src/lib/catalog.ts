@@ -19,14 +19,14 @@ export const CATEGORIES: CategoryDef[] = [
   },
   {
     id: 'ghee',
-    name: 'A2 Ghee',
+    name: 'A2 Desi Ghee',
     slug: 'ghee',
     description: 'Handcrafted over slow wood fire in earthen pots, churned from curd using the traditional two-way wooden bilona.',
     icon: '🐄'
   },
   {
     id: 'sweets',
-    name: 'Sweets',
+    name: 'Homemade Sweets',
     slug: 'sweets',
     description: 'Artisanal homemade sweets crafted strictly with pure A2 Gir Cow Bilona Ghee, organic jaggery, and premium whole nuts.',
     icon: '🍬'

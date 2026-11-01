@@ -201,6 +201,7 @@ function CategoryDetailPageContent() {
   };
 
   const toggleWishlist = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setWishlist(prev => ({ ...prev, [id]: !prev[id] }));
   };
