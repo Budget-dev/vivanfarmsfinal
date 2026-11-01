@@ -83,7 +83,7 @@ export const ALL_PRODUCTS: Product[] = [];
 
 export function getCategoryProducts(catId: string, customList?: Product[]): Product[] {
   const source = customList || [];
-  
+
   if (!catId || catId === 'all') {
     return source;
   }

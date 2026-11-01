@@ -17,36 +17,36 @@ export default function AboutPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const handleTabChange = (tab: string) => {
-    if (tab === 'home' || tab === 'shop') {
+    if (tab === 'home') {
       router.push('/');
+    } else if (tab === 'shop') {
+      router.push('/category/all');
     } else if (tab === 'cart') {
       setIsCartOpen(true);
+    } else if (tab === 'account') {
+      router.push('/track');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F6EF] text-[#100C06] pb-24 md:pb-0">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#100C06] pb-24 md:pb-0 font-sans">
       <div className="sticky top-0 z-[900]">
         <Ticker />
         <Header 
           onOpenCart={() => setIsCartOpen(true)} 
           cartCount={totalQty}
           onFilter={(cat) => router.push(`/category/${cat}`)}
-          onSearch={() => router.push('/')}
+          onSearch={() => router.push('/category/all')}
         />
       </div>
 
-      <motion.main
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
+      <main>
         <AboutSection3 />
-      </motion.main>
+      </main>
 
       <Footer />
       
-      <BottomNav activeTab="account" onTabChange={handleTabChange} cartCount={totalQty} />
+      <BottomNav activeTab="" onTabChange={handleTabChange} cartCount={totalQty} />
 
       <CartSidebar 
         isOpen={isCartOpen}

@@ -1,444 +1,554 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import Link from "next/link";
-import { TimelineContent } from "@/components/ui/timeline-animation";
-import { VerticalCutReveal } from "@/components/ui/vertical-cut-reveal";
+import Image from "next/image";
 import { 
-  ArrowRight, 
   Sparkles, 
   CheckCircle2, 
   Heart, 
   ShieldCheck, 
   Droplets, 
-  Compass, 
   Award,
   Sun,
   Flame,
-  Leaf
+  Leaf,
+  ArrowRight,
+  MessageCircle,
+  Clock,
+  Compass,
+  Check
 } from "lucide-react";
 
 export function AboutSection3() {
-  const heroRef = useRef<HTMLDivElement>(null);
-
-  const revealVariants = {
-    visible: (i: number) => ({
-      y: 0,
-      opacity: 1,
-      filter: "blur(0px)",
-      transition: {
-        delay: i * 0.12,
-        duration: 0.5,
-      },
-    }),
-    hidden: {
-      filter: "blur(10px)",
-      y: -20,
-      opacity: 0,
-    },
-  };
-
-  const scaleVariants = {
-    visible: (i: number) => ({
-      opacity: 1,
-      filter: "blur(0px)",
-      transition: {
-        delay: i * 0.15,
-        duration: 0.6,
-      },
-    }),
-    hidden: {
-      filter: "blur(10px)",
-      opacity: 0,
-    },
-  };
-
   return (
-    <section className="py-10 md:py-20 px-4 bg-[#F9F6EF] text-[#100C06] overflow-hidden select-none" ref={heroRef}>
-      <div className="max-w-6xl mx-auto">
-        <div className="relative">
-          {/* Header with badge & social icons */}
-          <div className="flex justify-between items-center mb-4 sm:mb-8 w-full sm:w-[88%] sm:absolute lg:top-4 md:top-2 sm:top-0 z-10 px-1 sm:px-0">
-            <div className="flex items-center gap-2 text-xl">
-              <span className="text-amber-600 animate-spin">✱</span>
-              <TimelineContent
-                as="span"
-                animationNum={0}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                className="text-xs sm:text-sm font-black text-amber-900 tracking-[3px] uppercase"
-              >
-                ABOUT VIVAAN FARMS
-              </TimelineContent>
+    <div className="bg-[#FAF7F2] text-[#1E2522] overflow-hidden selection:bg-[#0D3B2E] selection:text-white">
+      
+      {/* ── 1. Vedic Invocation & Hero Header ── */}
+      <section className="pt-8 sm:pt-14 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center">
+        {/* Sanskrit Shloka Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EFE9DC] border border-[#D9CEBA] text-[#5A4321] text-[11px] sm:text-xs font-serif font-bold tracking-wider mb-4 sm:mb-6 shadow-2xs">
+          <span className="text-[#C4821E] text-base leading-none">ॐ</span>
+          <span>॥ गावो विश्वस्य मातरः · आहारः शुद्धौ सत्त्वशुद्धिः ॥</span>
+        </div>
+
+        {/* Main Title */}
+        <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-black text-[#0D3B2E] tracking-tight leading-[1.15] max-w-4xl mx-auto mb-4 sm:mb-6">
+          Nourishing Generations With The Sacred Purity Of Ancient India
+        </h1>
+
+        {/* Natural Traditional Subtitle */}
+        <p className="text-sm sm:text-lg text-[#614E36] leading-relaxed max-w-3xl mx-auto font-medium">
+          Rooted in the pristine pastures of Gujarat, <strong className="text-[#0D3B2E] font-bold">Vivaan Farms</strong> was born from a sacred vow: to revive the forgotten nutritional heritage of our ancestors. Where native Desi Gir cows graze freely under open skies, golden curd is hand-churned before sunrise in earthen clay pots, and raw forest honey is gathered straight from untamed hives without heat, chemicals, or dilution.
+        </p>
+
+        {/* Hero Image Card (Replacing the awkward watermelon cutout with true Indian farm imagery) */}
+        <div className="relative mt-8 sm:mt-12 rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E5DAC6] shadow-xl bg-white group">
+          <div className="relative w-full h-[260px] sm:h-[420px] md:h-[500px]">
+            <Image
+              src="/images/home/trust_pastoral_farm.jpg"
+              alt="Vivaan Farms - Native Desi Gir Cows Grazing in Natural Pastures"
+              fill
+              priority
+              className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-700 ease-out"
+              sizes="(max-width: 768px) 100vw, 1200px"
+            />
+            {/* Subtle Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            
+            {/* Floating Top Badge */}
+            <div className="absolute top-3 sm:top-5 left-3 sm:left-5 bg-white/95 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-amber-900/10 shadow-md flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="text-[10.5px] sm:text-xs font-black uppercase tracking-wider text-[#0D3B2E]">
+                Indigenous Desi Gir Cow Sanctuary · Gujarat
+              </span>
             </div>
-            <div className="flex gap-2 sm:gap-3">
-              <TimelineContent
-                as="a"
-                animationNum={0}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Facebook"
-                className="md:w-9 md:h-9 sm:w-7 w-6 sm:h-7 h-6 border border-amber-200/80 bg-white/90 shadow-2xs rounded-xl flex items-center justify-center hover:scale-105 transition-all cursor-pointer"
-              >
-                <img src="https://pro-section.ui-layouts.com/facebook.svg" alt="Facebook" className="w-4 h-4" />
-              </TimelineContent>
-              <TimelineContent
-                as="a"
-                animationNum={1}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Instagram"
-                className="md:w-9 md:h-9 sm:w-7 w-6 sm:h-7 h-6 border border-amber-200/80 bg-white/90 shadow-2xs rounded-xl flex items-center justify-center hover:scale-105 transition-all cursor-pointer"
-              >
-                <img src="https://pro-section.ui-layouts.com/instagram.svg" alt="Instagram" className="w-4 h-4" />
-              </TimelineContent>
-              <TimelineContent
-                as="a"
-                animationNum={2}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="YouTube"
-                className="md:w-9 md:h-9 sm:w-7 w-6 sm:h-7 h-6 border border-amber-200/80 bg-white/90 shadow-2xs rounded-xl flex items-center justify-center hover:scale-105 transition-all cursor-pointer"
-              >
-                <img src="https://pro-section.ui-layouts.com/youtube.svg" alt="YouTube" className="w-4 h-4" />
-              </TimelineContent>
-            </div>
-          </div>
 
-          {/* Banner Figure with Cut SVG Clip Path */}
-          <TimelineContent
-            as="figure"
-            animationNum={4}
-            timelineRef={heroRef}
-            customVariants={scaleVariants}
-            className="relative group rounded-3xl overflow-hidden shadow-2xl border border-amber-900/10 mb-8"
-          >
-            <svg
-              className="w-full h-auto min-h-[260px] md:min-h-[420px]"
-              width={"100%"}
-              height={"100%"}
-              viewBox="0 0 100 40"
-            >
-              <defs>
-                <clipPath
-                  id="clip-inverted"
-                  clipPathUnits={"objectBoundingBox"}
-                >
-                  <path
-                    d="M0.0998072 1H0.422076H0.749756C0.767072 1 0.774207 0.961783 0.77561 0.942675V0.807325C0.777053 0.743631 0.791844 0.731953 0.799059 0.734076H0.969813C0.996268 0.730255 1.00088 0.693206 0.999875 0.675159V0.0700637C0.999875 0.0254777 0.985045 0.00477707 0.977629 0H0.902473C0.854975 0 0.890448 0.138535 0.850165 0.138535H0.0204424C0.00408849 0.142357 0 0.180467 0 0.199045V0.410828C0 0.449045 0.0136283 0.46603 0.0204424 0.469745H0.0523086C0.0696245 0.471019 0.0735527 0.497877 0.0733523 0.511146V0.915605C0.0723903 0.983121 0.090588 1 0.0998072 1Z"
-                    fill="#D9D9D9"
-                  />
-                </clipPath>
-              </defs>
-              <image
-                clipPath="url(#clip-inverted)"
-                preserveAspectRatio="xMidYMid slice"
-                width={"100%"}
-                height={"100%"}
-                xlinkHref="https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=1400&auto=format&fit=crop"
-              />
-            </svg>
-          </TimelineContent>
-
-          {/* Stats Bar */}
-          <div className="flex flex-wrap lg:justify-start justify-between items-center py-4 px-2 text-sm border-b border-amber-900/10 mb-10">
-            <TimelineContent
-              as="div"
-              animationNum={5}
-              timelineRef={heroRef}
-              customVariants={revealVariants}
-              className="flex flex-wrap gap-4 md:gap-8"
-            >
-              <div className="flex items-center gap-2 sm:text-base text-xs font-semibold">
-                <span className="text-amber-700 font-extrabold text-lg">100%</span>
-                <span className="text-gray-700">Pure Honey</span>
-                <span className="text-gray-300 hidden sm:inline">|</span>
+            {/* Bottom Overlay Text */}
+            <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3 text-left">
+              <div>
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[2px] text-amber-300 block mb-1">
+                  100% AHIMSA · GRASS-FED · PURE A2
+                </span>
+                <p className="text-white font-serif text-lg sm:text-2xl font-black drop-shadow-sm leading-snug">
+                  Ethical Go-Samrakshana. Where calves drink their fill first.
+                </p>
               </div>
-              <div className="flex items-center gap-2 sm:text-base text-xs font-semibold">
-                <span className="text-amber-700 font-extrabold text-lg">0%</span>
-                <span className="text-gray-700">Added Sugars & Additives</span>
-                <span className="text-gray-300 hidden sm:inline">|</span>
+              <div className="shrink-0 bg-amber-500/20 backdrop-blur-md border border-amber-300/40 text-amber-100 text-xs font-bold px-3 py-1.5 rounded-xl">
+                Traditional Vedic Sanctuary
               </div>
-              <div className="flex items-center gap-2 sm:text-base text-xs font-semibold">
-                <span className="text-amber-700 font-extrabold text-lg">50,000+</span>
-                <span className="text-gray-700">Happy Families</span>
-              </div>
-            </TimelineContent>
-
-            <div className="lg:absolute right-0 bottom-16 flex lg:flex-col flex-row-reverse lg:gap-0 gap-4 mt-4 lg:mt-0">
-              <TimelineContent
-                as="div"
-                animationNum={6}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                className="flex lg:text-3xl sm:text-2xl text-xl items-center gap-2 mb-1"
-              >
-                <span className="text-amber-700 font-extrabold">100%</span>
-                <span className="text-gray-800 uppercase font-black text-sm sm:text-base tracking-wider">Natural & Authentic</span>
-              </TimelineContent>
-              <TimelineContent
-                as="div"
-                animationNum={7}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                className="flex items-center gap-2 mb-2 sm:text-sm text-xs font-medium"
-              >
-                <span className="text-emerald-700 font-bold">Tested & Certified</span>
-                <span className="text-gray-600">Pure Hive Sourced</span>
-              </TimelineContent>
             </div>
           </div>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid md:grid-cols-3 gap-8 md:gap-12 items-start mb-16">
-          <div className="md:col-span-2">
-            <h1 className="sm:text-3xl md:text-5xl text-2xl !leading-[120%] font-black text-gray-900 mb-6 tracking-tight font-headline">
-              <VerticalCutReveal
-                splitBy="words"
-                staggerDuration={0.08}
-                staggerFrom="first"
-                reverse={true}
-                transition={{
-                  type: "spring",
-                  stiffness: 250,
-                  damping: 30,
-                  delay: 0.2,
-                }}
-              >
-                Pure Honey. Straight From Nature.
-              </VerticalCutReveal>
-            </h1>
-
-            <TimelineContent
-              as="div"
-              animationNum={9}
-              timelineRef={heroRef}
-              customVariants={revealVariants}
-              className="space-y-6 text-gray-700"
+        {/* 4 Core Pillars Stats Strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
+          {[
+            { value: "50,000+", label: "Happy Indian Families", sub: "Nourished with 100% trust" },
+            { value: "100%", label: "Two-Way Wooden Bilona", sub: "Ancient curd-churned process" },
+            { value: "0%", label: "Chemicals & Palm Oil", sub: "Zero refined white sugars" },
+            { value: "NABL", label: "Lab Tested Batches", sub: "Certified A2 Beta-Casein" }
+          ].map((stat, i) => (
+            <div 
+              key={i} 
+              className="bg-white p-4 sm:p-5 rounded-2xl border border-[#EAE3D2] shadow-2xs text-center hover:border-[#0D3B2E]/30 transition-colors"
             >
-              <div className="text-sm md:text-base leading-relaxed bg-white/70 p-6 sm:p-8 rounded-3xl border border-amber-900/10 shadow-sm">
-                <p className="leading-relaxed text-[#5A4628] text-base md:text-lg mb-4">
-                  At <strong className="text-amber-900 font-extrabold">Vivaan Farms</strong>, we believe that the best honey is nature’s own honey — pure, natural, and full of authentic taste.
-                </p>
-                <p className="leading-relaxed text-[#7A6848] text-sm md:text-base">
-                  We bring you carefully collected honey from healthy hives, preserving its natural character, aroma, and flavour. Our aim is simple: to provide families with quality honey they can trust and enjoy every day.
-                </p>
+              <div className="font-serif text-2xl sm:text-3xl font-black text-[#0D3B2E] mb-0.5">
+                {stat.value}
               </div>
-
-              {/* Our Story Card */}
-              <div className="bg-gradient-to-br from-amber-500/10 via-white to-amber-500/5 p-6 sm:p-8 rounded-3xl border border-amber-500/20 shadow-sm">
-                <div className="flex items-center gap-2 text-amber-800 font-headline font-black text-xl md:text-2xl mb-3">
-                  <Sparkles className="w-5 h-5 text-amber-600" />
-                  <h2>Our Story</h2>
-                </div>
-                <p className="leading-relaxed text-[#5A4628] text-sm md:text-base mb-5">
-                  Vivaan Farms was created with a passion for bringing the goodness of natural honey closer to people. From the hive to every jar, we focus on maintaining the natural quality of our honey while ensuring it is carefully packed for you.
-                </p>
-                
-                <div className="pt-2 border-t border-amber-200/60">
-                  <div className="text-xs font-black uppercase tracking-wider text-amber-900 mb-3">
-                    Our Signature Varieties:
-                  </div>
-                  <div className="grid sm:grid-cols-3 gap-3">
-                    {[
-                      { name: "Himalayan Dark Honey", desc: "Deep aroma & rich natural minerals" },
-                      { name: "Multi-Floral Honey", desc: "Balanced sweet nectar from wild blooms" },
-                      { name: "Wild Forest Honey", desc: "Raw, robust flavor from untouched groves" }
-                    ].map((variety, i) => (
-                      <div key={i} className="bg-white p-3.5 rounded-2xl border border-amber-200 shadow-2xs">
-                        <div className="font-extrabold text-amber-900 text-xs md:text-sm mb-1">{variety.name}</div>
-                        <div className="text-[11px] text-[#7A6848] leading-tight">{variety.desc}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                {stat.label}
               </div>
-            </TimelineContent>
-          </div>
-
-          {/* Right Sidebar / Brand Info */}
-          <div className="md:col-span-1">
-            <div className="bg-white p-7 sm:p-8 rounded-3xl border border-amber-900/10 shadow-xl text-left md:text-right sticky top-28">
-              <TimelineContent
-                as="div"
-                animationNum={12}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                className="text-amber-800 text-2xl md:text-3xl font-black tracking-wider mb-1 font-headline"
-              >
-                VIVAAN FARMS
-              </TimelineContent>
-              <TimelineContent
-                as="div"
-                animationNum={13}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                className="text-amber-600 text-xs font-extrabold uppercase tracking-widest mb-6"
-              >
-                Pure Honey · Nature’s Sweetness
-              </TimelineContent>
-
-              <TimelineContent
-                as="div"
-                animationNum={14}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                className="mb-6 space-y-4"
-              >
-                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 text-left">
-                  <div className="text-xs font-black text-amber-900 uppercase tracking-wider mb-1">Our Promise</div>
-                  <p className="text-xs text-[#5A4628] leading-relaxed font-medium">
-                    At Vivaan Farms, we don&apos;t just want to sell honey. We want to build a relationship with our customers based on trust.
-                  </p>
-                  <p className="text-xs font-extrabold text-amber-800 mt-2">
-                    Pure by nature. Carefully brought to you by Vivaan Farms.
-                  </p>
-                </div>
-
-                <p className="text-gray-800 text-xs sm:text-sm font-semibold leading-relaxed">
-                  Ready to experience unadulterated nature in every spoonful?
-                </p>
-              </TimelineContent>
-
-              <TimelineContent
-                as="a"
-                animationNum={15}
-                timelineRef={heroRef}
-                customVariants={revealVariants}
-                href="/category/honey"
-                className="inline-flex items-center justify-center gap-2 hover:gap-3 bg-amber-900 hover:bg-amber-950 text-white px-6 py-3.5 rounded-2xl cursor-pointer font-bold text-xs uppercase tracking-widest shadow-lg transition-all duration-300 ease-in-out w-full"
-              >
-                <span>EXPLORE OUR HONEY</span> <ArrowRight className="w-4 h-4" />
-              </TimelineContent>
+              <div className="text-[11px] text-[#7A6848] mt-1 font-medium">
+                {stat.sub}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
+      </section>
 
-        {/* Section 2: Our Commitment */}
-        <div className="mb-16">
-          <div className="text-center mb-8">
-            <span className="text-xs font-black text-amber-800 tracking-[3px] uppercase">OUR STANDARD</span>
-            <h2 className="font-headline text-2xl md:text-4xl font-extrabold text-[#100C06] mt-1">
-              Our Commitment
+
+      {/* ── 2. Our Sacred Genesis Story ── */}
+      <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-[#EAE3D2]">
+        <div className="grid md:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Left Column: Narrative */}
+          <div className="md:col-span-7 space-y-5">
+            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[2px] text-[#C4821E]">
+              <Sparkles className="w-4 h-4" />
+              <span>OUR ROOTS & SACRED VOW</span>
+            </div>
+
+            <h2 className="font-serif text-2xl sm:text-4xl font-black text-[#0D3B2E] tracking-tight leading-tight">
+              A Return To The Soil, A Promise To Our Children.
             </h2>
-            <p className="text-xs sm:text-sm text-[#7A6848] max-w-xl mx-auto mt-2">
-              We are committed to providing honey that upholds the highest standards of natural purity and integrity.
+
+            <p className="text-sm sm:text-base text-[#5A4321] leading-relaxed">
+              In a hurried world flooded with ultra-processed foods, adulterated market ghee made from industrial cream separator chemicals, and artificial honey laced with inverted sugar syrup, Indian kitchens lost their most divine blessing: <em>Pavitra Shuddhata</em> (Pure Sanctity).
+            </p>
+
+            <p className="text-sm sm:text-base text-[#5A4321] leading-relaxed">
+              We asked ourselves a heartfelt question: <strong>Where did the authentic, nutty aroma of grandmother&apos;s clay-pot bilona ghee go?</strong> Why must mothers wonder if the honey they give their little ones is genuine wild nectar or commercial fructose?
+            </p>
+
+            <p className="text-sm sm:text-base text-[#5A4321] leading-relaxed">
+              <strong>Vivaan Farms</strong> was born out of that collective yearning. We walked away from corporate city life to dedicate ourselves to native cow seva and natural farming. We re-established the traditional Vedic dairy cycle where our holy Desi Gir cows are treated as family, bathed in the warmth of the sun, and hand-milked only after their calves are fully satisfied.
+            </p>
+
+            {/* Sacred Quote Card */}
+            <div className="bg-[#F5EFEB] p-5 sm:p-6 rounded-2xl border-l-4 border-[#0D3B2E] text-left">
+              <p className="font-serif italic text-sm sm:text-base text-[#0D3B2E] font-bold leading-snug">
+                &ldquo;Food is not merely calories; in our ancient Sanatana tradition, pure food is Prana (the vital life force). When prepared with sacred patience and maternal devotion, food becomes medicine for both body and soul.&rdquo;
+              </p>
+              <span className="block text-[11px] font-black uppercase tracking-wider text-[#7A6848] mt-2">
+                — The Vivaan Farms Philosophy
+              </span>
+            </div>
+          </div>
+
+          {/* Right Column: Authentic Image Showcase */}
+          <div className="md:col-span-5">
+            <div className="relative rounded-3xl overflow-hidden border border-[#E5DAC6] shadow-xl bg-white">
+              <div className="relative w-full h-[360px] sm:h-[460px]">
+                <Image
+                  src="/images/home/hero_lifestyle.jpg"
+                  alt="Vivaan Farms - Traditional Pure Food For The Entire Family"
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
+                
+                <div className="absolute bottom-5 left-5 right-5 text-white">
+                  <div className="flex items-center gap-1.5 text-amber-300 text-xs font-black uppercase tracking-wider mb-1">
+                    <Heart className="w-3.5 h-3.5 fill-amber-300" /> Three Generations Of Trust
+                  </div>
+                  <p className="font-serif font-bold text-sm sm:text-base leading-snug">
+                    Restoring the golden health and memory of our ancestral kitchens in every Indian home.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* ── 3. The Sacred 5-Step Vedic Bilona Journey ── */}
+      <section className="py-12 sm:py-20 bg-[#F4EFE6] border-y border-[#EAE3D2]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[2px] text-[#C4821E] mb-2">
+              <Flame className="w-4 h-4 text-[#C4821E]" />
+              <span>THE SACRED BILONA PARAMPARA</span>
+            </div>
+            <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-black text-[#0D3B2E] tracking-tight leading-tight">
+              How True Vedic A2 Ghee Is Born: 5 Sacred Steps
+            </h2>
+            <p className="text-xs sm:text-base text-[#614E36] mt-3 leading-relaxed">
+              Commercial ghee is produced in minutes by spinning industrial cream through heat separators. Our Vedic A2 Ghee requires over 48 hours of slow, patient human devotion.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* 5 Steps Grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            
+            {/* Step 1 */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E5DAC6] shadow-2xs hover:shadow-md transition-shadow relative">
+              <span className="text-xs font-black text-[#C4821E] uppercase tracking-wider bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 inline-block mb-3">
+                Step 1 · गौ-सेवा
+              </span>
+              <h3 className="font-serif text-lg font-black text-gray-900 mb-2">
+                Ahimsa Grazing & Calves First
+              </h3>
+              <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed">
+                Indigenous Desi Gir cows roam freely in sunshine, grazing on organic grass and Ayurvedic herbs (Shatavari, Ashwagandha). Calves drink their full share first; only the surplus milk is respectfully gathered.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E5DAC6] shadow-2xs hover:shadow-md transition-shadow relative">
+              <span className="text-xs font-black text-[#C4821E] uppercase tracking-wider bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 inline-block mb-3">
+                Step 2 · मिट्टी की हांडी
+              </span>
+              <h3 className="font-serif text-lg font-black text-gray-900 mb-2">
+                Slow Woodfire Clay Boiling
+              </h3>
+              <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed">
+                Fresh raw A2 milk is boiled slowly in traditional clay pots (matkas) and heavy brass cauldrons over gentle firewood embers, preserving natural bioactive enzymes and native sweetness.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E5DAC6] shadow-2xs hover:shadow-md transition-shadow relative">
+              <span className="text-xs font-black text-[#C4821E] uppercase tracking-wider bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 inline-block mb-3">
+                Step 3 · प्राकृतिक जामन
+              </span>
+              <h3 className="font-serif text-lg font-black text-gray-900 mb-2">
+                Overnight Curd Culturing
+              </h3>
+              <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed">
+                The cooled milk is inoculated with a sacred natural curd starter (jamun) and kept overnight in earthen vessels. The whole milk undergoes natural fermentation into thick, gut-healing cultured dahi.
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E5DAC6] shadow-2xs hover:shadow-md transition-shadow relative">
+              <span className="text-xs font-black text-[#C4821E] uppercase tracking-wider bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 inline-block mb-3">
+                Step 4 · द्विमार्गी बिलोना
+              </span>
+              <h3 className="font-serif text-lg font-black text-gray-900 mb-2">
+                Two-Way Wooden Churning
+              </h3>
+              <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed">
+                During the serene Brahma Muhurta (dawn), the cultured curd is churned with a two-way wooden bilona rope churner. Golden, probiotic-rich cultured butter (makkhan) separates gently without friction heat.
+              </p>
+            </div>
+
+            {/* Step 5 */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E5DAC6] shadow-2xs hover:shadow-md transition-shadow relative">
+              <span className="text-xs font-black text-[#C4821E] uppercase tracking-wider bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 inline-block mb-3">
+                Step 5 · कंडे की आंच
+              </span>
+              <h3 className="font-serif text-lg font-black text-gray-900 mb-2">
+                Cow Dung Cake Clarification
+              </h3>
+              <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed">
+                The cultured makkhan is melted slowly in brass vessels over dried cow dung cakes and firewood. Water evaporates, milk solids settle, and golden granular (danedar) A2 Ghee emerges with divine aroma.
+              </p>
+            </div>
+
+            {/* Step Visual Card */}
+            <div className="relative rounded-3xl overflow-hidden border border-[#E5DAC6] shadow-sm min-h-[200px] flex flex-col justify-end p-6 text-white bg-black">
+              <Image
+                src="/images/home/bilona_blog.jpg"
+                alt="Traditional Wooden Bilona Method in Clay Pot"
+                fill
+                className="object-cover opacity-80"
+              />
+              <div className="relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                  SACRED CRAFT
+                </span>
+                <p className="font-serif font-black text-base sm:text-lg leading-tight mt-1">
+                  Over 25 to 30 Litres of Pure A2 Milk for 1 Single Litre of Authentic Bilona Ghee.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* ── 4. Our Three Sacred Farm Harvests ── */}
+      <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+          <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[2px] text-[#C4821E] mb-2">
+            <Leaf className="w-4 h-4 text-[#C4821E]" />
+            <span>OUR SACRED HARVEST</span>
+          </div>
+          <h2 className="font-serif text-2xl sm:text-4xl font-black text-[#0D3B2E] tracking-tight">
+            Pure Food Direct From Our Farm To Your Table
+          </h2>
+          <p className="text-xs sm:text-sm text-[#614E36] mt-2">
+            Every product is handcrafted in small batches, tested in accredited laboratories, and sealed in glass.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+          
+          {/* Card 1: A2 Ghee */}
+          <div className="bg-white rounded-3xl overflow-hidden border border-[#E5DAC6] shadow-sm hover:shadow-lg transition-all flex flex-col group">
+            <div className="relative w-full h-56 sm:h-64 bg-[#FAF7F2] p-4 overflow-hidden">
+              <Image
+                src="/images/home/featured_pure_jar.jpg"
+                alt="Vedic A2 Desi Gir Cow Ghee"
+                fill
+                className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-3 left-3 bg-[#EAB308] text-[#1F2937] text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-2xs">
+                Signature Vedic Ghee
+              </span>
+            </div>
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="font-serif text-xl font-black text-[#0D3B2E] mb-2">
+                  A2 Desi Gir Cow Bilona Ghee
+                </h3>
+                <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed mb-4">
+                  Handcrafted from whole cultured curd of indigenous Gir cows. Naturally granular (danedar), deep golden color, brimming with fat-soluble vitamins (A2, D, E, K) and gut-healing butyric acid.
+                </p>
+              </div>
+              <Link
+                href="/category/ghee"
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#0D3B2E] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#155442] transition-colors"
+              >
+                <span>Explore A2 Ghee</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 2: Wild Honey */}
+          <div className="bg-white rounded-3xl overflow-hidden border border-[#E5DAC6] shadow-sm hover:shadow-lg transition-all flex flex-col group">
+            <div className="relative w-full h-56 sm:h-64 bg-[#FAF7F2] p-4 overflow-hidden">
+              <Image
+                src="/images/products/honey_jar.jpg"
+                alt="Raw Wild Forest Honey"
+                fill
+                className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-3 left-3 bg-amber-700 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-2xs">
+                100% Raw & Unheated
+              </span>
+            </div>
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="font-serif text-xl font-black text-[#0D3B2E] mb-2">
+                  Raw Forest Wild Honey
+                </h3>
+                <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed mb-4">
+                  Ethically gathered by indigenous honey collectors from deep wild forest groves. 100% unpasteurized, unheated, unfiltered — preserving live floral pollen, royal jelly enzymes, and natural aroma.
+                </p>
+              </div>
+              <Link
+                href="/category/honey"
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#0D3B2E] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#155442] transition-colors"
+              >
+                <span>Explore Raw Honey</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3: Homemade Sweets */}
+          <div className="bg-white rounded-3xl overflow-hidden border border-[#E5DAC6] shadow-sm hover:shadow-lg transition-all flex flex-col group">
+            <div className="relative w-full h-56 sm:h-64 bg-[#FAF7F2] p-4 overflow-hidden">
+              <Image
+                src="/images/home/festive_hero_banner.jpg"
+                alt="Artisanal Homemade Indian Sweets"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-3 left-3 bg-rose-700 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-2xs">
+                Zero White Sugar · Pure Gur
+              </span>
+            </div>
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="font-serif text-xl font-black text-[#0D3B2E] mb-2">
+                  Heritage Homemade Sweets
+                </h3>
+                <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed mb-4">
+                  Prepared strictly with our pure A2 Gir Cow Bilona Ghee, organic chemical-free desi jaggery, and handpicked premium nuts. Zero white refined sugar, zero palm oil, zero synthetic essence.
+                </p>
+              </div>
+              <Link
+                href="/category/sweets"
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#0D3B2E] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#155442] transition-colors"
+              >
+                <span>Explore Pure Sweets</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* ── 5. Our Six Sacred Vows (The Vivaan Purity Standard) ── */}
+      <section className="py-12 sm:py-20 bg-white border-t border-[#EAE3D2]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[2px] text-[#C4821E] mb-2">
+              <ShieldCheck className="w-4 h-4 text-[#C4821E]" />
+              <span>THE VIVAAN PLEDGE</span>
+            </div>
+            <h2 className="font-serif text-2xl sm:text-4xl font-black text-[#0D3B2E] tracking-tight">
+              Six Sacred Vows Behind Every Jar
+            </h2>
+            <p className="text-xs sm:text-sm text-[#614E36] mt-2">
+              We never compromise on truth, ethics, or the health of our children.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               {
-                icon: <Droplets className="w-6 h-6 text-amber-600" />,
-                title: "100% Pure Honey",
-                desc: "Never adulterated, never diluted. Pure nectar straight from healthy hives."
-              },
-              {
-                icon: <Leaf className="w-6 h-6 text-emerald-600" />,
-                title: "Natural & Authentic",
-                desc: "Retaining authentic floral aromas, enzymes, and the natural depth of raw honey."
-              },
-              {
-                icon: <ShieldCheck className="w-6 h-6 text-amber-700" />,
-                title: "Free From Added Ingredients",
-                desc: "Zero added sugars, syrups, artificial colorings, or synthetic preservatives."
-              },
-              {
-                icon: <Award className="w-6 h-6 text-amber-600" />,
-                title: "Carefully Collected & Packed",
-                desc: "Ethically harvested with respect for bees, hygienic processing, and sealed in jars."
-              },
-              {
-                icon: <Compass className="w-6 h-6 text-emerald-600" />,
-                title: "Transparent Information",
-                desc: "Clear and transparent details about our ingredients and nutritional profiles."
+                icon: <Sun className="w-6 h-6 text-amber-600" />,
+                title: "100% Shuddh & Satvik",
+                desc: "Zero preservatives, artificial colors, synthetic fragrances, or chemical flavor enhancers. Only pure Mother Nature."
               },
               {
                 icon: <Heart className="w-6 h-6 text-rose-500" />,
-                title: "Family First Quality",
-                desc: "Wholesome natural sweetness you can confidently share with your loved ones every day."
+                title: "Ahimsa Go-Samrakshana",
+                desc: "Lifelong loving care for our indigenous Gir cows. Calves are never starved, and cows are protected throughout their natural elder years."
+              },
+              {
+                icon: <Droplets className="w-6 h-6 text-amber-600" />,
+                title: "Raw & Unheated Honey",
+                desc: "Pure forest nectar that is never subjected to ultra-filtration or high heat pasteurization, keeping natural bee pollen and enzymes alive."
+              },
+              {
+                icon: <Award className="w-6 h-6 text-emerald-600" />,
+                title: "NABL Laboratory Certified",
+                desc: "Every batch is tested in accredited NABL laboratories to verify 100% A2 Beta-Casein authenticity and zero pesticide or heavy metal residues."
+              },
+              {
+                icon: <Flame className="w-6 h-6 text-amber-700" />,
+                title: "Ancient Clay & Brass Craft",
+                desc: "We refuse industrial aluminum and plastic boiling tubs, honoring time-tested Ayurvedic clay handis, wooden bilonas, and brass cauldrons."
+              },
+              {
+                icon: <ShieldCheck className="w-6 h-6 text-[#0D3B2E]" />,
+                title: "Food-Grade Glass & Metal Jars",
+                desc: "Sealed in recyclable glass and metal containers to protect the food’s vital Prana and ensure zero toxic microplastic leaching into your food."
               }
-            ].map((item, idx) => (
+            ].map((vow, idx) => (
               <div 
                 key={idx}
-                className="bg-white p-6 rounded-3xl border border-amber-900/10 shadow-sm hover:shadow-md transition-all group"
+                className="p-6 rounded-3xl bg-[#FAF8F5] border border-[#EAE3D2] hover:border-[#0D3B2E]/30 transition-all hover:shadow-xs group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  {item.icon}
+                <div className="w-12 h-12 rounded-2xl bg-white border border-[#EAE3D2] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform shadow-2xs">
+                  {vow.icon}
                 </div>
-                <h3 className="font-headline text-lg font-bold text-gray-900 mb-1.5 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  {item.title}
+                <h3 className="font-serif text-lg font-bold text-[#0D3B2E] mb-2 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  {vow.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#7A6848] leading-relaxed">
-                  {item.desc}
+                  {vow.desc}
                 </p>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Section 3: From Hive to Your Home & Mission */}
-        <div className="grid md:grid-cols-2 gap-8 items-stretch">
-          {/* Hive to Home */}
-          <div className="bg-gradient-to-br from-[#2D5A27] to-[#1E3F1A] text-white p-8 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between">
-            <div>
-              <div className="inline-flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-amber-300 mb-4">
-                <Sun className="w-3.5 h-3.5" /> Direct & Pure
+        </div>
+      </section>
+
+
+      {/* ── 6. Personal Note From The Founders ── */}
+      <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div className="bg-[#FAF7F2] p-8 sm:p-12 md:p-16 rounded-3xl border border-[#D9CEBA] shadow-lg relative overflow-hidden">
+          
+          <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
+            <span className="text-3xl sm:text-4xl text-[#C4821E] font-serif font-black block">
+              &ldquo;
+            </span>
+
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-black text-[#0D3B2E] leading-tight">
+              An Open Invitation To Our Farm & Our Heart
+            </h2>
+
+            <p className="text-sm sm:text-base text-[#5A4321] leading-relaxed font-medium">
+              We never intended Vivaan Farms to be a faceless commercial brand. For us, this is our life&apos;s dharma. When you open a jar of our golden A2 Ghee, taste the wildflower depth of our forest honey, or share our handmade sweets with your family during festivals, you are tasting the devotion of farmers, artisans, and holy cows who live in peaceful harmony with the earth.
+            </p>
+
+            <p className="text-sm sm:text-base text-[#5A4321] leading-relaxed font-medium">
+              You are always welcome to visit our farm in Gujarat. Walk alongside our cows in the morning dew, hear the rhythmic sound of the wooden bilona churning, and share a warm cup of herbal tea with our farm family.
+            </p>
+
+            <div className="pt-6 border-t border-[#D9CEBA]/80">
+              <div className="font-serif font-bold text-base sm:text-lg text-[#0D3B2E]">
+                With Deep Prem &amp; Pranam,
               </div>
-              <h2 className="font-headline text-2xl md:text-3xl font-extrabold mb-4">
-                From Hive to Your Home
-              </h2>
-              <p className="text-white/80 text-sm md:text-base leading-relaxed mb-6">
-                Every jar represents our effort to bring nature’s sweetness to your table. We carefully handle and pack our honey while preserving the qualities that make natural honey special.
-              </p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/15">
-              <div className="text-xs text-amber-200 font-bold uppercase tracking-wider mb-1">Our Philosophy</div>
-              <p className="text-sm font-semibold text-white">
-                “Pure honey, honest quality, and the goodness of nature.”
-              </p>
+              <div className="text-xs font-black uppercase tracking-wider text-[#C4821E] mt-0.5">
+                The Vivaan Farms Family
+              </div>
             </div>
           </div>
 
-          {/* Mission */}
-          <div className="bg-white p-8 md:p-10 rounded-3xl border border-amber-900/10 shadow-xl flex flex-col justify-between">
-            <div>
-              <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Purpose Driven
-              </div>
-              <h2 className="font-headline text-2xl md:text-3xl font-extrabold text-[#100C06] mb-4">
-                Our Mission
-              </h2>
-              <p className="text-[#7A6848] text-sm md:text-base leading-relaxed mb-6">
-                Our mission is to make high-quality natural honey accessible to more families while building a brand based on <strong className="text-amber-900">purity, trust, transparency, and quality</strong>.
-              </p>
-            </div>
+        </div>
+      </section>
+
+
+      {/* ── 7. Call To Action Banner ── */}
+      <section className="py-10 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto mb-10">
+        <div className="bg-gradient-to-br from-[#0D3B2E] via-[#14422B] to-[#0A2E24] text-white p-8 sm:p-12 md:p-16 rounded-3xl shadow-xl text-center relative overflow-hidden">
+          
+          <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+            <span className="inline-block px-3 py-1 rounded-full bg-white/10 text-amber-300 text-[10px] sm:text-xs font-black uppercase tracking-[2px]">
+              Direct From Farm · Delivered Pan-India
+            </span>
             
-            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-amber-100">
-              <div className="text-center p-3 bg-amber-50/60 rounded-2xl">
-                <div className="font-headline font-black text-lg text-amber-900">Purity & Trust</div>
-                <div className="text-[11px] text-[#7A6848]">Core Foundation</div>
-              </div>
-              <div className="text-center p-3 bg-amber-50/60 rounded-2xl">
-                <div className="font-headline font-black text-lg text-amber-900">Transparency</div>
-                <div className="text-[11px] text-[#7A6848]">Open & Honest</div>
-              </div>
+            <h2 className="font-serif text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+              Experience The True Fragrance Of Ancient Purity
+            </h2>
+
+            <p className="text-white/80 text-xs sm:text-base leading-relaxed">
+              Order farm-fresh A2 Desi Bilona Ghee, Raw Forest Honey, and Artisanal Homemade Sweets delivered directly to your doorstep in pristine protective glass packaging.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              <Link
+                href="/category/all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#EAB308] text-[#1F2937] font-black text-xs uppercase tracking-wider hover:bg-[#FACC15] transition-all shadow-md active:scale-95"
+              >
+                <span>Shop Pure Farm Harvest</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <a
+                href="https://wa.me/916302548215?text=Namaste%20Vivaan%20Farms,%20I%20would%20like%20to%20know%20more%20about%20your%20A2%20Ghee%20and%20farm%20harvest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all"
+              >
+                <MessageCircle className="w-4 h-4 text-emerald-400" />
+                <span>WhatsApp Our Farm</span>
+              </a>
             </div>
           </div>
-        </div>
 
-      </div>
-    </section>
+        </div>
+      </section>
+
+    </div>
   );
 }

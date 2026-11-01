@@ -52,7 +52,7 @@ export default function OrderSuccessPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F6EF] text-[#100C06]">
-      <Header onOpenCart={() => {}} cartCount={0} onSearch={() => {}} onFilter={() => {}} />
+      <Header onOpenCart={() => { }} cartCount={0} onSearch={() => { }} onFilter={() => { }} />
 
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-14 md:py-20 flex flex-col items-center justify-center text-center">
         <div className="w-24 h-24 sm:w-32 sm:h-32 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 sm:mb-10 animate-bounce">
@@ -74,7 +74,7 @@ export default function OrderSuccessPage() {
             <div className="text-[10px] font-black text-primary uppercase tracking-[3px] mb-2">Order Reference ID</div>
             <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
               <div className="text-xl sm:text-2xl md:text-3xl font-headline font-black text-primary break-all">#{orderId.toUpperCase()}</div>
-              <button 
+              <button
                 onClick={copyToClipboard}
                 title="Copy order ID"
                 className="w-10 h-10 rounded-full bg-[#F9F6EF] flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shrink-0 active:scale-90 cursor-pointer"
@@ -82,7 +82,7 @@ export default function OrderSuccessPage() {
                 {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-primary" />}
               </button>
             </div>
-            
+
             <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
               <p className="text-[11px] text-[#7A6848] font-bold uppercase tracking-wider">
