@@ -9,9 +9,23 @@ import {
   ShieldCheck, 
   CreditCard,
   Check,
-  ShoppingBag
+  ShoppingBag,
+  Sparkles,
+  Gift,
+  Coins,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { LoginModal } from '@/components/vivaan/LoginModal';
+import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Product, ProductVariant } from '@/types';
 
@@ -41,6 +55,10 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
   onOpenCart
 }) => {
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { user } = useUser();
+  const { toast } = useToast();
 
   // Use configured variants or reference defaults
   const vars: ProductVariant[] = Array.isArray(product?.vars) && product.vars.length > 0
@@ -215,7 +233,9 @@ export const ProductPurchasePane: React.FC<ProductPurchasePaneProps> = ({
           </span>
           <button 
             type="button"
-            className="text-[#0D3B2E] font-black underline hover:text-emerald-900 cursor-pointer"
+            onClick={() => setIsMembershipModalOpen(true)}
+            className="text-[#0D3B2E] font-black underline hover:text-emerald-900 cursor-pointer transition-colors active:scale-95"
+            aria-label="Join Vivaan Pure Membership"
           >
             Join Membership
           </button>

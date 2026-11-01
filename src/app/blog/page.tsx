@@ -12,7 +12,14 @@ import { CartSidebar } from '@/components/vivaan/CartSidebar';
 import { PaymentModal } from '@/components/vivaan/PaymentModal';
 import { SuccessModal } from '@/components/vivaan/SuccessModal';
 import { useCart } from '@/hooks/use-cart';
-import { ArrowRight, Calendar, User } from 'lucide-react';
+import { ArrowRight, Calendar, User, BookOpen, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 const BLOG_POSTS = [
   {
@@ -77,6 +84,7 @@ export default function BlogPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<typeof BLOG_POSTS[0] | null>(null);
 
   const handleTabChange = (tab: string) => {
     if (tab === 'home' || tab === 'shop') {

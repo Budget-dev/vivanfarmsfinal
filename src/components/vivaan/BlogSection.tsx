@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowRight, BookOpen, Clock } from 'lucide-react';
 
 export const BlogSection: React.FC = () => {
@@ -55,7 +56,9 @@ export const BlogSection: React.FC = () => {
             </div>
 
             <h3 className="font-headline text-lg sm:text-2xl font-black text-[#1A1410] hover:text-[#C85A32] transition-colors leading-tight">
-              Ancient Vedic Bilona: Why Curd Churning Matters
+              <Link href="/blog">
+                Ancient Vedic Bilona: Why Curd Churning Matters
+              </Link>
             </h3>
 
             <p className="text-xs sm:text-sm text-[#5C4524] font-medium leading-relaxed">
@@ -63,13 +66,14 @@ export const BlogSection: React.FC = () => {
             </p>
 
             <div className="pt-2">
-              <button 
-                type="button"
-                className="inline-flex items-center gap-2 text-xs sm:text-sm font-black text-[#C85A32] hover:text-[#9A3B1B] uppercase tracking-wider underline decoration-2 underline-offset-4 cursor-pointer"
+              <Link 
+                href="/blog"
+                className="inline-flex items-center gap-2 text-xs sm:text-sm font-black text-[#C85A32] hover:text-[#9A3B1B] uppercase tracking-wider underline decoration-2 underline-offset-4 cursor-pointer transition-colors"
+                aria-label="Read full article on Vedic Bilona Curd Churning"
               >
                 <span>Read Full Article</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              </Link>
             </div>
 
           </div>

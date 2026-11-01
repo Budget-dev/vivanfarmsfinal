@@ -8,6 +8,7 @@ import {
   LayoutDashboard, 
   Package, 
   ShoppingBag, 
+  Truck,
   Star, 
   TicketPercent, 
   Users, 
@@ -63,6 +64,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Store Operations',
     items: [
       { id: 'orders', label: 'Orders & Shipments', icon: ShoppingBag, href: '/admin/orders' },
+      { id: 'shipping', label: 'NimbusPost Shipping', icon: Truck, href: '/admin/shipping', badge: 'Live', badgeVariant: 'secondary' },
       { id: 'reviews', label: 'Customer Reviews', icon: Star, href: '/admin/reviews' },
       { id: 'coupons', label: 'Discounts & Coupons', icon: TicketPercent, href: '/admin/coupons' },
       { id: 'users', label: 'Users & Purity Coins', icon: Users, href: '/admin/users' },

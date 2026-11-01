@@ -116,10 +116,22 @@ export const HoverFooter: React.FC = () => {
 
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex space-x-6 text-white/40">
-            {[Facebook, Instagram, Youtube, Globe].map((Icon, i) => (
-              <button key={i} className="hover:text-white transition-colors">
+            {[
+              { Icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+              { Icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+              { Icon: Youtube, href: "https://youtube.com", label: "YouTube" },
+              { Icon: Globe, href: "/", label: "Vivaan Farms Official" },
+            ].map(({ Icon, href, label }) => (
+              <a
+                key={label}
+                href={href}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                aria-label={label}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
                 <Icon size={20} />
-              </button>
+              </a>
             ))}
           </div>
           <p className="text-[11px] font-black text-white/30 uppercase tracking-[2px]">

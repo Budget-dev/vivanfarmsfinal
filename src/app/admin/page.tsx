@@ -41,9 +41,94 @@ import { Chart } from 'react-google-charts';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
   const db = useFirestore();
+  const { toast } = useToast();
+
+  const handleExportData = () => {
+    try {
+      const rows: (string | number)[][] = [];
+
+      rows.push(["VIVAAN FARMS - ADMIN DASHBOARD EXPORT"]);
+      rows.push([`Exported At: ${new Date().toLocaleString('en-IN')}`]);
+      rows.push([]);
+
+      // Section 1: KPI Metrics
+      rows.push(["KEY PERFORMANCE INDICATORS"]);
+      rows.push(["Metric", "Value"]);
+      rows.push(["Total Gross Revenue", `Rs. ${stats.revenue.toLocaleString('en-IN')}`]);
+      rows.push(["Total Orders", stats.ordersCount]);
+      rows.push(["Average Order Value", `Rs. ${stats.avgValue.toLocaleString('en-IN')}`]);
+      rows.push(["Purity Coins Distributed/Redeemed", stats.coins]);
+      rows.push(["Pending/Processing Orders", stats.pendingCount]);
+      rows.push([]);
+
+      // Section 2: Recent Orders Summary
+      rows.push(["ORDERS SUMMARY"]);
+      rows.push(["Order ID", "Customer Name", "Phone", "Total Amount (Rs.)", "Status", "Payment Method", "Date"]);
+      if (orders && orders.length > 0) {
+        orders.forEach((o: any) => {
+          const ms = getOrderTimestamp(o);
+          const dateStr = ms > 0 ? new Date(ms).toLocaleDateString('en-IN') : 'N/A';
+          rows.push([
+            o.id || o.orderId || 'N/A',
+            o.customerName || o.shippingAddress?.fullName || 'Anonymous',
+            o.customerPhone || o.shippingAddress?.phone || 'N/A',
+            o.totalAmount || 0,
+            o.status || 'Pending',
+            o.paymentMethod || 'Online',
+            dateStr
+          ]);
+        });
+      } else {
+        rows.push(["No orders recorded"]);
+      }
+      rows.push([]);
+
+      // Section 3: Catalog Products Summary
+      rows.push(["PRODUCTS CATALOG SUMMARY"]);
+      rows.push(["Product ID", "Title", "Category", "Price (Rs.)", "Stock Status"]);
+      if (products && products.length > 0) {
+        products.forEach((p: any) => {
+          rows.push([
+            p.id || 'N/A',
+            p.title || p.name || 'N/A',
+            p.category || 'General',
+            p.price || 0,
+            p.inStock !== false ? 'In Stock' : 'Out of Stock'
+          ]);
+        });
+      }
+
+      // Convert rows to CSV string
+      const csvContent = rows
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\r\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `vivaan-dashboard-${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Dashboard Data Exported",
+        description: `Exported ${orders?.length || 0} orders and product catalog metrics to CSV.`,
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: err.message || "Could not generate CSV export.",
+      });
+    }
+  };
   const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
 
   // Firestore Data Collections
@@ -196,7 +281,13 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-medium border-border">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExportData}
+            className="h-9 gap-1.5 text-xs font-medium border-border hover:bg-accent cursor-pointer transition-colors active:scale-95"
+            aria-label="Export Dashboard Data to CSV"
+          >
             <Download className="w-3.5 h-3.5 text-muted-foreground" />
             <span>Export Data</span>
           </Button>

@@ -85,6 +85,8 @@ export default function PaymentPage() {
         const shippingRes = await createShipment({
           orderId: finalOrderId,
           userEmail: customerEmail,
+          totalAmount: total,
+          paymentMethod: details.paymentMethod,
           items: cart,
           shippingAddress
         });
