@@ -18,7 +18,8 @@ import {
   Ticket, 
   CheckCircle2,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -61,6 +62,7 @@ export default function CheckoutPage() {
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isVerifyingPincode, setIsVerifyingPincode] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('vivaan_shipping');
@@ -163,7 +165,7 @@ export default function CheckoutPage() {
     return { couponDiscount, coinsDiscount, finalTotal, earnedCoins };
   }, [subtotal, appliedCoupon, useCoins, userProfile, cart]);
 
-  const handleProceedToPayment = () => {
+  const handleProceedToPayment = async () => {
     if (!user) {
       toast({
         title: "Please Sign In",
@@ -180,7 +182,9 @@ export default function CheckoutPage() {
     }
     if (!address.address?.trim()) newErrors.address = 'Street address is required';
     if (!address.city?.trim()) newErrors.city = 'City / District is required';
-    if (!address.pincode?.trim() || address.pincode.replace(/\D/g, '').length !== 6) {
+    
+    const cleanPin = (address.pincode || '').replace(/\D/g, '').slice(0, 6);
+    if (!cleanPin || cleanPin.length !== 6) {
       newErrors.pincode = 'Valid 6-digit PIN code required';
     }
 
@@ -193,6 +197,32 @@ export default function CheckoutPage() {
       });
       window.scrollTo({ top: 100, behavior: 'smooth' });
       return;
+    }
+
+    // Validate PIN code against India Post postal records
+    setIsVerifyingPincode(true);
+    try {
+      const pinRes = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, {
+        signal: AbortSignal.timeout(3500)
+      });
+      const pinData = await pinRes.json();
+      if (!Array.isArray(pinData) || pinData[0]?.Status !== 'Success' || !pinData[0].PostOffice?.length) {
+        setFieldErrors({
+          pincode: `PIN code ${cleanPin} is not recognized in postal records. Please check your delivery PIN code.`
+        });
+        toast({
+          variant: "destructive",
+          title: "Invalid Delivery PIN Code",
+          description: `PIN code ${cleanPin} does not exist in postal records. Please enter a valid 6-digit PIN code.`,
+        });
+        setIsVerifyingPincode(false);
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+        return;
+      }
+    } catch {
+      // If postal verification service times out, allow 6-digit PIN code
+    } finally {
+      setIsVerifyingPincode(false);
     }
     
     setFieldErrors({});
@@ -462,9 +492,20 @@ export default function CheckoutPage() {
               {/* Desktop CTA Button */}
               <Button 
                 onClick={handleProceedToPayment}
-                className="hidden lg:flex w-full h-14 bg-gradient-to-br from-[#1B5E3B] to-[#0D3520] hover:from-[#14482D] hover:to-[#092617] text-white rounded-full font-black uppercase tracking-wider text-xs shadow-xl items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
+                disabled={isVerifyingPincode}
+                className="hidden lg:flex w-full h-14 bg-gradient-to-br from-[#1B5E3B] to-[#0D3520] hover:from-[#14482D] hover:to-[#092617] text-white rounded-full font-black uppercase tracking-wider text-xs shadow-xl items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer disabled:opacity-60"
               >
-                Proceed to Payment <ArrowRight className="w-4 h-4" />
+                {isVerifyingPincode ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying Delivery PIN...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Proceed to Payment</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -481,10 +522,20 @@ export default function CheckoutPage() {
         </div>
         <Button 
           onClick={handleProceedToPayment}
-          className="h-12 px-6 bg-gradient-to-br from-[#1B5E3B] to-[#0D3520] text-white rounded-full font-black uppercase text-xs tracking-wider shadow-lg flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+          disabled={isVerifyingPincode}
+          className="h-12 px-6 bg-gradient-to-br from-[#1B5E3B] to-[#0D3520] text-white rounded-full font-black uppercase text-xs tracking-wider shadow-lg flex items-center gap-2 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
         >
-          <span>Pay Now</span>
-          <ArrowRight className="w-4 h-4" />
+          {isVerifyingPincode ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Verifying...</span>
+            </>
+          ) : (
+            <>
+              <span>Pay Now</span>
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
         </Button>
       </div>
 

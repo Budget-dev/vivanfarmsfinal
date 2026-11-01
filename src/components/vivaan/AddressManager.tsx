@@ -46,6 +46,11 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
   className = '',
 }) => {
   const { toast } = useToast();
+  const latestAddressRef = useRef(address);
+  useEffect(() => {
+    latestAddressRef.current = address;
+  }, [address]);
+
   const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
   const [selectedTag, setSelectedTag] = useState<'Home' | 'Work' | 'Other'>('Home');
 
@@ -139,14 +144,15 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         const detectedState = postOffice.State || '';
         const areaName = postOffice.Name || '';
 
+        const currentAddr = latestAddressRef.current;
         onChange({
-          ...address,
+          ...currentAddr,
           pincode: cleanPincode,
-          city: detectedCity || address.city,
-          state: detectedState || address.state,
-          address: address.address 
-            ? address.address 
-            : (areaName && areaName !== detectedCity ? `${areaName}, ${detectedCity}` : address.address)
+          city: detectedCity || currentAddr.city,
+          state: detectedState || currentAddr.state,
+          address: currentAddr.address 
+            ? currentAddr.address 
+            : (areaName && areaName !== detectedCity ? `${areaName}, ${detectedCity}` : currentAddr.address)
         });
 
         setPincodeLookupState('verified');
@@ -159,7 +165,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
       setPincodeLookupState('failed');
       setPincodeNotice('Postal lookup offline. Please enter City & State manually.');
     }
-  }, [address, onChange]);
+  }, [onChange]);
 
   // Reverse geocodes coordinates to complete Indian street address via /api/location/reverse-geocode
   const reverseGeocodeCoords = async (latitude: number, longitude: number) => {
@@ -227,10 +233,26 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
         const nomData = await nomRes.json();
         const addr = nomData.address || {};
         road = addr.road || addr.street || addr.suburb || addr.neighbourhood || addr.residential || road;
-        city = city || addr.city || addr.town || addr.village || addr.county || addr.district || '';
+        const village = addr.village || addr.hamlet || '';
+        const mandal = (addr.county || '').replace(/\s*(mandal|taluk|tehsil|block|sub-district)\b/gi, '').trim();
+        const district = (addr.state_district || addr.district || '').replace(/\s*(district|dist)\b/gi, '').trim();
+        city = city || district || addr.city || addr.town || village;
         state = state || addr.state || '';
         pincode = pincode || (addr.postcode || '').replace(/\D/g, '').slice(0, 6);
         houseNumber = addr.house_number || '';
+
+        // If mandal is found and pincode is missing or unverified, prioritize mandal lookup
+        if (mandal && (!pincode || pincode.length !== 6)) {
+          try {
+            const mRes = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(mandal)}`, { signal: AbortSignal.timeout(2500) });
+            const mData = await mRes.json();
+            if (mData?.[0]?.Status === 'Success' && mData[0].PostOffice?.[0]?.Pincode) {
+              pincode = String(mData[0].PostOffice[0].Pincode).replace(/\D/g, '').slice(0, 6);
+              if (mData[0].PostOffice[0].District) city = mData[0].PostOffice[0].District;
+              if (mData[0].PostOffice[0].State) state = mData[0].PostOffice[0].State;
+            }
+          } catch {}
+        }
       }
     } catch (e) {
       console.warn('Nominatim geocode notice:', e);
@@ -394,20 +416,21 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             const finalPincode = geo.pincode || '';
 
             // Enter ALL fields at one time!
+            const currentAddr = latestAddressRef.current;
             onChange({
-              ...address,
-              address: fullStreet || address.address,
-              city: finalCity || address.city,
-              state: finalState || address.state,
-              pincode: finalPincode || address.pincode,
+              ...currentAddr,
+              address: fullStreet || currentAddr.address,
+              city: finalCity || currentAddr.city,
+              state: finalState || currentAddr.state,
+              pincode: finalPincode || currentAddr.pincode,
             });
 
             setGeoState('success');
-            setGeoMessage(`Auto-filled: ${[finalCity, finalState].filter(Boolean).join(', ')}`);
+            setGeoMessage(`Auto-filled: ${[finalCity, finalState, finalPincode].filter(Boolean).join(', ')}`);
 
             toast({
               title: "Address Auto-Filled",
-              description: `Auto-filled: ${finalCity}, ${finalState}`,
+              description: `Auto-filled: ${[finalCity, finalState, finalPincode].filter(Boolean).join(', ')}`,
             });
 
             if (finalPincode && finalPincode.length === 6) {
@@ -524,13 +547,13 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
       {isMapPickerOpen && (
         <LeafletLocationPicker
           onLocationSelect={(loc) => {
-            // Populate ALL fields at one time
+            const currentAddr = latestAddressRef.current;
             onChange({
-              ...address,
-              address: loc.address || address.address,
-              city: loc.city || address.city,
-              state: loc.state || address.state,
-              pincode: loc.pincode || address.pincode,
+              ...currentAddr,
+              address: loc.address || currentAddr.address,
+              city: loc.city || currentAddr.city,
+              state: loc.state || currentAddr.state,
+              pincode: loc.pincode || currentAddr.pincode,
             });
             setGeoState('success');
             setGeoMessage(`Address auto-filled: ${[loc.city, loc.state, loc.pincode].filter(Boolean).join(', ')}.`);
@@ -540,7 +563,7 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
             setIsMapPickerOpen(false);
             toast({
               title: "Address Auto-Filled",
-              description: "All doorstep address fields have been populated from map pin.",
+              description: `Doorstep address auto-filled: ${[loc.city, loc.state, loc.pincode].filter(Boolean).join(', ')}`,
             });
           }}
           onClose={() => setIsMapPickerOpen(false)}

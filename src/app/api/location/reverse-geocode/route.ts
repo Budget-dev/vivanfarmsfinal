@@ -28,7 +28,11 @@ async function resolveIndianPincode(
     state?: string;
   }
 ): Promise<{ pincode: string; city?: string; state?: string; verified: boolean }> {
-  const { village, locality, mandal, district, city, state } = details;
+  const cleanState = (details.state || "").replace(/\bstate\b/gi, "").trim().toLowerCase();
+  const cleanDistrict = (details.district || "").replace(/\s*(district|dist)\b/gi, "").trim().toLowerCase();
+  const cleanMandal = (details.mandal || "").replace(/\s*(mandal|taluk|tehsil|block|sub-district)\b/gi, "").trim().toLowerCase();
+  const cleanVillage = (details.village || "").trim().toLowerCase();
+  const cleanLocality = (details.locality || "").replace(/\s*(road|street|nagar|colony|lane|bypass)\b/gi, "").trim().toLowerCase();
 
   // 1. If rawPincode is a 6-digit code, verify it with official India Post API
   if (rawPincode && /^\d{6}$/.test(rawPincode)) {
@@ -38,67 +42,99 @@ async function resolveIndianPincode(
       });
       const data = await res.json();
       if (Array.isArray(data) && data[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
-        return {
-          pincode: rawPincode,
-          city: data[0].PostOffice[0].District || city,
-          state: data[0].PostOffice[0].State || state,
-          verified: true,
-        };
+        const offices = data[0].PostOffice;
+        // Verify this pincode actually matches the district and state!
+        const matchesDistrict = !cleanDistrict || offices.some((o: any) =>
+          (o.District || "").toLowerCase().includes(cleanDistrict) || cleanDistrict.includes((o.District || "").toLowerCase())
+        );
+        const matchesState = !cleanState || offices.some((o: any) =>
+          (o.State || "").toLowerCase() === cleanState
+        );
+        // If cleanMandal is provided, verify whether this pincode covers this mandal/block
+        const matchesBlock = !cleanMandal || offices.some((o: any) =>
+          (o.Block || "").toLowerCase().includes(cleanMandal) || cleanMandal.includes((o.Block || "").toLowerCase())
+        );
+
+        if (matchesDistrict && matchesState && matchesBlock) {
+          return {
+            pincode: rawPincode,
+            city: offices[0].District || details.city,
+            state: offices[0].State || details.state,
+            verified: true,
+          };
+        }
       }
     } catch {
-      // Network timeout or offline - keep raw if verified check cannot complete
+      // Network timeout or offline - continue to postal directory hierarchy lookup
     }
   }
 
-  // 2. If rawPincode was invalid/non-existent (e.g. OSM error like 531204) or missing:
-  // Search India Post database by candidate location names in order of specificity
-  const cleanMandal = mandal ? mandal.replace(/\s*(mandal|taluk|tehsil|block|sub-district)\b/gi, "").trim() : "";
-  const cleanDistrict = district ? district.replace(/\s*(district|dist)\b/gi, "").trim() : "";
-  const cleanVillage = village ? village.trim() : "";
-  const cleanLocality = locality ? locality.trim() : "";
-  const cleanCity = city ? city.trim() : "";
+  // 2. Search India Post database by administrative hierarchy:
+  // In India, Mandal / Taluk / Block is the authoritative postal delivery unit.
+  // Village post offices are validated against cleanMandal to avoid matching same-named villages in other mandals.
+  const candidateList = [
+    { name: cleanMandal, isMandal: true },
+    { name: cleanVillage, isMandal: false },
+    { name: cleanLocality, isMandal: false },
+    { name: details.city, isMandal: false },
+    { name: cleanDistrict, isMandal: false },
+  ].filter(c => c.name && c.name.length >= 3);
 
-  const candidates = [cleanVillage, cleanLocality, cleanMandal, cleanCity, cleanDistrict].filter(Boolean);
-  const uniqueCandidates = Array.from(new Set(candidates));
+  const seen = new Set<string>();
+  const uniqueCandidates = candidateList.filter(c => {
+    const key = (c.name || '').toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
-  for (const name of uniqueCandidates) {
-    if (!name || name.length < 3) continue;
+  for (const cand of uniqueCandidates) {
     try {
-      const res = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(name)}`, {
+      const res = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(cand.name!)}`, {
         signal: AbortSignal.timeout(3000),
       });
       const data = await res.json();
       if (Array.isArray(data) && data[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
-        const postOffices = data[0].PostOffice;
-        const targetState = (state || "").toLowerCase();
-        const targetDistrict = (cleanDistrict || cleanCity || "").toLowerCase();
+        const offices = data[0].PostOffice;
+        for (const po of offices) {
+          const poDist = (po.District || "").toLowerCase();
+          const poState = (po.State || "").toLowerCase();
+          const distMatch = !cleanDistrict || poDist.includes(cleanDistrict) || cleanDistrict.includes(poDist);
+          const stateMatch = !cleanState || poState === cleanState;
 
-        // 1st priority: matches both district & state
-        let match = postOffices.find(
-          (po: any) =>
-            (targetDistrict &&
-              (po.District?.toLowerCase().includes(targetDistrict) ||
-                targetDistrict.includes(po.District?.toLowerCase()))) &&
-            (!targetState || po.State?.toLowerCase() === targetState)
-        );
+          if (distMatch && stateMatch) {
+            const poPincode = String(po.Pincode).replace(/\D/g, "").slice(0, 6);
+            if (!/^\d{6}$/.test(poPincode)) continue;
 
-        // 2nd priority: matches state
-        if (!match && targetState) {
-          match = postOffices.find((po: any) => po.State?.toLowerCase() === targetState);
-        }
+            // If candidate is a village or locality, verify that the post office's block matches cleanMandal
+            if (!cand.isMandal && cleanMandal) {
+              try {
+                const pinRes = await fetch(`https://api.postalpincode.in/pincode/${poPincode}`, {
+                  signal: AbortSignal.timeout(2500),
+                });
+                const pinData = await pinRes.json();
+                if (pinData && pinData[0]?.Status === "Success") {
+                  const pinOffices = pinData[0].PostOffice || [];
+                  const blockMatches = pinOffices.some((o: any) =>
+                    (o.Block || "").toLowerCase().includes(cleanMandal) || cleanMandal.includes((o.Block || "").toLowerCase())
+                  );
+                  if (!blockMatches) {
+                    // Village is in a different block/mandal! Continue searching.
+                    continue;
+                  }
+                }
+              } catch {
+                // Ignore secondary timeout
+              }
+            }
 
-        // 3rd priority: first matching post office
-        if (!match) {
-          match = postOffices[0];
-        }
-
-        if (match && match.Pincode) {
-          return {
-            pincode: String(match.Pincode).replace(/\D/g, "").slice(0, 6),
-            city: match.District || city,
-            state: match.State || state,
-            verified: true,
-          };
+            return {
+              pincode: poPincode,
+              city: po.District || details.city,
+              state: po.State || details.state,
+              verified: true,
+            };
+          }
         }
       }
     } catch {
@@ -106,8 +142,8 @@ async function resolveIndianPincode(
     }
   }
 
-  // Fallback: return raw pincode
-  return { pincode: rawPincode || "", city, state, verified: false };
+  // 3. Fallback: return raw pincode
+  return { pincode: rawPincode || "", city: details.city, state: details.state, verified: false };
 }
 
 export async function POST(req: NextRequest) {
@@ -198,22 +234,29 @@ export async function POST(req: NextRequest) {
         const data = await fallbackRes.json();
         const addr = data.address || {};
 
-        const street = [addr.house_number, addr.road || addr.suburb || addr.neighbourhood].filter(Boolean).join(" ");
-        const city = addr.village || addr.city || addr.town || addr.municipality || addr.county || addr.district || "";
+        const village = addr.village || addr.hamlet || "";
+        const locality = addr.suburb || addr.neighbourhood || "";
+        const road = addr.road || "";
+        const mandal = addr.county || "";
+        const district = addr.state_district || addr.district || "";
         const state = addr.state || "";
         const rawPostal = (addr.postcode || "").replace(/\D/g, "").slice(0, 6);
 
+        // Build clean doorstep street
+        const streetParts = [addr.house_number, road, village || locality].filter(Boolean);
+        const street = streetParts.length > 0 ? streetParts.join(", ") : (village || locality || "Doorstep Address");
+
         // Validate and enrich with official India Post data
         const pinResult = await resolveIndianPincode(rawPostal, {
-          village: addr.village,
-          locality: addr.suburb || addr.neighbourhood,
-          mandal: addr.county,
-          district: addr.state_district,
-          city,
+          village,
+          locality: road ? `${road}, ${locality}` : locality,
+          mandal,
+          district,
+          city: addr.city || addr.town || district || village,
           state,
         });
 
-        const finalCity = pinResult.city || city || "City";
+        const finalCity = pinResult.city || district || addr.city || "City";
         const finalState = pinResult.state || state || "State";
         const finalPostal = pinResult.pincode || rawPostal;
 
@@ -221,13 +264,13 @@ export async function POST(req: NextRequest) {
           success: true,
           provider: "openstreetmap",
           address: {
-            street: street || addr.suburb || data.display_name?.split(",")[0] || "Street address",
-            apartment: addr.neighbourhood || addr.suburb || "",
+            street: street || "Doorstep address",
+            apartment: locality || village || "",
             city: finalCity,
             state: finalState,
             postalCode: finalPostal,
             country: addr.country || "India",
-            formattedAddress: data.display_name || "",
+            formattedAddress: [street, finalCity, finalState, finalPostal].filter(Boolean).join(", "),
           },
         });
       }
@@ -241,25 +284,30 @@ export async function POST(req: NextRequest) {
       const bdcRes = await fetch(bdcUrl, { signal: AbortSignal.timeout(5000) });
       if (bdcRes.ok) {
         const bdc = await bdcRes.json();
-        const city = bdc.city || bdc.locality || "";
-        const state = bdc.principalSubdivision || "";
-        const rawPostal = (bdc.postcode || "").replace(/\D/g, "").slice(0, 6);
-        const street = [bdc.locality, bdc.neighbourhood].filter(Boolean).join(", ");
-        const locality = bdc.locality || "";
-
         const adminLevels = bdc.localityInfo?.administrative || [];
         const districtObj = adminLevels.find((a: any) => a.order === 8 || a.adminLevel === 5);
         const district = districtObj?.name || "";
+        const mandalObj = adminLevels.find((a: any) => /mandal|taluk|tehsil|block/i.test(a.name));
+        const mandal = mandalObj?.name || "";
+        const villageObj = adminLevels.find((a: any) => a.adminLevel >= 6 && !/mandal|taluk|tehsil|block/i.test(a.name));
+        const village = villageObj?.name || bdc.locality || "";
+        const city = bdc.city || district || village || "";
+        const state = bdc.principalSubdivision || "";
+        const rawPostal = (bdc.postcode || "").replace(/\D/g, "").slice(0, 6);
+        const street = [village, bdc.neighbourhood].filter(Boolean).join(", ");
+        const locality = bdc.locality || "";
 
         // Validate and enrich with official India Post data
         const pinResult = await resolveIndianPincode(rawPostal, {
+          village,
           locality,
+          mandal,
           district,
           city,
           state,
         });
 
-        const finalCity = pinResult.city || city || "City";
+        const finalCity = pinResult.city || district || city || "City";
         const finalState = pinResult.state || state || "State";
         const finalPostal = pinResult.pincode || rawPostal;
 

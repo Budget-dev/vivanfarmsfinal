@@ -99,10 +99,26 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
         const nom = await nomRes.json();
         const a = nom.address || {};
         road = a.road || a.street || a.suburb || a.neighbourhood || a.residential || road;
-        city = a.city || a.town || a.village || a.county || a.district || city;
-        state = a.state || state;
+        const village = a.village || a.hamlet || '';
+        const mandal = (a.county || '').replace(/\s*(mandal|taluk|tehsil|block|sub-district)\b/gi, '').trim();
+        const district = (a.state_district || a.district || '').replace(/\s*(district|dist)\b/gi, '').trim();
+        city = city || district || a.city || a.town || village;
+        state = state || a.state || '';
         pincode = (a.postcode || '').replace(/\D/g, '').slice(0, 6) || pincode;
         houseNumber = a.house_number || '';
+
+        // If mandal is found and pincode is missing or unverified, prioritize mandal lookup
+        if (mandal && (!pincode || pincode.length !== 6)) {
+          try {
+            const mRes = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(mandal)}`, { signal: AbortSignal.timeout(2500) });
+            const mData = await mRes.json();
+            if (mData?.[0]?.Status === 'Success' && mData[0].PostOffice?.[0]?.Pincode) {
+              pincode = String(mData[0].PostOffice[0].Pincode).replace(/\D/g, '').slice(0, 6);
+              if (mData[0].PostOffice[0].District) city = mData[0].PostOffice[0].District;
+              if (mData[0].PostOffice[0].State) state = mData[0].PostOffice[0].State;
+            }
+          } catch {}
+        }
       }
     } catch (e) {
       console.warn('Nominatim error:', e);
@@ -114,6 +130,7 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
         const checkRes = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, { signal: AbortSignal.timeout(2500) });
         const checkData = await checkRes.json();
         if (checkData?.[0]?.Status !== 'Success') {
+          // If raw postcode from OSM failed (e.g. 531204 typo), look up by locality or city
           const candidate = locality || city;
           if (candidate) {
             const poRes = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(candidate)}`, { signal: AbortSignal.timeout(2500) });
@@ -130,9 +147,9 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
 
     const fullStreet = [houseNumber, road, locality].filter(Boolean).join(', ');
     const result = {
-      address: fullStreet,
-      city,
-      state,
+      address: fullStreet || 'Doorstep address',
+      city: city || 'City',
+      state: state || 'State',
       pincode,
     };
 
@@ -384,16 +401,22 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
 
   const handleConfirm = () => {
     if (!detectedAddress || !currentCoords) return;
+    const cleanPin = (detectedAddress.pincode || '').replace(/\D/g, '').slice(0, 6);
+    if (!cleanPin || cleanPin.length !== 6) return;
     onLocationSelect({
       address: detectedAddress.address,
       city: detectedAddress.city,
       state: detectedAddress.state,
-      pincode: detectedAddress.pincode,
+      pincode: cleanPin,
       lat: currentCoords.lat,
       lng: currentCoords.lng,
     });
     if (onClose) onClose();
   };
+
+  const hasValidPincode = Boolean(
+    detectedAddress?.pincode && /^\d{6}$/.test(detectedAddress.pincode.replace(/\D/g, ''))
+  );
 
   return (
     <div className={cn("bg-white rounded-2xl border border-[#EEE0BC] shadow-lg overflow-hidden", className)}>
@@ -479,7 +502,7 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!detectedAddress || isReverseGeocoding}
+          disabled={!detectedAddress || isReverseGeocoding || !hasValidPincode}
           className="h-10 px-5 rounded-full bg-[#0D3B2E] hover:bg-[#144E3F] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
         >
           <Check className="w-3.5 h-3.5" />
