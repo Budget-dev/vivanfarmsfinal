@@ -74,11 +74,11 @@ export default function PaymentPage() {
       const customerEmail = user?.email || (shippingAddress?.phone ? `${shippingAddress.phone}@vivaanfarms.com` : 'customer@vivaanfarms.com');
       const customerUserId = user?.uid || `guest_${Date.now()}`;
 
-      // 1. Attempt Courier Shipment Registration (Non-blocking: failures won't abort order creation)
+      // 1. Attempt Courier Shipment Registration (Only assign tracking if live carrier successfully booked)
       let shipmentDetails = {
         shipmentId: null as string | null,
-        trackingId: `VF${Date.now().toString().slice(-8)}IN`,
-        courierName: 'Vivaan Farm Direct Express',
+        trackingId: null as string | null,
+        courierName: null as string | null,
       };
 
       try {
@@ -89,15 +89,15 @@ export default function PaymentPage() {
           shippingAddress
         });
 
-        if (shippingRes?.success) {
+        if (shippingRes?.success && shippingRes.trackingId) {
           shipmentDetails = {
             shipmentId: shippingRes.shipmentId || null,
-            trackingId: shippingRes.trackingId || shipmentDetails.trackingId,
+            trackingId: shippingRes.trackingId,
             courierName: shippingRes.courierName || 'NimbusPost Express',
           };
         }
       } catch (shipErr) {
-        console.warn('Courier shipment integration notice (using internal tracking):', shipErr);
+        console.warn('Courier shipment integration notice:', shipErr);
       }
 
       // 2. Save Order Record to Firestore
@@ -164,7 +164,12 @@ export default function PaymentPage() {
       localStorage.removeItem('vivaan_shipping');
       localStorage.removeItem('vivaan_checkout_state');
       localStorage.setItem('vivaan_last_order_id', finalOrderId);
-      localStorage.setItem('vivaan_last_tracking', shipmentDetails.trackingId);
+      localStorage.setItem('vivaan_last_order_id', finalOrderId);
+      if (shipmentDetails.trackingId) {
+        localStorage.setItem('vivaan_last_tracking', shipmentDetails.trackingId);
+      } else {
+        localStorage.removeItem('vivaan_last_tracking');
+      }
       localStorage.setItem('vivaan_last_earned_coins', String(checkoutState?.earnedCoins || 0));
 
       router.push('/order-success');

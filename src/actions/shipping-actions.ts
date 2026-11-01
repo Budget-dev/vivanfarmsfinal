@@ -166,17 +166,11 @@ export async function createShipment(orderData: NimbusShipmentInput) {
 
     const token = await getNimbusToken();
 
-    // If no credentials yet, provide seamless internal tracking fallback
+    // If no credentials yet, do not create a fake shipment
     if (!token) {
-      const fallbackAwb = `VF${Date.now().toString().slice(-8)}IN`;
       return {
-        success: true,
-        isSimulated: true,
-        shipmentId: `SIM-${Date.now()}`,
-        trackingId: fallbackAwb,
-        courierName: 'Vivaan Farm Direct Express',
-        trackingUrl: `https://ship.nimbuspost.com/shipping/tracking/${fallbackAwb}`,
-        message: 'Order recorded. NimbusPost live credentials pending in environment.',
+        success: false,
+        message: 'NimbusPost live credentials pending. Order recorded for farm packing & manual dispatch.',
       };
     }
 
@@ -279,29 +273,11 @@ export async function trackShipment(awbNumber: string) {
 
     const token = await getNimbusToken();
 
-    // If live credentials not active, return structured response with carrier portal link
+    // If live credentials not active, do not invent fake checkpoints
     if (!token) {
       return {
-        success: true,
-        isSimulated: true,
-        awb: cleanAwb,
-        courier: 'NimbusPost Logistics Network',
-        currentStatus: 'In Transit',
-        trackingUrl: `https://ship.nimbuspost.com/shipping/tracking/${encodeURIComponent(cleanAwb)}`,
-        checkpoints: [
-          {
-            status: 'Manifested',
-            activity: 'Order packed & shipment manifest generated',
-            location: 'Gujarat Farm Dispatch Facility',
-            timestamp: new Date().toISOString(),
-          },
-          {
-            status: 'Dispatched',
-            activity: 'Handed over to carrier for direct transit',
-            location: 'Logistics Transit Hub',
-            timestamp: new Date().toISOString(),
-          }
-        ],
+        success: false,
+        error: 'Live courier tracking unavailable (pending dispatch)',
       };
     }
 

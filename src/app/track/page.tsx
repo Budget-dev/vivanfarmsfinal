@@ -293,9 +293,19 @@ function TrackOrderContent() {
     if (s === 'delivered') return 4;
     if (s === 'out for delivery' || s === 'out_for_delivery') return 3.5;
     if (s === 'shipped' || s === 'in transit') return 3;
-    if (s === 'farm packed' || s === 'processing' || s === 'confirmed') return 2;
+    if (s === 'farm packed') return 2;
     return 1;
   };
+
+  // Only consider an order genuinely dispatched if status is Shipped/In Transit/Out for Delivery/Delivered AND has trackingId
+  const isDispatched = useMemo(() => {
+    if (!searchedOrder) return false;
+    const s = (searchedOrder.status || '').toLowerCase();
+    return Boolean(
+      searchedOrder.trackingId &&
+      ['shipped', 'in transit', 'out for delivery', 'out_for_delivery', 'delivered'].includes(s)
+    );
+  }, [searchedOrder]);
 
   // Combined Checkpoints (From Admin manual updates + carrier scans)
   const combinedCheckpoints = useMemo(() => {
@@ -536,22 +546,22 @@ function TrackOrderContent() {
               </div>
             </div>
 
-            {/* Courier Dispatch Box */}
-            <div className="p-5 sm:p-8 bg-[#FAF8F5] border-b border-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-primary/10 shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Carrier / Dispatch Partner</span>
-                    <Badge variant="outline" className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border-emerald-200">
-                      Active
-                    </Badge>
-                  </div>
-                  <div className="text-base sm:text-lg font-headline font-extrabold text-primary flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-secondary" />
-                    <span>{searchedOrder.courierPartner || searchedOrder.courierName || 'Vivaan Farm Direct Express'}</span>
-                  </div>
+            {/* Courier Dispatch Box: ONLY shown when order has actually been dispatched! */}
+            {isDispatched ? (
+              <div className="p-5 sm:p-8 bg-[#FAF8F5] border-b border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white p-4 sm:p-5 rounded-2xl border border-primary/10 shadow-xs">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Carrier / Dispatch Partner</span>
+                      <Badge variant="outline" className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border-emerald-200">
+                        Dispatched
+                      </Badge>
+                    </div>
+                    <div className="text-base sm:text-lg font-headline font-extrabold text-primary flex items-center gap-2">
+                      <Truck className="w-5 h-5 text-secondary" />
+                      <span>{searchedOrder.courierPartner || searchedOrder.courierName || 'Carrier Express'}</span>
+                    </div>
 
-                  {searchedOrder.trackingId ? (
                     <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                       <div>
                         <span className="text-[10px] font-semibold text-gray-500 block">Tracking / Waybill ID:</span>
@@ -566,42 +576,55 @@ function TrackOrderContent() {
                         <span>{copiedAwb ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
-                  ) : (
-                    <p className="text-xs text-amber-700 mt-2 font-medium">
-                      Tracking code is being assigned by our farm dispatch facility.
-                    </p>
-                  )}
-                </div>
-
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-primary/10 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Live Doorstep Tracking</span>
-                    <p className="text-xs text-gray-600">
-                      Access real-time transit checkpoints, location updates, and delivery notes.
-                    </p>
                   </div>
 
-                  {searchedOrder.trackingId ? (
-                    <a
-                      href={searchedOrder.trackingUrl || getCourierUrl(searchedOrder.courierPartner || 'Vivaan Express', searchedOrder.trackingId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center justify-center gap-2 h-11 px-5 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-secondary transition-all shadow-md active:scale-95"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>Open Live Carrier Portal</span>
-                    </a>
-                  ) : (
-                    <button
-                      disabled
-                      className="mt-3 inline-flex items-center justify-center gap-2 h-11 px-5 bg-gray-100 text-gray-400 rounded-xl font-bold text-xs uppercase tracking-wider cursor-not-allowed"
-                    >
-                      <span>Link Pending Dispatch</span>
-                    </button>
-                  )}
+                  <div className="bg-white p-4 sm:p-5 rounded-2xl border border-primary/10 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Live Doorstep Tracking</span>
+                      <p className="text-xs text-gray-600">
+                        Access real-time transit checkpoints, location updates, and delivery notes.
+                      </p>
+                    </div>
+
+                    {searchedOrder.trackingUrl || searchedOrder.trackingId ? (
+                      <a
+                        href={searchedOrder.trackingUrl || getCourierUrl(searchedOrder.courierPartner || 'Vivaan Express', searchedOrder.trackingId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center justify-center gap-2 h-11 px-5 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-secondary transition-all shadow-md active:scale-95 cursor-pointer"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Open Live Carrier Portal</span>
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-5 sm:p-8 bg-[#FAF8F5] border-b border-gray-100">
+                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-primary/10 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0">
+                      <Clock className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-100/70 px-2.5 py-0.5 rounded-full">
+                          Order Status: {searchedOrder.status || 'Processing'}
+                        </span>
+                      </div>
+                      <h4 className="text-base font-extrabold text-gray-900 mt-1">Farm Preparation & Packing In Progress</h4>
+                      <p className="text-xs text-[#7A6848] mt-0.5 max-w-xl">
+                        Your farm-fresh harvest is confirmed and being prepared. Live carrier dispatch details and tracking ID will appear here once the package is dispatched.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200 text-[11px] text-gray-600 font-bold">
+                    Est. Dispatch: Within 24-48 Hours
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Real-time Checkpoints Timeline (Admin updates + Carrier Scans) ── */}
             <div className="p-5 sm:p-8 bg-white border-b border-gray-100">
@@ -651,9 +674,11 @@ function TrackOrderContent() {
                   ))}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 text-center">
-                  <p className="text-xs text-gray-600 font-medium">
-                    Order registered at dispatch facility. Checkpoints and transit notes will update as the order progresses.
+                <div className="p-5 rounded-2xl bg-[#FAF9F5] border border-[#EAE3D2] text-center">
+                  <p className="text-xs text-gray-700 font-bold">
+                    {isDispatched 
+                      ? 'Package registered with carrier. Checkpoints will update as it moves through transit hubs.'
+                      : 'Order confirmed and registered at our farm. Checkpoints will appear once the package is dispatched.'}
                   </p>
                 </div>
               )}
