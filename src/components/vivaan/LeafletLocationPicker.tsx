@@ -108,6 +108,26 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
       console.warn('Nominatim error:', e);
     }
 
+    // Verify client fallback pincode with India Post
+    if (pincode && pincode.length === 6) {
+      try {
+        const checkRes = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, { signal: AbortSignal.timeout(2500) });
+        const checkData = await checkRes.json();
+        if (checkData?.[0]?.Status !== 'Success') {
+          const candidate = locality || city;
+          if (candidate) {
+            const poRes = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(candidate)}`, { signal: AbortSignal.timeout(2500) });
+            const poData = await poRes.json();
+            if (poData?.[0]?.Status === 'Success' && poData[0].PostOffice?.[0]?.Pincode) {
+              pincode = String(poData[0].PostOffice[0].Pincode).replace(/\D/g, '').slice(0, 6);
+              if (poData[0].PostOffice[0].District) city = poData[0].PostOffice[0].District;
+              if (poData[0].PostOffice[0].State) state = poData[0].PostOffice[0].State;
+            }
+          }
+        }
+      } catch {}
+    }
+
     const fullStreet = [houseNumber, road, locality].filter(Boolean).join(', ');
     const result = {
       address: fullStreet,
