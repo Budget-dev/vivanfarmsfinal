@@ -95,20 +95,20 @@ export function getCategoryProducts(catId: string, customList?: Product[]): Prod
     const name = (p.name || '').toLowerCase();
     const id = (p.id || '').toLowerCase();
 
-    if (normalized === 'ghee') {
-      return cat === 'ghee' || name.includes('ghee') || id.includes('ghee');
+    if (normalized === 'ghee' || normalized.includes('ghee')) {
+      return cat === 'ghee' || cat.includes('ghee') || name.includes('ghee') || id.includes('ghee');
     }
-    if (normalized === 'sweets' || normalized === 'sweet') {
-      return cat === 'sweets' || cat === 'sweet' || name.includes('sweet') || name.includes('ladoo') || name.includes('laddu') || name.includes('peda') || name.includes('barfi') || name.includes('halwa') || name.includes('katli');
+    if (normalized === 'sweets' || normalized === 'sweet' || normalized.includes('sweet')) {
+      return cat === 'sweets' || cat === 'sweet' || cat.includes('sweet') || name.includes('sweet') || name.includes('ladoo') || name.includes('laddu') || name.includes('peda') || name.includes('barfi') || name.includes('halwa') || name.includes('katli');
     }
-    if (normalized === 'honey') {
-      return cat === 'honey' || name.includes('honey') || id.includes('honey');
+    if (normalized === 'honey' || normalized.includes('honey')) {
+      return cat === 'honey' || cat.includes('honey') || name.includes('honey') || id.includes('honey');
     }
-    if (normalized === 'oils' || normalized === 'oil') {
-      return cat === 'oils' || cat === 'oil' || name.includes('oil') || id.includes('oil');
+    if (normalized === 'oils' || normalized === 'oil' || normalized.includes('oil')) {
+      return cat === 'oils' || cat === 'oil' || cat.includes('oil') || name.includes('oil') || id.includes('oil');
     }
-    if (normalized === 'combos' || normalized === 'combo') {
-      return cat === 'combos' || cat === 'combo' || name.includes('combo') || name.includes('hamper') || id.includes('combo');
+    if (normalized === 'combos' || normalized === 'combo' || normalized.includes('combo')) {
+      return cat === 'combos' || cat === 'combo' || cat.includes('combo') || name.includes('combo') || name.includes('hamper') || id.includes('combo');
     }
 
     return cat === normalized || cat.includes(normalized);

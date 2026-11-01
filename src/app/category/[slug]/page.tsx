@@ -69,6 +69,7 @@ function CategoryDetailPageContent() {
   const [priceRange, setPriceRange] = useState<PriceRangeType>('all');
   const [searchQuery, setSearchQuery] = useState(rawSearchParam);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
   // Synchronize searchQuery with URL query parameter
   useEffect(() => {
@@ -109,7 +110,12 @@ function CategoryDetailPageContent() {
 
   // Find active category metadata
   const currentCategory = useMemo(() => {
-    return CATEGORIES.find(c => c.slug === activeSlug || c.id === activeSlug) || CATEGORIES[0];
+    return CATEGORIES.find(c => 
+      c.slug === activeSlug || 
+      c.id === activeSlug ||
+      c.slug.includes(activeSlug) ||
+      activeSlug.includes(c.slug)
+    ) || CATEGORIES[0];
   }, [activeSlug]);
 
   // Filter products by category, search query, and price range
@@ -151,18 +157,23 @@ function CategoryDetailPageContent() {
       list = list.filter((p) => {
         const prices = [
           Number(p.price) || 0,
+          Number(p.basePrice) || 0,
           ...(Array.isArray(p.vars) ? p.vars.map(v => Number(v.p) || 0) : [])
-        ].filter(pr => pr > 0);
+        ];
+
+        // Collect all positive prices, or default to [0] if none exist
+        const positivePrices = prices.filter(pr => pr > 0);
+        const effectivePrices = positivePrices.length > 0 ? positivePrices : [0];
 
         if (priceRange === 'under-500') {
-          return prices.some(pr => pr < 500);
+          return effectivePrices.some(pr => pr < 500);
         } else if (priceRange === '500-1000') {
-          return prices.some(pr => pr >= 500 && pr <= 1000);
+          return effectivePrices.some(pr => pr >= 500 && pr <= 1000);
         } else if (priceRange === '1000-2000') {
-          return prices.some(pr => pr > 1000 && pr <= 2000);
+          return effectivePrices.some(pr => pr > 1000 && pr <= 2000);
         } else if (priceRange === 'above-2000') {
           // Highest Price Range: includes any product where base price OR variant price >= 2000
-          return prices.some(pr => pr >= 2000);
+          return effectivePrices.some(pr => pr >= 2000);
         }
         return true;
       });
@@ -170,11 +181,31 @@ function CategoryDetailPageContent() {
 
     // 3. Sorting
     if (sortBy === 'price-asc') {
-      list = [...list].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+      list = [...list].sort((a, b) => {
+        const pA = Number(a.price) || Number(a.basePrice) || 0;
+        const pB = Number(b.price) || Number(b.basePrice) || 0;
+        if (pA !== pB) return pA - pB;
+        return (a.pi ?? 0) - (b.pi ?? 0);
+      });
     } else if (sortBy === 'price-desc') {
-      list = [...list].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+      list = [...list].sort((a, b) => {
+        const pA = Number(a.price) || Number(a.basePrice) || 0;
+        const pB = Number(b.price) || Number(b.basePrice) || 0;
+        if (pA !== pB) return pB - pA;
+        return (a.pi ?? 0) - (b.pi ?? 0);
+      });
     } else if (sortBy === 'rating') {
-      list = [...list].sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+      list = [...list].sort((a, b) => {
+        const rA = Number(a.rating) || 0;
+        const rB = Number(b.rating) || 0;
+        if (rB !== rA) return rB - rA;
+        const cA = Number(a.reviewCount) || 0;
+        const cB = Number(b.reviewCount) || 0;
+        if (cB !== cA) return cB - cA;
+        return (a.pi ?? 0) - (b.pi ?? 0);
+      });
+    } else if (sortBy === 'featured') {
+      list = [...list].sort((a, b) => (a.pi ?? 0) - (b.pi ?? 0));
     }
 
     return list;
@@ -376,74 +407,140 @@ function CategoryDetailPageContent() {
                       {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'}
                     </span>
 
-                    <DropdownMenu>
+                    <DropdownMenu open={isFilterMenuOpen} onOpenChange={setIsFilterMenuOpen}>
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="h-8 w-8 sm:w-auto sm:h-8 sm:px-2.5 rounded-lg border border-gray-200 bg-[#FAF8F5] hover:bg-[#F2ECE1] text-[#0D3B2E] transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95 shadow-2xs"
+                          className="h-8 px-2 sm:px-2.5 rounded-lg border border-gray-200 bg-[#FAF8F5] hover:bg-[#F2ECE1] text-[#0D3B2E] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
                           aria-label="Filter and Sort"
                         >
-                          <SlidersHorizontal className="w-3.5 h-3.5 text-[#0D3B2E] hidden sm:block" />
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-[#0D3B2E]" />
                           <span className="text-xs font-bold hidden sm:inline">Filter & Sort</span>
-                          <MoreVertical className="w-4 h-4 text-[#0D3B2E]" />
+                          {(sortBy !== 'featured' || priceRange !== 'all') && (
+                            <span className="w-2 h-2 rounded-full bg-[#EAB308] shrink-0" />
+                          )}
+                          <MoreVertical className="w-3.5 h-3.5 text-[#0D3B2E] sm:hidden" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 bg-white shadow-xl border border-gray-100 z-[1000]">
-                        
+                      <DropdownMenuContent 
+                        align="end" 
+                        sideOffset={6}
+                        className="w-64 max-w-[90vw] rounded-2xl p-2.5 bg-white shadow-xl border border-[#EAE3D2] z-[1000] focus:outline-none"
+                      >
                         {/* Sort Options */}
-                        <div className="px-2 py-1 text-[10px] font-black text-[#6B5A45] uppercase tracking-wider">
-                          Sort By
+                        <div className="px-2 py-1 text-[10px] font-black text-[#6B5A45] uppercase tracking-wider flex items-center justify-between">
+                          <span>Sort By</span>
+                          {sortBy !== 'featured' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSortBy('featured');
+                              }}
+                              className="text-[10px] font-bold text-amber-700 hover:underline cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
                         </div>
-                        {[
-                          { id: 'featured', label: 'Featured' },
-                          { id: 'price-asc', label: 'Price: Low to High' },
-                          { id: 'price-desc', label: 'Price: High to Low' },
-                          { id: 'rating', label: 'Highest Rated' },
-                        ].map((option) => (
-                          <DropdownMenuItem
-                            key={option.id}
-                            onClick={() => setSortBy(option.id as any)}
-                            className={cn(
-                              "flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl cursor-pointer transition-colors",
-                              sortBy === option.id
-                                ? "bg-[#0D3B2E]/10 text-[#0D3B2E] font-bold"
-                                : "text-gray-700 hover:bg-gray-100"
-                            )}
-                          >
-                            <span>{option.label}</span>
-                            {sortBy === option.id && <Check className="w-3.5 h-3.5 text-[#0D3B2E]" />}
-                          </DropdownMenuItem>
-                        ))}
+                        <div className="space-y-0.5 mb-1.5">
+                          {[
+                            { id: 'featured', label: 'Featured' },
+                            { id: 'price-asc', label: 'Price: Low to High' },
+                            { id: 'price-desc', label: 'Price: High to Low' },
+                            { id: 'rating', label: 'Highest Rated' },
+                          ].map((option) => (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSortBy(option.id as any);
+                              }}
+                              className={cn(
+                                "w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer transition-colors text-left",
+                                sortBy === option.id
+                                  ? "bg-[#0D3B2E]/10 text-[#0D3B2E] font-bold"
+                                  : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                              )}
+                            >
+                              <span>{option.label}</span>
+                              {sortBy === option.id && <Check className="w-4 h-4 text-[#0D3B2E]" />}
+                            </button>
+                          ))}
+                        </div>
 
-                        <DropdownMenuSeparator className="my-1.5" />
+                        <DropdownMenuSeparator className="my-2 bg-[#EAE3D2]" />
 
                         {/* Price Range Filter Options */}
-                        <div className="px-2 py-1 text-[10px] font-black text-[#6B5A45] uppercase tracking-wider">
-                          Product Cost / Price Filter
+                        <div className="px-2 py-1 text-[10px] font-black text-[#6B5A45] uppercase tracking-wider flex items-center justify-between">
+                          <span>Product Cost / Price Filter</span>
+                          {priceRange !== 'all' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPriceRange('all');
+                              }}
+                              className="text-[10px] font-bold text-amber-700 hover:underline cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
                         </div>
-                        {(['all', 'under-500', '500-1000', '1000-2000', 'above-2000'] as PriceRangeType[]).map((rangeKey) => (
-                          <DropdownMenuItem
-                            key={rangeKey}
-                            onClick={() => setPriceRange(rangeKey)}
-                            className={cn(
-                              "flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl cursor-pointer transition-colors",
-                              priceRange === rangeKey
-                                ? "bg-[#0D3B2E] text-white font-bold"
-                                : "text-gray-700 hover:bg-gray-100"
-                            )}
-                          >
-                            <span>{PRICE_RANGE_LABELS[rangeKey]}</span>
-                            {priceRange === rangeKey && <Check className="w-3.5 h-3.5 text-[#EBB847]" />}
-                          </DropdownMenuItem>
-                        ))}
+                        <div className="space-y-0.5 mb-2">
+                          {(['all', 'under-500', '500-1000', '1000-2000', 'above-2000'] as PriceRangeType[]).map((rangeKey) => (
+                            <button
+                              key={rangeKey}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPriceRange(rangeKey);
+                              }}
+                              className={cn(
+                                "w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer transition-colors text-left",
+                                priceRange === rangeKey
+                                  ? "bg-[#0D3B2E] text-white font-bold shadow-xs"
+                                  : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                              )}
+                            >
+                              <span>{PRICE_RANGE_LABELS[rangeKey]}</span>
+                              {priceRange === rangeKey && <Check className="w-4 h-4 text-[#EBB847]" />}
+                            </button>
+                          ))}
+                        </div>
 
+                        {/* Bottom Actions */}
+                        <div className="pt-2 border-t border-[#EAE3D2] flex items-center justify-between gap-2 px-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSortBy('featured');
+                              setPriceRange('all');
+                            }}
+                            className="text-[11px] font-bold text-gray-500 hover:text-red-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                          >
+                            Reset All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsFilterMenuOpen(false);
+                            }}
+                            className="px-4 py-1.5 rounded-xl bg-[#0D3B2E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#155442] active:scale-95 transition-all shadow-xs cursor-pointer"
+                          >
+                            Done
+                          </button>
+                        </div>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 </div>
 
                 {/* Active Filter Badges Strip */}
-                {(searchQuery || priceRange !== 'all') && (
+                {(searchQuery || priceRange !== 'all' || sortBy !== 'featured') && (
                   <div className="flex items-center gap-2 flex-wrap pt-2.5 mt-2.5 border-t border-gray-100 text-xs">
                     <span className="text-[11px] font-bold text-gray-400">Active Filters:</span>
                     
@@ -455,6 +552,20 @@ function CategoryDetailPageContent() {
                           onClick={clearSearch} 
                           className="hover:text-red-600 transition-colors cursor-pointer ml-0.5"
                           aria-label="Clear search"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    )}
+
+                    {sortBy !== 'featured' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#0D3B2E] font-bold text-[11px]">
+                        <SlidersHorizontal className="w-3 h-3 text-[#0D3B2E]" />
+                        <span>Sort: {sortBy === 'price-asc' ? 'Price: Low to High' : sortBy === 'price-desc' ? 'Price: High to Low' : 'Highest Rated'}</span>
+                        <button 
+                          onClick={() => setSortBy('featured')} 
+                          className="hover:text-red-600 transition-colors cursor-pointer ml-0.5"
+                          aria-label="Clear sort"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -478,6 +589,7 @@ function CategoryDetailPageContent() {
                     <button
                       onClick={() => {
                         setPriceRange('all');
+                        setSortBy('featured');
                         clearSearch();
                       }}
                       className="text-[11px] text-gray-500 hover:text-[#0D3B2E] underline cursor-pointer ml-auto"
@@ -491,7 +603,7 @@ function CategoryDetailPageContent() {
               {/* Product Cards Grid */}
               {filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-2.5 sm:gap-6">
-                  {filteredProducts.map((p) => {
+                  {filteredProducts.map((p, idx) => {
                     const varIdx = getActiveVariantIdx(p);
                     const currentVar = Array.isArray(p.vars) && p.vars.length > varIdx ? p.vars[varIdx] : null;
                     const displayPrice = currentVar?.p ? Number(currentVar.p) : Number(p.price) || 0;
@@ -662,14 +774,28 @@ function CategoryDetailPageContent() {
                 <div className="bg-white rounded-2xl p-12 text-center border border-[#EAE3D2]">
                   <Sparkles className="w-10 h-10 text-amber-600 mx-auto mb-3" />
                   <h3 className="font-serif text-lg font-bold text-[#0D3B2E]">
-                    {searchQuery ? `No products match "${searchQuery}"` : 'No products found in this category'}
+                    {searchQuery 
+                      ? `No products match "${searchQuery}"` 
+                      : priceRange !== 'all'
+                        ? `No products found under ${PRICE_RANGE_LABELS[priceRange]}`
+                        : 'No products found in this category'}
                   </h3>
                   <p className="text-xs text-gray-500 mt-1 mb-5">
                     {searchQuery 
                       ? 'Try searching for "Ghee", "Murrah", "Honey", or clear your price filters.' 
-                      : 'We are harvesting and preparing new batches from the farm.'}
+                      : priceRange !== 'all'
+                        ? `We don't have items strictly matching "${PRICE_RANGE_LABELS[priceRange]}" in this category right now.`
+                        : 'We are harvesting and preparing new batches from the farm.'}
                   </p>
-                  <div className="flex justify-center gap-3">
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {priceRange !== 'all' && (
+                      <button
+                        onClick={() => setPriceRange('all')}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0D3B2E] text-white font-bold text-xs uppercase tracking-wider cursor-pointer hover:bg-[#155442] shadow-xs active:scale-95 transition-all"
+                      >
+                        Show All Prices
+                      </button>
+                    )}
                     {searchQuery && (
                       <button
                         onClick={clearSearch}
@@ -680,7 +806,7 @@ function CategoryDetailPageContent() {
                     )}
                     <Link
                       href="/category/all"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0D3B2E] text-white font-bold text-xs uppercase tracking-wider"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold text-xs uppercase tracking-wider hover:bg-gray-50"
                     >
                       View All Products
                     </Link>
