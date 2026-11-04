@@ -71,6 +71,7 @@ import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Product, ProductVariant, ProductReel } from '@/types';
 
 interface ProductCategoryManagerProps {
@@ -121,6 +122,92 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
   
   const productsRef = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: allProducts, isLoading } = useCollection(productsRef);
+  const categoriesRef = useMemoFirebase(() => collection(db, 'categories'), [db]);
+  const { data: dbCategories } = useCollection(categoriesRef);
+
+  const [isAddingInlineCategory, setIsAddingInlineCategory] = useState(false);
+  const [inlineCategoryName, setInlineCategoryName] = useState('');
+
+  // Dynamic Category Options for Product Modal
+  const allCategoryOptions = useMemo(() => {
+    const defaultOptions = [
+      { id: 'ghee', name: 'A2 Vedic Ghee' },
+      { id: 'sweets', name: 'Farm Sweets' },
+      { id: 'honey', name: 'Raw Honey' },
+      { id: 'oils', name: 'Wood Pressed Oils' },
+      { id: 'pickles', name: 'Traditional Pickles' },
+      { id: 'combos', name: 'Healthy Combos' },
+    ];
+    const map = new Map();
+    defaultOptions.forEach(o => map.set(o.id, o.name));
+
+    if (dbCategories && dbCategories.length > 0) {
+      dbCategories.forEach(c => {
+        const cid = (c.slug || c.id || c.name || '').toLowerCase().trim();
+        if (cid) {
+          map.set(cid, c.name || cid);
+        }
+      });
+    }
+
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [dbCategories]);
+
+  // Dynamic Category Tabs for Filter Bar
+  const activeCategoryTabs = useMemo(() => {
+    const baseTabs = [...CATEGORY_TABS];
+    if (dbCategories && dbCategories.length > 0) {
+      dbCategories.forEach(cat => {
+        const catId = (cat.slug || cat.id || cat.name || '').toLowerCase().trim();
+        const exists = baseTabs.some(t => t.id === catId || t.label.toLowerCase() === (cat.name || '').toLowerCase());
+        if (!exists && catId) {
+          let IconComp = Package;
+          const n = (cat.name || catId).toLowerCase();
+          if (n.includes('milk') || n.includes('dairy') || n.includes('ghee')) IconComp = Milk;
+          else if (n.includes('sweet') || n.includes('mithai')) IconComp = Sparkles;
+          else if (n.includes('honey')) IconComp = Droplets;
+          else if (n.includes('oil')) IconComp = Droplets;
+          else if (n.includes('pickle')) IconComp = Flame;
+          else if (n.includes('combo') || n.includes('pack')) IconComp = Layers;
+
+          baseTabs.push({
+            id: catId,
+            label: cat.name || catId.charAt(0).toUpperCase() + catId.slice(1),
+            icon: IconComp
+          });
+        }
+      });
+    }
+    return baseTabs;
+  }, [dbCategories]);
+
+  const handleCreateInlineCategory = async () => {
+    const raw = inlineCategoryName.trim();
+    if (!raw) return;
+    const slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `cat-${Date.now()}`;
+    const newCatData = {
+      id: slug,
+      slug: slug,
+      name: raw,
+      description: `Collection of pure ${raw} products.`,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      setDocumentNonBlocking(doc(db, 'categories', slug), newCatData, { merge: true });
+      await setDoc(doc(db, 'categories', slug), newCatData, { merge: true });
+      setProductCat(slug);
+      setIsAddingInlineCategory(false);
+      setInlineCategoryName('');
+      toast({ title: "Category Created", description: `"${raw}" created and selected for this product.` });
+    } catch (err) {
+      setProductCat(slug);
+      setIsAddingInlineCategory(false);
+      setInlineCategoryName('');
+      toast({ title: "Category Created", description: `"${raw}" selected.` });
+    }
+  };
   
   // Filtering & View State
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>(category.toLowerCase());
@@ -759,7 +846,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
 
       {/* ── 2. CATEGORY PILLS TABS ── */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-        {CATEGORY_TABS.map((tab) => {
+        {activeCategoryTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = selectedCategoryTab === tab.id;
           return (
@@ -1228,19 +1315,54 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">Category *</label>
-                    <select
-                      value={productCat}
-                      onChange={(e) => setProductCat(e.target.value)}
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs focus:ring-1 focus:ring-emerald-500"
-                    >
-                      <option value="ghee">A2 Vedic Ghee</option>
-                      <option value="sweets">Artisanal Sweets</option>
-                      <option value="honey">Raw Wild Honey</option>
-                      <option value="oils">Wood Pressed Oils</option>
-                      <option value="pickles">Traditional Pickles</option>
-                      <option value="combos">Healthy Combos</option>
-                    </select>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-foreground">Category *</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingInlineCategory(!isAddingInlineCategory)}
+                        className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 underline cursor-pointer"
+                      >
+                        {isAddingInlineCategory ? 'Choose Existing' : '+ Add New'}
+                      </button>
+                    </div>
+
+                    {isAddingInlineCategory ? (
+                      <div className="flex gap-1.5">
+                        <Input
+                          value={inlineCategoryName}
+                          onChange={(e) => setInlineCategoryName(e.target.value)}
+                          placeholder="e.g. Milk, Spices, Grains"
+                          className="h-9 text-xs"
+                          autoFocus
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreateInlineCategory}
+                          disabled={!inlineCategoryName.trim()}
+                          className="h-9 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 cursor-pointer"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    ) : (
+                      <select
+                        value={productCat}
+                        onChange={(e) => {
+                          if (e.target.value === '__add_new__') {
+                            setIsAddingInlineCategory(true);
+                          } else {
+                            setProductCat(e.target.value);
+                          }
+                        }}
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs focus:ring-1 focus:ring-emerald-500 font-medium"
+                      >
+                        {allCategoryOptions.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                        <option value="__add_new__">+ Add New Category...</option>
+                      </select>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

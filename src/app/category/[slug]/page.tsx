@@ -61,6 +61,8 @@ function CategoryDetailPageContent() {
   const db = useFirestore();
   const productsRef = useMemoFirebase(() => collection(db, 'products'), [db]);
   const { data: dbProducts } = useCollection(productsRef);
+  const categoriesRef = useMemoFirebase(() => collection(db, 'categories'), [db]);
+  const { data: dbCategories } = useCollection(categoriesRef);
 
   const [selectedVariants, setSelectedVariants] = useState<Record<string, number>>({});
   const [justAddedMap, setJustAddedMap] = useState<Record<string, boolean>>({});
@@ -108,15 +110,58 @@ function CategoryDetailPageContent() {
       });
   }, [dbProducts]);
 
-  // Find active category metadata
+  // Find active category metadata (combines Firestore dynamic categories + presets)
   const currentCategory = useMemo(() => {
+    if (dbCategories && dbCategories.length > 0) {
+      const match = dbCategories.find(c => {
+        const slug = (c.slug || c.id || '').toLowerCase();
+        const name = (c.name || '').toLowerCase();
+        return slug === activeSlug || name === activeSlug;
+      });
+      if (match) {
+        return {
+          id: match.slug || match.id,
+          name: match.name,
+          slug: match.slug || match.id,
+          description: match.description || `Pure, authentic ${match.name} freshly sourced from our organic farm.`,
+          icon: '✨'
+        };
+      }
+    }
+
     return CATEGORIES.find(c => 
       c.slug === activeSlug || 
       c.id === activeSlug ||
       c.slug.includes(activeSlug) ||
       activeSlug.includes(c.slug)
-    ) || CATEGORIES[0];
-  }, [activeSlug]);
+    ) || {
+      id: activeSlug,
+      name: activeSlug.charAt(0).toUpperCase() + activeSlug.slice(1),
+      slug: activeSlug,
+      description: `Explore our collection of authentic ${activeSlug} from Vivaan Farms.`,
+      icon: '✨'
+    };
+  }, [activeSlug, dbCategories]);
+
+  // Dynamic sidebar categories including newly added admin categories
+  const dynamicSidebarCategories = useMemo(() => {
+    const list = [...SIDEBAR_CATEGORIES];
+    if (dbCategories && dbCategories.length > 0) {
+      dbCategories.forEach(c => {
+        const slug = (c.slug || c.id || '').toLowerCase();
+        if (slug && !list.some(s => s.slug === slug || s.id === slug)) {
+          list.push({
+            id: slug,
+            name: c.name || slug,
+            slug: slug,
+            description: c.description || '',
+            icon: '🌾'
+          });
+        }
+      });
+    }
+    return list;
+  }, [dbCategories]);
 
   // Filter products by category, search query, and price range
   const filteredProducts = useMemo(() => {
@@ -298,7 +343,7 @@ function CategoryDetailPageContent() {
 
           {/* Mobile Category Scrollable Pill Tabs */}
           <div className="lg:hidden mb-5 overflow-x-auto no-scrollbar -mx-3 px-3 py-1 flex items-center gap-2">
-            {SIDEBAR_CATEGORIES.map(cat => {
+            {dynamicSidebarCategories.map(cat => {
               const isActive = cat.slug === activeSlug || cat.id === activeSlug;
               return (
                 <Link
@@ -325,7 +370,7 @@ function CategoryDetailPageContent() {
             {/* ── Left Sidebar (Desktop) ── */}
             <aside className="hidden lg:block w-[240px] shrink-0 sticky top-[130px] bg-white rounded-2xl p-5 border border-[#EAE3D2] shadow-xs">
               <div className="flex flex-col space-y-2">
-                {SIDEBAR_CATEGORIES.map(cat => {
+                {dynamicSidebarCategories.map(cat => {
                   const isActive = cat.slug === activeSlug || cat.id === activeSlug;
 
                   return (

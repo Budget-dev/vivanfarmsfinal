@@ -111,7 +111,7 @@ export function getCategoryProducts(catId: string, customList?: Product[]): Prod
       return cat === 'combos' || cat === 'combo' || cat.includes('combo') || name.includes('combo') || name.includes('hamper') || id.includes('combo');
     }
 
-    return cat === normalized || cat.includes(normalized);
+    return cat === normalized || cat.includes(normalized) || normalized.includes(cat) || name.includes(normalized);
   });
 }
 
