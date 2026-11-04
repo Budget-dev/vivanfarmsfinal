@@ -59,9 +59,9 @@ export default function ProductDetailsPage() {
           on: true
         }];
 
-    const imageUrls: string[] = Array.isArray(dbProduct.imageUrls) && dbProduct.imageUrls.length > 0
+    const imageUrls: string[] = Array.isArray(dbProduct.imageUrls)
       ? dbProduct.imageUrls.filter(Boolean)
-      : ['/images/products/ghee_tin.jpg'];
+      : [];
 
     return {
       ...dbProduct,
@@ -152,8 +152,8 @@ export default function ProductDetailsPage() {
   const currentVar: ProductVariant = (product.vars && product.vars.find((v: ProductVariant) => v.s === selectedSize)) || (product.vars && product.vars[0]) || { s: 'Standard', p: product.price, on: true };
   const displayPrice = getVariantPrice(currentVar);
   const isWishlisted = isInWishlist(product.id);
-  const galleryImages = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : ['/images/products/ghee_tin.jpg'];
-  const activeImageSrc = galleryImages[selectedImgIndex] || galleryImages[0];
+  const galleryImages = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) : [];
+  const activeImageSrc = galleryImages[selectedImgIndex] || galleryImages[0] || '';
 
   // Cart quantity count for this specific product & size
   const normalizeSize = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');

@@ -18,7 +18,8 @@ import {
   ShieldCheck,
   Search,
   X,
-  Tag
+  Tag,
+  Leaf
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -102,7 +103,7 @@ function CategoryDetailPageContent() {
           statusBadge: p.statusBadge || 'Vedic Purity',
           badges: Array.isArray(p.badges) ? p.badges : [],
           description: p.description || '',
-          imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0 ? p.imageUrls : ['/images/products/ghee_tin.jpg'],
+          imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls.filter(Boolean) : [],
           vars: Array.isArray(p.vars) && p.vars.length > 0 
             ? p.vars 
             : [{ s: 'Standard', p: basePrice, mrp: Number(p.mrpPrice) || basePrice, on: true }]
@@ -695,13 +696,22 @@ function CategoryDetailPageContent() {
 
                           {/* Product Image */}
                           <div className="relative w-full h-full flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                            <Image
-                              src={(p.imageUrls && p.imageUrls[0]) || '/images/products/ghee_tin.jpg'}
-                              alt={p.name}
-                              fill
-                              className="object-contain p-1.5 sm:p-3"
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
-                            />
+                            {p.imageUrls && p.imageUrls[0] ? (
+                              <Image
+                                src={p.imageUrls[0]}
+                                alt={p.name}
+                                fill
+                                className="object-contain p-1.5 sm:p-3"
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center">
+                                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mb-1">
+                                  <Leaf className="w-6 h-6" />
+                                </div>
+                                <span className="text-[10px] font-bold text-emerald-950 truncate max-w-[130px]">{p.name}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 

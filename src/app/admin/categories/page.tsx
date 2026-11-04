@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   FolderTree, 
   Plus, 
@@ -14,7 +14,9 @@ import {
   Layers,
   Check,
   RefreshCw,
-  Tag
+  Tag,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,13 +46,22 @@ import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 
+const CORE_ORDER_MAP: Record<string, number> = {
+  ghee: 10,
+  sweets: 20,
+  honey: 30,
+  oils: 40,
+  pickles: 50,
+  combos: 60,
+};
+
 const DEFAULT_CORE_CATEGORIES = [
-  { id: 'ghee', slug: 'ghee', name: 'A2 Vedic Ghee', description: 'Handcrafted cultured Bilona ghee from indigenous Gir cows.' },
-  { id: 'sweets', slug: 'sweets', name: 'Homemade Sweets', description: 'Artisanal farm sweets made with pure Bilona Ghee and organic jaggery.' },
-  { id: 'honey', slug: 'honey', name: 'Raw Forest Honey', description: '100% raw unheated forest honey with wild medicinal pollen.' },
-  { id: 'oils', slug: 'oils', name: 'Cold Pressed Oils', description: 'Traditional wood-pressed native seed oils extracted without heat.' },
-  { id: 'pickles', slug: 'pickles', name: 'Traditional Pickles', description: 'Grandmother recipes sun-matured in wood-pressed mustard oil.' },
-  { id: 'combos', slug: 'combos', name: 'Healthy Combos', description: 'Curated wellness hampers and gift sets for pure living.' },
+  { id: 'ghee', slug: 'ghee', name: 'A2 Vedic Ghee', description: 'Handcrafted cultured Bilona ghee from indigenous Gir cows.', order: 10 },
+  { id: 'sweets', slug: 'sweets', name: 'Homemade Sweets', description: 'Artisanal farm sweets made with pure Bilona Ghee and organic jaggery.', order: 20 },
+  { id: 'honey', slug: 'honey', name: 'Raw Forest Honey', description: '100% raw unheated forest honey with wild medicinal pollen.', order: 30 },
+  { id: 'oils', slug: 'oils', name: 'Cold Pressed Oils', description: 'Traditional wood-pressed native seed oils extracted without heat.', order: 40 },
+  { id: 'pickles', slug: 'pickles', name: 'Traditional Pickles', description: 'Grandmother recipes sun-matured in wood-pressed mustard oil.', order: 50 },
+  { id: 'combos', slug: 'combos', name: 'Healthy Combos', description: 'Curated wellness hampers and gift sets for pure living.', order: 60 },
 ];
 
 export default function AdminCategoriesPage() {
@@ -69,6 +80,24 @@ export default function AdminCategoriesPage() {
   const [desc, setDesc] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+
+  // Canonical Sorted Categories:
+  // Core categories stay at top in farm order, newly created categories are ALWAYS appended at the bottom
+  const sortedCategories = useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+    return [...categories].sort((a, b) => {
+      const orderA = typeof a.order === 'number' ? a.order : (CORE_ORDER_MAP[a.id] ?? CORE_ORDER_MAP[a.slug] ?? 900);
+      const orderB = typeof b.order === 'number' ? b.order : (CORE_ORDER_MAP[b.id] ?? CORE_ORDER_MAP[b.slug] ?? 900);
+      if (orderA !== orderB) return orderA - orderB;
+
+      // When orders match, sort by createdAt ascending so newly created categories appear at the bottom
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (timeA && timeB && timeA !== timeB) return timeA - timeB;
+
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }, [categories]);
 
   const resetForm = () => {
     setName('');
@@ -93,6 +122,13 @@ export default function AdminCategoriesPage() {
     const cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `cat-${Date.now()}`;
     const targetId = editingId || cleanSlug;
 
+    // Calculate order so newly created category is placed down at the bottom
+    const existingMaxOrder = categories && categories.length > 0
+      ? Math.max(...categories.map((c: any) => typeof c.order === 'number' ? c.order : (CORE_ORDER_MAP[c.id] ?? CORE_ORDER_MAP[c.slug] ?? 60)), 60)
+      : 60;
+    const existingCat = categories?.find((c: any) => c.id === targetId);
+    const assignedOrder = typeof existingCat?.order === 'number' ? existingCat.order : existingMaxOrder + 10;
+
     setIsSaving(true);
     try {
       const catData = {
@@ -100,9 +136,10 @@ export default function AdminCategoriesPage() {
         slug: cleanSlug,
         name: cleanName,
         description: desc.trim(),
+        order: assignedOrder,
         isActive: true,
         updatedAt: new Date().toISOString(),
-        ...(editingId ? {} : { createdAt: new Date().toISOString() })
+        createdAt: existingCat?.createdAt || new Date().toISOString()
       };
 
       // 1. Immediate optimistic cache update via non-blocking write
@@ -113,7 +150,7 @@ export default function AdminCategoriesPage() {
 
       toast({ 
         title: editingId ? "Category Updated" : "Category Created! ✓", 
-        description: `Category "${cleanName}" (${cleanSlug}) saved successfully.` 
+        description: `Category "${cleanName}" (${cleanSlug}) added to catalog.` 
       });
 
       setIsAddOpen(false);
@@ -142,6 +179,30 @@ export default function AdminCategoriesPage() {
         console.warn("Delete category notice:", err);
         toast({ title: "Category Deleted", description: `"${catName}" removed.` });
       }
+    }
+  };
+
+  const handleMoveOrder = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= sortedCategories.length) return;
+    const current = sortedCategories[index];
+    const neighbor = sortedCategories[targetIndex];
+
+    const currentOrder = typeof current.order === 'number' ? current.order : (index + 1) * 10;
+    const neighborOrder = typeof neighbor.order === 'number' ? neighbor.order : (targetIndex + 1) * 10;
+    const newCurrentOrder = currentOrder === neighborOrder 
+      ? (direction === 'up' ? neighborOrder - 5 : neighborOrder + 5)
+      : neighborOrder;
+    const newNeighborOrder = currentOrder;
+
+    try {
+      setDocumentNonBlocking(doc(db, 'categories', current.id), { order: newCurrentOrder }, { merge: true });
+      setDocumentNonBlocking(doc(db, 'categories', neighbor.id), { order: newNeighborOrder }, { merge: true });
+      await setDoc(doc(db, 'categories', current.id), { order: newCurrentOrder }, { merge: true });
+      await setDoc(doc(db, 'categories', neighbor.id), { order: newNeighborOrder }, { merge: true });
+      toast({ title: "Order Updated", description: `"${current.name}" moved ${direction}.` });
+    } catch (err: any) {
+      console.warn("Move category order:", err);
     }
   };
 
@@ -291,8 +352,8 @@ export default function AdminCategoriesPage() {
 
       {/* Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {categories && categories.length > 0 ? (
-          categories.map((cat) => {
+        {sortedCategories && sortedCategories.length > 0 ? (
+          sortedCategories.map((cat) => {
             const catId = (cat.id || '').toLowerCase().trim();
             const catSlug = (cat.slug || '').toLowerCase().trim();
             const catName = (cat.name || '').toLowerCase().trim();
@@ -336,6 +397,7 @@ export default function AdminCategoriesPage() {
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border/60 hover:bg-transparent">
+              <TableHead className="w-16 px-3 text-xs font-semibold text-center">Order</TableHead>
               <TableHead className="px-4 text-xs font-semibold">Category Name</TableHead>
               <TableHead className="px-4 text-xs font-semibold">Slug</TableHead>
               <TableHead className="px-4 text-xs font-semibold">Description</TableHead>
@@ -345,8 +407,8 @@ export default function AdminCategoriesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {categories && categories.length > 0 ? (
-              categories.map((cat) => {
+            {sortedCategories && sortedCategories.length > 0 ? (
+              sortedCategories.map((cat, index) => {
                 const catId = (cat.id || '').toLowerCase().trim();
                 const catSlug = (cat.slug || '').toLowerCase().trim();
                 const catName = (cat.name || '').toLowerCase().trim();
@@ -365,6 +427,32 @@ export default function AdminCategoriesPage() {
 
                 return (
                   <TableRow key={cat.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
+                    {/* Order Controls */}
+                    <TableCell className="w-16 px-3 py-3 text-center">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === 0}
+                          onClick={() => handleMoveOrder(index, 'up')}
+                          className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-20"
+                          title="Move Up"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === sortedCategories.length - 1}
+                          onClick={() => handleMoveOrder(index, 'down')}
+                          className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-20"
+                          title="Move Down"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+
                     <TableCell className="px-4 py-3 font-semibold text-xs text-foreground">
                       <div className="flex items-center gap-2">
                         {getCategoryIcon(cat.name)}

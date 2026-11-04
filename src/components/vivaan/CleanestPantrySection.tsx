@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Star, ShoppingCart, Heart, ChevronLeft, ChevronRight, Check, ArrowRight } from 'lucide-react';
+import { Star, ShoppingCart, Heart, ChevronLeft, ChevronRight, Check, ArrowRight, Leaf } from 'lucide-react';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
 import { PantryCategoryIcons } from './PantryCategoryIcons';

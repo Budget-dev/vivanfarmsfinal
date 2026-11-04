@@ -64,7 +64,7 @@ export const ProductInstagramReelSection: React.FC<ProductInstagramReelSectionPr
           title: reelTitle,
           subtitle: r.subtitle || 'Farm Fresh & Authentic',
           videoUrl: r.videoUrl || product.videoUrl || DEFAULT_VIDEO_URL,
-          posterUrl: r.posterUrl || product.imageUrls?.[idx % (product.imageUrls?.length || 1)] || '/images/products/ghee_tin.jpg',
+          posterUrl: r.posterUrl || (product.imageUrls && product.imageUrls[idx % product.imageUrls.length]) || '',
           caption: r.caption || `Experience authentic farm-direct ${product.name}. 100% pure ingredients crafted with traditional love and care.`,
           likesCount: Number(r.likesCount) || (3500 + idx * 850),
           commentsCount: Number(r.commentsCount) || (120 + idx * 45),
@@ -75,7 +75,7 @@ export const ProductInstagramReelSection: React.FC<ProductInstagramReelSectionPr
       });
     }
 
-    const primaryImg = product.imageUrls?.[0] || '/images/products/ghee_tin.jpg';
+    const primaryImg = product.imageUrls?.[0] || '';
     const prodName = product.name || 'A2 Desi Farm Product';
 
     return [

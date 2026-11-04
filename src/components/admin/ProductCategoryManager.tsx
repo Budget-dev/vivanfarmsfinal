@@ -185,11 +185,15 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
     const raw = inlineCategoryName.trim();
     if (!raw) return;
     const slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `cat-${Date.now()}`;
+    const existingMax = dbCategories && dbCategories.length > 0
+      ? Math.max(...dbCategories.map((c: any) => typeof c.order === 'number' ? c.order : 0), 60)
+      : 60;
     const newCatData = {
       id: slug,
       slug: slug,
       name: raw,
       description: `Collection of pure ${raw} products.`,
+      order: existingMax + 10,
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -500,7 +504,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
       title: computedTitle,
       subtitle: reelSubtitle.trim() || 'Gujarat Organic Farm',
       videoUrl: video,
-      posterUrl: reelPosterUrl.trim() || uploadedImages[0] || '/images/products/ghee_tin.jpg',
+      posterUrl: reelPosterUrl.trim() || uploadedImages[0] || '',
       caption: reelCaption.trim() || `Experience authentic Vedic ${prodTitle}. Handcrafted with pure farm-fresh ingredients! 🔥🌿`,
       tag: reelTag.trim() || prodTitle,
       viewsLabel: '24.8k',
@@ -596,7 +600,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
         title: `${p.name || 'Product'} — Official Reel`,
         subtitle: 'Farm Direct Craftsmanship',
         videoUrl: p.videoUrl,
-        posterUrl: p.imageUrls?.[0] || '/images/products/ghee_tin.jpg',
+        posterUrl: p.imageUrls?.[0] || '',
         caption: `Watch authentic ${p.name} handcrafted at our farm! ✨🌾`,
         viewsLabel: '28.4k',
         likesCount: 4890,
@@ -638,13 +642,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
       } catch {}
     }
 
-    if (finalImages.length === 0) {
-      // Provide default fallback image for this category
-      if (productCat === 'ghee') finalImages.push('/images/products/ghee_tin.jpg');
-      else if (productCat === 'sweets') finalImages.push('/images/products/sweets.jpg');
-      else if (productCat === 'honey') finalImages.push('/images/products/honey_jar.jpg');
-      else finalImages.push('/images/products/mustard_oil.jpg');
-    }
+    // Do NOT inject mock images if user didn't provide any URL. Keep clean empty array.
 
     let finalVars = variants;
     if (!finalVars || finalVars.length === 0) {
@@ -682,7 +680,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
         ...r,
         id: r.id || `reel-${idx}`,
         title: reelTitle,
-        posterUrl: r.posterUrl || finalImages[0] || '/images/products/ghee_tin.jpg',
+        posterUrl: r.posterUrl || finalImages[0] || '',
         tag: r.tag || name.trim()
       };
     });
@@ -1661,6 +1659,18 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
 
                 {/* Images Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {uploadedImages.length === 0 && (
+                    <div className="col-span-2 sm:col-span-4 py-8 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center p-4">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-2">
+                        <Package className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-semibold text-foreground">No images added</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 max-w-xs">
+                        Enter an image URL above or pick a preset. If left empty, no mock or random image will be attached.
+                      </p>
+                    </div>
+                  )}
+
                   {uploadedImages.map((url, idx) => (
                     <div 
                       key={idx} 

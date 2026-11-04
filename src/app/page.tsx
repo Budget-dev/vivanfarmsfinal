@@ -58,7 +58,7 @@ export default function VivaanFarms() {
           statusBadge: p.statusBadge || 'Vedic Purity',
           badges: Array.isArray(p.badges) ? p.badges : [],
           description: p.description || '',
-          imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0 ? p.imageUrls : ['/images/products/ghee_tin.jpg'],
+          imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls.filter(Boolean) : [],
           vars: Array.isArray(p.vars) && p.vars.length > 0 
             ? p.vars 
             : [{ s: 'Standard', p: basePrice, mrp: Number(p.mrpPrice) || basePrice, on: true }]

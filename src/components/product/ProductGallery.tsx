@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Heart, Share2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, Share2, Search, ChevronLeft, ChevronRight, Leaf } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const BUFFALO_GHEE_IMAGES: string[] = ['/images/products/ghee_tin.jpg'];
@@ -36,9 +36,8 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
   price = 1099,
   onAddToCart,
 }) => {
-  const displayImages = images && images.length > 0 && images.some(img => !!img) 
-    ? images.filter(Boolean) 
-    : ['/images/products/ghee_tin.jpg'];
+  const hasImages = Boolean(images && images.length > 0 && images.some(img => !!img));
+  const displayImages = hasImages ? (images || []).filter(Boolean) : [];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const touchStartXRef = useRef<number | null>(null);
@@ -149,22 +148,41 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
           {/* Active Image */}
           <div 
             className="w-full h-full relative cursor-zoom-in"
-            onClick={onOpenLightbox}
+            onClick={hasImages ? onOpenLightbox : undefined}
           >
-            <Image 
-              src={displayImages[currentIndex]} 
-              alt={`${productName} view ${currentIndex + 1}`} 
-              fill 
-              className="object-cover select-none"
-              priority
-              sizes="100vw"
-            />
+            {hasImages ? (
+              <Image 
+                src={displayImages[currentIndex]} 
+                alt={`${productName} view ${currentIndex + 1}`} 
+                fill 
+                className="object-cover select-none"
+                priority
+                sizes="100vw"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-radial from-[#FDFBF7] to-[#F5ECE0] p-6 text-center select-none">
+                <div className="w-20 h-20 rounded-full bg-emerald-100/80 border border-emerald-300/60 flex items-center justify-center text-emerald-800 mb-3 shadow-xs">
+                  <Leaf className="w-10 h-10" />
+                </div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
+                  Authentic Farm Direct
+                </span>
+                <span className="text-base font-bold text-foreground mt-2 max-w-[260px] truncate">
+                  {productName}
+                </span>
+                <span className="text-xs text-muted-foreground mt-1 max-w-[280px]">
+                  100% pure harvest from Gujarat organic farms • Clean traditional processing
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Counter pill */}
-          <div className="absolute bottom-2.5 right-2.5 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-            {currentIndex + 1} / {displayImages.length}
-          </div>
+          {hasImages && displayImages.length > 1 && (
+            <div className="absolute bottom-2.5 right-2.5 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {currentIndex + 1} / {displayImages.length}
+            </div>
+          )}
         </div>
 
         {/* Thumbnails Row with Nav Buttons */}
