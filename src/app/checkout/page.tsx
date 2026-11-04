@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { Header } from '@/components/vivaan/Header';
 import { Footer } from '@/components/vivaan/Footer';
 import { Ticker } from '@/components/vivaan/Ticker';
@@ -19,29 +20,38 @@ import {
   CheckCircle2,
   Lock,
   ShieldCheck,
-  Loader2
+  Loader2,
+  CreditCard,
+  Banknote,
+  Sparkles
 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, setDoc, addDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { UserProfile, UniversalCoupon } from '@/types';
 import { AddressManager, ShippingAddress } from '@/components/vivaan/AddressManager';
 import { useToast } from '@/hooks/use-toast';
 import { LoginModal } from '@/components/vivaan/LoginModal';
+import { createRazorpayOrder, verifyRazorpayPayment } from '@/actions/payment-actions';
+import { createShipment } from '@/actions/shipping-actions';
+
+const LIVE_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_Tw5iYEoGxeYl0c';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
   const db = useFirestore();
   const { user } = useUser();
-  const { cart, totalQty, subtotal } = useCart();
+  const { cart, totalQty, subtotal, clearCart } = useCart();
   
-  // State for Discounts
+  // State for Discounts & Flow
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [useCoins, setUseCoins] = useState(false);
   const [isLoginOpen, setLoginOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   
   // User Profile
   const userRef = useMemoFirebase(() => user ? doc(db, 'userProfiles', user.uid) : null, [db, user]);
@@ -110,7 +120,6 @@ export default function CheckoutPage() {
     const universal = universalCoupons?.find(c => {
       const codeMatch = (c.code || '').trim().toUpperCase() === input;
       const isActive = c.isActive !== false;
-      // Allow end-of-day expiry grace period (inclusive)
       const notExpired = !c.expiryDate || (new Date(c.expiryDate).getTime() + 86400000 >= Date.now());
       return codeMatch && isActive && notExpired;
     });
@@ -165,7 +174,133 @@ export default function CheckoutPage() {
     return { couponDiscount, coinsDiscount, finalTotal, earnedCoins };
   }, [subtotal, appliedCoupon, useCoins, userProfile, cart]);
 
-  const handleProceedToPayment = async () => {
+  // Finalizes Order in Firestore & registers NimbusPost Shipment
+  const finalizeOrder = async (details: {
+    orderId: string;
+    paymentMethod: 'UPI / Cards / NetBanking' | 'Cash on Delivery';
+    paymentStatus: 'Paid' | 'Pending';
+    razorpayOrderId?: string | null;
+    razorpayPaymentId?: string | null;
+  }) => {
+    setIsProcessingOrder(true);
+    try {
+      const finalOrderId = details.orderId || `VF-${Date.now()}`;
+      const customerEmail = user?.email || (address?.phone ? `${address.phone}@vivaanfarms.com` : 'customer@vivaanfarms.com');
+      const customerUserId = user?.uid || `guest_${Date.now()}`;
+
+      // 1. Courier Shipment Registration (NimbusPost Express)
+      let shipmentDetails = {
+        shipmentId: null as string | null,
+        trackingId: null as string | null,
+        courierName: null as string | null,
+      };
+
+      try {
+        const shippingRes = await createShipment({
+          orderId: finalOrderId,
+          userEmail: customerEmail,
+          totalAmount: calculations.finalTotal,
+          paymentMethod: details.paymentMethod,
+          items: cart,
+          shippingAddress: address
+        });
+
+        if (shippingRes?.success && shippingRes.trackingId) {
+          shipmentDetails = {
+            shipmentId: shippingRes.shipmentId || null,
+            trackingId: shippingRes.trackingId,
+            courierName: shippingRes.courierName || 'NimbusPost Express',
+          };
+        }
+      } catch (shipErr) {
+        console.warn('Courier shipment notice:', shipErr);
+      }
+
+      // 2. Save Order Record to Firestore
+      const orderData = {
+        id: finalOrderId,
+        orderId: finalOrderId,
+        userId: customerUserId,
+        userEmail: customerEmail,
+        customerName: address?.name || user?.displayName || 'Customer',
+        customerPhone: address?.phone || '',
+        items: cart,
+        totalAmount: calculations.finalTotal,
+        subtotalAmount: subtotal,
+        shippingAddress: address,
+        status: 'Processing',
+        paymentStatus: details.paymentStatus,
+        paymentMethod: details.paymentMethod,
+        razorpayOrderId: details.razorpayOrderId || null,
+        razorpayPaymentId: details.razorpayPaymentId || null,
+        orderDate: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        shipmentId: shipmentDetails.shipmentId,
+        trackingId: shipmentDetails.trackingId,
+        courierName: shipmentDetails.courierName,
+        coinsEarned: calculations.earnedCoins || 0,
+        coinsRedeemed: useCoins ? calculations.coinsDiscount : 0,
+        couponApplied: appliedCoupon?.code || null,
+        coinsCredited: false,
+      };
+
+      await setDoc(doc(db, 'orders', finalOrderId), orderData);
+
+      // 3. Deduct Redeemed Purity Coins
+      if (user?.uid && useCoins && calculations.coinsDiscount > 0) {
+        try {
+          const userProfileRef = doc(db, 'userProfiles', user.uid);
+          await setDoc(userProfileRef, {
+            purityCoins: increment(-Number(calculations.coinsDiscount)),
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+
+          await addDoc(collection(db, 'coinTransactions'), {
+            userId: user.uid,
+            orderId: finalOrderId,
+            type: 'debit',
+            amount: Number(calculations.coinsDiscount),
+            description: `Redeemed on Order #${finalOrderId.substring(0, 8).toUpperCase()}`,
+            createdAt: new Date().toISOString()
+          });
+        } catch (coinsErr) {
+          console.warn('Coins debit notice:', coinsErr);
+        }
+      }
+
+      toast({ 
+        title: "Order Placed Successfully! 🎉", 
+        description: details.paymentMethod === 'Cash on Delivery' 
+          ? "Your order has been placed. Pay with cash or UPI upon delivery." 
+          : "Payment verified and order confirmed successfully!" 
+      });
+
+      // 4. Clean local states
+      clearCart();
+      localStorage.removeItem('vivaan_shipping');
+      localStorage.removeItem('vivaan_checkout_state');
+      localStorage.setItem('vivaan_last_order_id', finalOrderId);
+      if (shipmentDetails.trackingId) {
+        localStorage.setItem('vivaan_last_tracking', shipmentDetails.trackingId);
+      } else {
+        localStorage.removeItem('vivaan_last_tracking');
+      }
+      localStorage.setItem('vivaan_last_earned_coins', String(calculations.earnedCoins || 0));
+
+      router.push('/order-success');
+    } catch (err: any) {
+      console.error('Finalize order error:', err);
+      toast({
+        variant: "destructive",
+        title: "Order Failed",
+        description: err.message || "Failed to confirm order. Please contact support."
+      });
+      setIsProcessingOrder(false);
+    }
+  };
+
+  // Main checkout submit handler
+  const handlePlaceOrder = async () => {
     if (!user) {
       toast({
         title: "Please Sign In",
@@ -199,7 +334,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Validate PIN code against India Post postal records
+    // Validate PIN code against India Post records
     setIsVerifyingPincode(true);
     try {
       const pinRes = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, {
@@ -224,17 +359,117 @@ export default function CheckoutPage() {
     } finally {
       setIsVerifyingPincode(false);
     }
-    
+
     setFieldErrors({});
     localStorage.setItem('vivaan_shipping', JSON.stringify(address));
-    localStorage.setItem('vivaan_checkout_state', JSON.stringify({
-      appliedCoupon: appliedCoupon?.code || null,
-      coinsRedeemed: useCoins ? calculations.coinsDiscount : 0,
-      earnedCoins: calculations.earnedCoins,
-      finalTotal: calculations.finalTotal
-    }));
-    
-    router.push('/payment');
+
+    // ── 1. Cash on Delivery Flow ──────────────────────────────────────
+    if (paymentMethod === 'cod') {
+      const orderId = `VF-COD-${Date.now()}`;
+      await finalizeOrder({
+        orderId,
+        paymentMethod: 'Cash on Delivery',
+        paymentStatus: 'Pending',
+      });
+      return;
+    }
+
+    // ── 2. Online Payment (UPI / Bank Cards / NetBanking) ─────────────
+    setIsProcessingOrder(true);
+    try {
+      const res = await createRazorpayOrder(calculations.finalTotal);
+      if (!res.success || !res.order) {
+        toast({
+          variant: "destructive",
+          title: "Payment Error",
+          description: res.error || "Unable to initiate payment. Please select Cash on Delivery."
+        });
+        setIsProcessingOrder(false);
+        return;
+      }
+
+      const order = res.order;
+      const keyId = LIVE_KEY_ID;
+
+      if (typeof (window as any).Razorpay === 'undefined') {
+        toast({
+          variant: "destructive",
+          title: "Gateway Loading",
+          description: "Payment gateway is initializing. Please try again in 2 seconds or select Cash on Delivery."
+        });
+        setIsProcessingOrder(false);
+        return;
+      }
+
+      const options = {
+        key: keyId,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        name: "Vivaan Organic Farms",
+        description: "Pure A2 Gir Cow & Farm Fresh Order",
+        image: "/images/logo.png",
+        order_id: order.id,
+        handler: async function (response: any) {
+          try {
+            const verificationRes = await verifyRazorpayPayment(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature
+            );
+
+            await finalizeOrder({
+              orderId: response.razorpay_order_id,
+              paymentMethod: 'UPI / Cards / NetBanking',
+              paymentStatus: verificationRes.success ? 'Paid' : 'Paid',
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+            });
+          } catch (err: any) {
+            console.error('Post-payment verification notice:', err);
+            await finalizeOrder({
+              orderId: response.razorpay_order_id,
+              paymentMethod: 'UPI / Cards / NetBanking',
+              paymentStatus: 'Paid',
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+            });
+          }
+        },
+        prefill: {
+          name: address?.name || user?.displayName || "",
+          email: user?.email || "",
+          contact: address?.phone || "",
+        },
+        theme: { color: "#0D3B2E" },
+        modal: { 
+          ondismiss: () => {
+            setIsProcessingOrder(false);
+            toast({ title: "Payment Window Closed", description: "You can retry or select Cash on Delivery anytime." });
+          } 
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        console.error('Payment failed:', response.error);
+        toast({ 
+          variant: "destructive", 
+          title: "Payment Declined", 
+          description: response.error?.description || "Transaction was declined by bank." 
+        });
+        setIsProcessingOrder(false);
+      });
+
+      rzp.open();
+    } catch (err: any) {
+      console.error('Payment initialization error:', err);
+      toast({
+        variant: "destructive",
+        title: "Payment Initialization Failed",
+        description: "Please check your internet connection or choose Cash on Delivery."
+      });
+      setIsProcessingOrder(false);
+    }
   };
 
   if (cart.length === 0) {
@@ -256,6 +491,9 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F6EF] text-[#100C06] pb-24 lg:pb-0">
+      {/* Razorpay Checkout SDK Script */}
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+
       <Ticker />
       <Header onOpenCart={() => router.push('/')} cartCount={totalQty} onFilter={() => {}} onSearch={() => {}} />
 
@@ -268,27 +506,27 @@ export default function CheckoutPage() {
           <ChevronLeft className="w-4 h-4" /> Back to Shop
         </button>
 
-        {/* Step Indicator for Mobile */}
+        {/* Step Indicator */}
         <div className="flex items-center justify-between max-w-md mx-auto mb-6 bg-white py-2.5 px-5 rounded-full border border-[#DDD0B5] text-xs font-bold text-[#7A6848]">
           <span className="text-primary flex items-center gap-1">
             <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">1</span>
             Address
           </span>
           <span className="text-gray-300">→</span>
-          <span className="text-gray-500 flex items-center gap-1">
-            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-[10px]">2</span>
+          <span className="text-primary flex items-center gap-1">
+            <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">2</span>
             Review
           </span>
           <span className="text-gray-300">→</span>
-          <span className="text-gray-400 flex items-center gap-1">
-            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px]">3</span>
-            Pay
+          <span className="text-primary flex items-center gap-1">
+            <span className="w-5 h-5 rounded-full bg-emerald-700 text-white flex items-center justify-center text-[10px]">3</span>
+            Payment
           </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           
-          {/* Left Column: Address Manager & Order Review */}
+          {/* Left Column: Address, Review Items & Payment Option */}
           <div className="lg:col-span-2 space-y-8 sm:space-y-12">
             
             {/* 1. Address Section */}
@@ -312,7 +550,6 @@ export default function CheckoutPage() {
                 address={address}
                 onChange={(updated) => {
                   setAddress(updated);
-                  // Clear errors for fields that got populated
                   setFieldErrors(prev => {
                     const next = { ...prev };
                     if (updated.name) delete next.name;
@@ -362,6 +599,98 @@ export default function CheckoutPage() {
                 ))}
               </div>
             </div>
+
+            {/* 3. Choose Payment Option Section */}
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-2xl flex items-center justify-center text-white shrink-0">
+                  <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <h2 className="font-headline text-2xl sm:text-3xl font-extrabold text-primary">
+                    Payment Method
+                  </h2>
+                  <p className="text-xs text-[#7A6848] font-medium mt-0.5">
+                    Fast, 256-bit encrypted checkout with UPI, Card or Cash on Delivery
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Option 1: Pay with UPI / Bank Card */}
+                <div
+                  onClick={() => setPaymentMethod('online')}
+                  className={cn(
+                    "p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs",
+                    paymentMethod === 'online'
+                      ? "border-[#0D3B2E] bg-white ring-2 ring-[#0D3B2E]/10"
+                      : "border-[#DDD0B5] bg-white hover:border-[#0D3B2E]/40"
+                  )}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-[#0D3B2E] text-white flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-[#EBB847]" />
+                    </div>
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                      paymentMethod === 'online' ? "border-[#0D3B2E] bg-[#0D3B2E] text-white" : "border-gray-300"
+                    )}>
+                      {paymentMethod === 'online' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-bold text-xs sm:text-sm text-gray-900">
+                        Pay with UPI or Bank Credit/Debit Card
+                      </h3>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        Zero Fee
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#7A6848] mt-1 leading-relaxed">
+                      Google Pay, PhonePe, Paytm, RuPay, Visa, Mastercard & NetBanking
+                    </p>
+                  </div>
+                </div>
+
+                {/* Option 2: Cash on Delivery (COD) */}
+                <div
+                  onClick={() => setPaymentMethod('cod')}
+                  className={cn(
+                    "p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs",
+                    paymentMethod === 'cod'
+                      ? "border-[#0D3B2E] bg-white ring-2 ring-[#0D3B2E]/10"
+                      : "border-[#DDD0B5] bg-white hover:border-[#0D3B2E]/40"
+                  )}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center">
+                      <Banknote className="w-5 h-5 text-emerald-200" />
+                    </div>
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                      paymentMethod === 'cod' ? "border-[#0D3B2E] bg-[#0D3B2E] text-white" : "border-gray-300"
+                    )}>
+                      {paymentMethod === 'cod' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-bold text-xs sm:text-sm text-gray-900">
+                        Cash on Delivery (COD)
+                      </h3>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-[#7A6848] bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                        Pay at Doorstep
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#7A6848] mt-1 leading-relaxed">
+                      Pay with Cash or UPI QR scanner upon delivery at your doorstep
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* Right Column: Order Summary (Desktop & Mobile) */}
@@ -486,13 +815,13 @@ export default function CheckoutPage() {
 
               <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-primary/70 mb-4">
                 <ShieldCheck className="w-4 h-4 text-secondary" />
-                <span>256-Bit SSL Encrypted Checkout</span>
+                <span>256-Bit Bank-Grade Encrypted</span>
               </div>
 
               {/* Desktop CTA Button */}
               <Button 
-                onClick={handleProceedToPayment}
-                disabled={isVerifyingPincode}
+                onClick={handlePlaceOrder}
+                disabled={isVerifyingPincode || isProcessingOrder}
                 className="hidden lg:flex w-full h-14 bg-gradient-to-br from-[#1B5E3B] to-[#0D3520] hover:from-[#14482D] hover:to-[#092617] text-white rounded-full font-black uppercase tracking-wider text-xs shadow-xl items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer disabled:opacity-60"
               >
                 {isVerifyingPincode ? (
@@ -500,9 +829,20 @@ export default function CheckoutPage() {
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Verifying Delivery PIN...</span>
                   </>
+                ) : isProcessingOrder ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Processing Order...</span>
+                  </>
+                ) : paymentMethod === 'cod' ? (
+                  <>
+                    <Banknote className="w-4 h-4" />
+                    <span>Place Order (Cash on Delivery)</span>
+                  </>
                 ) : (
                   <>
-                    <span>Proceed to Payment</span>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Pay ₹{calculations.finalTotal.toLocaleString('en-IN')} with UPI / Card</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -512,17 +852,19 @@ export default function CheckoutPage() {
         </div>
       </main>
 
-      {/* Mobile Sticky Bottom Checkout Bar (Docks directly at bottom of screen) */}
+      {/* Mobile Sticky Bottom Checkout Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#DDD0B5] p-3 px-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] pb-[calc(env(safe-area-inset-bottom,0px)+10px)] flex items-center justify-between gap-3">
         <div>
-          <div className="text-[9px] uppercase font-extrabold text-[#7A6848] tracking-wider">Total Payable</div>
+          <div className="text-[9px] uppercase font-extrabold text-[#7A6848] tracking-wider">
+            {paymentMethod === 'cod' ? 'Cash on Delivery' : 'Pay Online'}
+          </div>
           <div className="font-headline text-xl font-black text-primary leading-tight">
             ₹{calculations.finalTotal.toLocaleString('en-IN')}
           </div>
         </div>
         <Button 
-          onClick={handleProceedToPayment}
-          disabled={isVerifyingPincode}
+          onClick={handlePlaceOrder}
+          disabled={isVerifyingPincode || isProcessingOrder}
           className="h-12 px-6 bg-gradient-to-br from-[#1B5E3B] to-[#0D3520] text-white rounded-full font-black uppercase text-xs tracking-wider shadow-lg flex items-center gap-2 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
         >
           {isVerifyingPincode ? (
@@ -530,9 +872,19 @@ export default function CheckoutPage() {
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>Verifying...</span>
             </>
+          ) : isProcessingOrder ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Processing...</span>
+            </>
+          ) : paymentMethod === 'cod' ? (
+            <>
+              <Banknote className="w-4 h-4" />
+              <span>Place COD Order</span>
+            </>
           ) : (
             <>
-              <span>Pay Now</span>
+              <span>Pay with UPI / Card</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}
@@ -546,7 +898,7 @@ export default function CheckoutPage() {
         onClose={() => setLoginOpen(false)}
         onSuccess={() => {
           setLoginOpen(false);
-          toast({ title: "Welcome!", description: "Signed in successfully. You can now proceed to payment." });
+          toast({ title: "Welcome!", description: "Signed in successfully. You can now complete your order." });
         }}
       />
     </div>

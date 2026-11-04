@@ -62,7 +62,7 @@ export default function PaymentPage() {
    */
   const finalizeOrder = async (details: {
     orderId: string;
-    paymentMethod: 'Razorpay' | 'Cash on Delivery';
+    paymentMethod: 'UPI / Cards / NetBanking' | 'Cash on Delivery';
     paymentStatus: 'Paid' | 'Pending';
     razorpayOrderId?: string | null;
     razorpayPaymentId?: string | null;
@@ -222,7 +222,7 @@ export default function PaymentPage() {
       }
 
       const order = res.order;
-      const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_Tw5iYEoGxeYl0c';
 
       if (!keyId || typeof (window as any).Razorpay === 'undefined') {
         console.warn('Razorpay SDK / Key unconfigured, switching to seamless fallback');
@@ -250,7 +250,7 @@ export default function PaymentPage() {
             if (verificationRes.success) {
               await finalizeOrder({
                 orderId: response.razorpay_order_id,
-                paymentMethod: 'Razorpay',
+                paymentMethod: 'UPI / Cards / NetBanking',
                 paymentStatus: 'Paid',
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
@@ -268,7 +268,7 @@ export default function PaymentPage() {
             // CRITICAL: Razorpay collected the money, still record order with manual review tag
             await finalizeOrder({
               orderId: response.razorpay_order_id,
-              paymentMethod: 'Razorpay',
+              paymentMethod: 'UPI / Cards / NetBanking',
               paymentStatus: 'Paid',
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
@@ -373,9 +373,9 @@ export default function PaymentPage() {
                       </div>
                     </div>
                     <div>
-                      <h3 className="font-bold text-xs sm:text-sm text-gray-900">Online Payment</h3>
+                      <h3 className="font-bold text-xs sm:text-sm text-gray-900">Pay with UPI or Bank Credit/Debit Card</h3>
                       <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                        UPI, Google Pay, PhonePe, Cards & NetBanking
+                        Google Pay, PhonePe, Paytm, RuPay, Visa, Mastercard & NetBanking
                       </p>
                     </div>
                   </div>
@@ -402,9 +402,9 @@ export default function PaymentPage() {
                       </div>
                     </div>
                     <div>
-                      <h3 className="font-bold text-xs sm:text-sm text-gray-900">Cash on Delivery</h3>
+                      <h3 className="font-bold text-xs sm:text-sm text-gray-900">Cash on Delivery (COD)</h3>
                       <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                        Pay with Cash or UPI upon doorstep arrival
+                        Pay with Cash or UPI QR scanner upon doorstep delivery
                       </p>
                     </div>
                   </div>
@@ -466,42 +466,6 @@ export default function PaymentPage() {
                 <span>100% Purity Guarantee · 256-Bit Encrypted</span>
               </div>
 
-              {/* Sandbox / Gateway Notice with Immediate Confirmation Button */}
-              {showSandboxFallback && (
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
-                  <div className="flex items-center gap-2 font-bold">
-                    <AlertCircle className="w-4 h-4 text-amber-700" />
-                    <span>Payment Gateway Sandbox Notice</span>
-                  </div>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
-                    Online gateway keys are in development/sandbox mode. You can instantly confirm this order either as Cash on Delivery or complete a verified sandbox test order:
-                  </p>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Button
-                      type="button"
-                      onClick={() => handleCodPayment()}
-                      className="h-9 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold uppercase tracking-wider"
-                    >
-                      Confirm with Cash on Delivery
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => finalizeOrder({
-                        orderId: `VF-ONLINE-${Date.now()}`,
-                        paymentMethod: 'Razorpay',
-                        paymentStatus: 'Paid',
-                        razorpayOrderId: `rzp_sandbox_${Date.now()}`,
-                        razorpayPaymentId: `pay_sandbox_${Date.now()}`
-                      })}
-                      variant="outline"
-                      className="h-9 px-4 rounded-xl border-amber-700 text-amber-900 hover:bg-amber-100 text-xs font-bold uppercase tracking-wider"
-                    >
-                      Complete Sandbox Test Order
-                    </Button>
-                  </div>
-                </div>
-              )}
-
               {/* Main Submit CTA */}
               <Button 
                 onClick={handleSubmit}
@@ -513,7 +477,7 @@ export default function PaymentPage() {
                 ) : paymentMethod === 'cod' ? (
                   <span>Place Order (Cash on Delivery) →</span>
                 ) : (
-                  <span>Pay ₹{total.toLocaleString('en-IN')} & Confirm Order →</span>
+                  <span>Pay ₹{total.toLocaleString('en-IN')} with UPI / Card →</span>
                 )}
               </Button>
             </div>
