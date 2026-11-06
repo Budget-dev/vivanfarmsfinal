@@ -48,18 +48,22 @@ export const Footer: React.FC = () => {
             </Link>
 
             <p className="text-[11px] md:text-sm text-emerald-100/80 leading-relaxed max-w-sm">
-              Reviving authentic Vedic food traditions from our native soil to your table. Handcrafted A2 Gir Cow Bilona Ghee, cold wood-pressed unrefined oils, and raw forest honey with zero chemicals.
+              Natural dairy farming and fresh buffalo milk delivered directly from Chandravelli, Bellampalli, Telangana to your family with care, quality, and trust.
             </p>
 
             <div className="space-y-1.5 md:space-y-2 text-[11px] md:text-sm text-emerald-100/90 pt-0.5 md:pt-1">
-              <a href="tel:+919217428737" className="flex items-center gap-2 hover:text-[#F8D279] transition-colors">
+              <a href="tel:+919988667848" className="flex items-center gap-2 hover:text-[#F8D279] transition-colors">
                 <Phone className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#F8D279] shrink-0" />
-                <span>Customer Care: +91 92174 28737 / +91 89508 00633</span>
+                <span>Mobile: +91 99886 67848</span>
               </a>
-              <a href="mailto:support@varahifarms.com" className="flex items-center gap-2 hover:text-[#F8D279] transition-colors">
+              <a href="mailto:support@vivaanfarms.in" className="flex items-center gap-2 hover:text-[#F8D279] transition-colors">
                 <Mail className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#F8D279] shrink-0" />
-                <span>support@varahifarms.com</span>
+                <span>support@vivaanfarms.in</span>
               </a>
+              <div className="flex items-start gap-2 text-emerald-100/80 text-[10.5px] md:text-xs">
+                <span className="text-[#F8D279] font-bold shrink-0">📍</span>
+                <span>Chandravelli, Bellampalli, Telangana, India – 504251</span>
+              </div>
               <div className="flex items-center gap-2 text-emerald-200/60 text-[10px] md:text-xs">
                 <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#F8D279] shrink-0" />
                 <span>Monday - Sunday: 8:00 AM - 8:00 PM IST</span>

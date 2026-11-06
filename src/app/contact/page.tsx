@@ -52,15 +52,15 @@ export default function ContactPage() {
                 <span className="text-[10px] font-black text-primary tracking-[3px] uppercase px-3.5 py-1.5 bg-primary/5 rounded-full inline-block">Contact Us</span>
                 <h1 className="font-headline text-2xl sm:text-5xl md:text-7xl font-extrabold text-primary leading-tight">Reach the Farm.</h1>
                 <p className="text-sm sm:text-lg text-[#7A6848] font-medium leading-relaxed max-w-lg">
-                  Whether you have questions about our Bilona Ghee or want to visit our Gujarat farm, we&apos;re here to help you on your purity journey.
+                  Whether you have questions about our fresh buffalo milk, dairy operations, or daily delivery in Chandravelli, Bellampalli, we are here to help.
                 </p>
               </div>
 
               <div className="space-y-6 sm:space-y-8">
                 {[
-                  { icon: <Mail className="w-5 h-5 sm:w-6 sm:h-6" />, label: "Email Us", val: "care@vivaanfarms.com", href: "mailto:care@vivaanfarms.com" },
-                  { icon: <Phone className="w-5 h-5 sm:w-6 sm:h-6" />, label: "Call Us", val: "+91 98765 43210", href: "tel:+919876543210" },
-                  { icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />, label: "Visit Farm", val: "Rajkot, Gujarat, India", href: "https://maps.google.com/?q=Rajkot,+Gujarat,+India" },
+                  { icon: <Mail className="w-5 h-5 sm:w-6 sm:h-6" />, label: "Email Us", val: "support@vivaanfarms.in", href: "mailto:support@vivaanfarms.in" },
+                  { icon: <Phone className="w-5 h-5 sm:w-6 sm:h-6" />, label: "Call Us", val: "+91 99886 67848", href: "tel:+919988667848" },
+                  { icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />, label: "Visit Farm", val: "Chandravelli, Bellampalli, Telangana, India – 504251", href: "https://maps.google.com/?q=Chandravelli,+Bellampalli,+Telangana+504251" },
                 ].map((item, i) => (
                   <a 
                     key={i} 
@@ -87,7 +87,7 @@ export default function ContactPage() {
                 </div>
                 <p className="text-xs sm:text-sm text-[#7A6848] font-medium mb-5">Our farm desk is available Mon-Sat, 9am - 7pm IST.</p>
                 <a
-                  href="https://wa.me/919876543210?text=Hi%20Vivaan%20Farms%2C%20I%20have%20an%20inquiry%20regarding%20pure%20Gir%20cow%20ghee."
+                  href="https://wa.me/919988667848?text=Hi%20Vivaan%20Farms%2C%20I%20have%20an%20inquiry%20regarding%20pure%20Gir%20cow%20ghee."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center h-12 px-7 bg-primary hover:bg-secondary text-white rounded-full text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all min-h-[44px]"
