@@ -251,7 +251,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
   const [volumeUnit, setVolumeUnit] = useState<VolumeUnit>('ml');
   const [customUnitName, setCustomUnitName] = useState('');
   const [variants, setVariants] = useState<ProductVariant[]>([
-    { s: '500 ml', p: 850, mrp: 999, on: true }
+    { s: '500 ml', p: 0, mrp: 0, on: true }
   ]);
   const [newVarSize, setNewVarSize] = useState('');
   const [newVarPrice, setNewVarPrice] = useState('');
@@ -649,14 +649,26 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
       finalVars = [{ s: 'Standard', p: Number(price) || 0, mrp: Number(mrpPrice) || Number(price) || 0, on: true }];
     }
 
+    const enteredBase = Number(price);
+    const enteredMrp = Number(mrpPrice);
     const defaultVar = finalVars.find(v => v.on) || finalVars[0];
-    const finalBasePrice = Number(defaultVar.p) || Number(price) || 0;
-    const finalMrpPrice = Number(defaultVar.mrp) || Number(mrpPrice) || finalBasePrice;
+
+    // CRITICAL: Always prioritize the explicitly typed Selling Price and MRP over stale defaultVar cache
+    const finalBasePrice = (Number.isFinite(enteredBase) && enteredBase > 0)
+      ? enteredBase
+      : (Number(defaultVar?.p) || 0);
+
+    const finalMrpPrice = (Number.isFinite(enteredMrp) && enteredMrp > 0)
+      ? enteredMrp
+      : (Number(defaultVar?.mrp) || finalBasePrice);
 
     if (finalBasePrice <= 0) {
       toast({ variant: "destructive", title: "Invalid Price", description: "Please enter a selling price greater than ₹0." });
       return;
     }
+
+    // Ensure the default variant stores the exact price the admin entered
+    finalVars = finalVars.map(v => v.on ? { ...v, p: finalBasePrice, mrp: finalMrpPrice } : v);
 
     // Process ingredients & benefits from multi-line text
     const ingredientsList = ingredientsText
@@ -1368,7 +1380,17 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
                     <Input 
                       type="number"
                       value={price} 
-                      onChange={(e) => setPrice(e.target.value)} 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPrice(val);
+                        const num = Number(val) || 0;
+                        setVariants(prev => {
+                          if (!prev || prev.length === 0) return [{ s: '500 ml', p: num, mrp: num, on: true }];
+                          const activeIdx = prev.findIndex(v => v.on);
+                          const targetIdx = activeIdx >= 0 ? activeIdx : 0;
+                          return prev.map((item, idx) => idx === targetIdx ? { ...item, p: num } : item);
+                        });
+                      }} 
                       placeholder="e.g. 1099"
                       className="h-9 text-xs font-mono" 
                     />
@@ -1379,7 +1401,17 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
                     <Input 
                       type="number"
                       value={mrpPrice} 
-                      onChange={(e) => setMrpPrice(e.target.value)} 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setMrpPrice(val);
+                        const num = Number(val) || 0;
+                        setVariants(prev => {
+                          if (!prev || prev.length === 0) return [{ s: '500 ml', p: 0, mrp: num, on: true }];
+                          const activeIdx = prev.findIndex(v => v.on);
+                          const targetIdx = activeIdx >= 0 ? activeIdx : 0;
+                          return prev.map((item, idx) => idx === targetIdx ? { ...item, mrp: num } : item);
+                        });
+                      }} 
                       placeholder="e.g. 1299"
                       className="h-9 text-xs font-mono" 
                     />

@@ -258,22 +258,15 @@ export const AddressManager: React.FC<AddressManagerProps> = ({
       console.warn('Nominatim geocode notice:', e);
     }
 
-    // If client fallback retrieved a pincode, verify with India Post
+    // If client fallback retrieved a pincode, check if India Post can enrich city/state
     if (pincode && pincode.length === 6) {
       try {
         const checkRes = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, { signal: AbortSignal.timeout(2500) });
         const checkData = await checkRes.json();
-        if (checkData?.[0]?.Status !== 'Success') {
-          const candidate = locality || city;
-          if (candidate) {
-            const poRes = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(candidate)}`, { signal: AbortSignal.timeout(2500) });
-            const poData = await poRes.json();
-            if (poData?.[0]?.Status === 'Success' && poData[0].PostOffice?.[0]?.Pincode) {
-              pincode = String(poData[0].PostOffice[0].Pincode).replace(/\D/g, '').slice(0, 6);
-              if (poData[0].PostOffice[0].District) city = poData[0].PostOffice[0].District;
-              if (poData[0].PostOffice[0].State) state = poData[0].PostOffice[0].State;
-            }
-          }
+        if (checkData?.[0]?.Status === 'Success' && checkData[0].PostOffice?.[0]) {
+          const po = checkData[0].PostOffice[0];
+          if (!city && po.District) city = po.District;
+          if (!state && po.State) state = po.State;
         }
       } catch {}
     }

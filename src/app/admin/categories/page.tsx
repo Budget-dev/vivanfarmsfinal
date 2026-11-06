@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { 
-  FolderTree, 
   Plus, 
   Pencil, 
   Trash2, 
@@ -12,13 +11,11 @@ import {
   Flame, 
   Package,
   Layers,
-  Check,
   RefreshCw,
-  Tag,
   ChevronUp,
   ChevronDown
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,7 +33,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
@@ -74,15 +70,26 @@ export default function AdminCategoriesPage() {
   const { data: categories, isLoading } = useCollection(categoriesRef);
   const { data: products } = useCollection(productsRef);
 
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  // Edit Dialog states
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [name, setName] = useState('');
-  const [desc, setDesc] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
 
+  // Inline Category Row states (Extra row directly inside table)
+  const [inlineName, setInlineName] = useState('');
+  const [inlineDesc, setInlineDesc] = useState('');
+  const [isSavingInline, setIsSavingInline] = useState(false);
+  const inlineInputRef = useRef<HTMLInputElement>(null);
+
+  const inlineSlug = useMemo(() => {
+    return inlineName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  }, [inlineName]);
+
   // Canonical Sorted Categories:
-  // Core categories stay at top in farm order, newly created categories are ALWAYS appended at the bottom
+  // Core categories stay at top in farm order, newly created categories are ALWAYS appended down at the bottom
   const sortedCategories = useMemo(() => {
     if (!categories || categories.length === 0) return [];
     return [...categories].sort((a, b) => {
@@ -99,21 +106,15 @@ export default function AdminCategoriesPage() {
     });
   }, [categories]);
 
-  const resetForm = () => {
-    setName('');
-    setDesc('');
-    setEditingId(null);
-  };
-
   const handleEdit = (cat: any) => {
     setEditingId(cat.id);
-    setName(cat.name || '');
-    setDesc(cat.description || '');
-    setIsAddOpen(true);
+    setEditName(cat.name || '');
+    setEditDesc(cat.description || '');
+    setIsEditOpen(true);
   };
 
-  const handleSave = async () => {
-    const cleanName = name.trim();
+  const handleSaveEdit = async () => {
+    const cleanName = editName.trim();
     if (!cleanName) {
       toast({ variant: "destructive", title: "Name Required", description: "Please enter a category name." });
       return;
@@ -121,51 +122,97 @@ export default function AdminCategoriesPage() {
 
     const cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `cat-${Date.now()}`;
     const targetId = editingId || cleanSlug;
-
-    // Calculate order so newly created category is placed down at the bottom
-    const existingMaxOrder = categories && categories.length > 0
-      ? Math.max(...categories.map((c: any) => typeof c.order === 'number' ? c.order : (CORE_ORDER_MAP[c.id] ?? CORE_ORDER_MAP[c.slug] ?? 60)), 60)
-      : 60;
     const existingCat = categories?.find((c: any) => c.id === targetId);
-    const assignedOrder = typeof existingCat?.order === 'number' ? existingCat.order : existingMaxOrder + 10;
 
-    setIsSaving(true);
+    setIsSavingEdit(true);
     try {
       const catData = {
         id: targetId,
         slug: cleanSlug,
         name: cleanName,
-        description: desc.trim(),
-        order: assignedOrder,
+        description: editDesc.trim(),
+        order: existingCat?.order ?? 100,
         isActive: true,
         updatedAt: new Date().toISOString(),
         createdAt: existingCat?.createdAt || new Date().toISOString()
       };
 
-      // 1. Immediate optimistic cache update via non-blocking write
       setDocumentNonBlocking(doc(db, 'categories', targetId), catData, { merge: true });
-
-      // 2. Safe async network persistence
       await setDoc(doc(db, 'categories', targetId), catData, { merge: true });
 
       toast({ 
-        title: editingId ? "Category Updated" : "Category Created! ✓", 
-        description: `Category "${cleanName}" (${cleanSlug}) added to catalog.` 
+        title: "Category Updated! ✓", 
+        description: `Category "${cleanName}" (${cleanSlug}) saved.` 
       });
 
-      setIsAddOpen(false);
-      resetForm();
+      setIsEditOpen(false);
+      setEditingId(null);
+      setEditName('');
+      setEditDesc('');
     } catch (err: any) {
-      console.warn("Category save notice:", err);
-      // If client cache accepted the non-blocking write, treat as successful
+      console.warn("Category update notice:", err);
       toast({ 
-        title: editingId ? "Category Updated" : "Category Created! ✓", 
+        title: "Category Updated! ✓", 
         description: `Category "${cleanName}" saved.` 
       });
-      setIsAddOpen(false);
-      resetForm();
+      setIsEditOpen(false);
     } finally {
-      setIsSaving(false);
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleSaveInline = async () => {
+    const cleanName = inlineName.trim();
+    if (!cleanName) {
+      toast({ variant: "destructive", title: "Name Required", description: "Please enter a category name." });
+      inlineInputRef.current?.focus();
+      return;
+    }
+
+    const cleanSlug = inlineSlug || `cat-${Date.now()}`;
+    const targetId = cleanSlug;
+
+    // Calculate order so newly created category is strictly placed DOWN at the bottom
+    const existingMaxOrder = categories && categories.length > 0
+      ? Math.max(...categories.map((c: any) => typeof c.order === 'number' ? c.order : (CORE_ORDER_MAP[c.id] ?? CORE_ORDER_MAP[c.slug] ?? 60)), 60)
+      : 60;
+    const assignedOrder = existingMaxOrder + 10;
+
+    setIsSavingInline(true);
+    try {
+      const catData = {
+        id: targetId,
+        slug: cleanSlug,
+        name: cleanName,
+        description: inlineDesc.trim(),
+        order: assignedOrder,
+        isActive: true,
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      // Optimistic cache update
+      setDocumentNonBlocking(doc(db, 'categories', targetId), catData, { merge: true });
+      await setDoc(doc(db, 'categories', targetId), catData, { merge: true });
+
+      toast({ 
+        title: "Category Added! ✓", 
+        description: `Category "${cleanName}" added as a new row at the bottom of the table.` 
+      });
+
+      setInlineName('');
+      setInlineDesc('');
+      inlineInputRef.current?.focus();
+    } catch (err: any) {
+      console.warn("Category save notice:", err);
+      toast({ 
+        title: "Category Added! ✓", 
+        description: `Category "${cleanName}" saved.` 
+      });
+      setInlineName('');
+      setInlineDesc('');
+    } finally {
+      setIsSavingInline(false);
     }
   };
 
@@ -288,115 +335,25 @@ export default function AdminCategoriesPage() {
             </Button>
           )}
 
-          <Dialog open={isAddOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsAddOpen(open); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-9 gap-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs">
-                <Plus className="w-3.5 h-3.5" />
-                <span>Create Category</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md p-6 font-sans">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">
-                  {editingId ? 'Edit Category' : 'New Category'}
-                </DialogTitle>
-                <DialogDescription className="text-xs">
-                  Configure taxonomy name, slug, and descriptive details for this collection.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">Category Name *</label>
-                  <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. A2 Gir Cow Milk, Wood Pressed Oils"
-                    className="h-9 text-xs"
-                    autoFocus
-                  />
-                  {name.trim() && (
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
-                      <span>Slug:</span>
-                      <span className="text-emerald-700 font-bold">
-                        {name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">Description</label>
-                  <Textarea
-                    value={desc}
-                    onChange={(e) => setDesc(e.target.value)}
-                    rows={3}
-                    placeholder="Collection of authentic farm products delivered fresh..."
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-
-              <DialogFooter className="pt-4 border-t border-border/60">
-                <Button variant="outline" size="sm" onClick={() => setIsAddOpen(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleSave} disabled={isSaving || !name.trim()} className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
-                  {isSaving ? 'Saving...' : editingId ? 'Update Category' : 'Create Category'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            size="sm" 
+            onClick={() => {
+              inlineInputRef.current?.focus();
+              inlineInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            className="h-9 gap-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Add Category Row</span>
+          </Button>
         </div>
       </div>
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {sortedCategories && sortedCategories.length > 0 ? (
-          sortedCategories.map((cat) => {
-            const catId = (cat.id || '').toLowerCase().trim();
-            const catSlug = (cat.slug || '').toLowerCase().trim();
-            const catName = (cat.name || '').toLowerCase().trim();
-
-            const count = products?.filter(p => {
-              const pCat = (p.categoryId || p.cat || '').toLowerCase().trim();
-              const pName = (p.name || '').toLowerCase().trim();
-              return pCat === catId || 
-                     pCat === catSlug || 
-                     pCat === catName || 
-                     catName.includes(pCat) || 
-                     (pCat && catId.includes(pCat)) ||
-                     (catSlug && pCat.includes(catSlug)) ||
-                     (catSlug && pName.includes(catSlug));
-            }).length || 0;
-
-            return (
-              <Card key={cat.id} className="border border-border/80 shadow-sm p-4 bg-card hover:border-emerald-500/40 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center">
-                    {getCategoryIcon(cat.name)}
-                  </div>
-                  <Badge variant="outline" className="text-[10px] font-mono">
-                    {count} {count === 1 ? 'Product' : 'Products'}
-                  </Badge>
-                </div>
-                <div className="mt-3">
-                  <h3 className="font-semibold text-sm text-foreground">{cat.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                    {cat.description || 'Active catalog collection'}
-                  </p>
-                </div>
-              </Card>
-            );
-          })
-        ) : null}
-      </div>
-
-      {/* Categories Table */}
+      {/* Categories Table with Inline Extra Row */}
       <Card className="border border-border/80 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border/60 hover:bg-transparent">
+            <TableRow className="border-b border-border/60 hover:bg-transparent bg-muted/30">
               <TableHead className="w-16 px-3 text-xs font-semibold text-center">Order</TableHead>
               <TableHead className="px-4 text-xs font-semibold">Category Name</TableHead>
               <TableHead className="px-4 text-xs font-semibold">Slug</TableHead>
@@ -505,16 +462,142 @@ export default function AdminCategoriesPage() {
                   </TableRow>
                 );
               })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
-                  No categories found. Click &quot;Create Category&quot; or &quot;Seed Core Categories&quot; to begin.
-                </TableCell>
-              </TableRow>
-            )}
+            ) : null}
+
+            {/* Dedicated Extra Row for Creating New Category Directly in Table */}
+            <TableRow className="bg-emerald-50/60 dark:bg-emerald-950/20 border-t-2 border-dashed border-emerald-400/70 transition-colors">
+              <TableCell className="w-16 px-3 py-3 text-center">
+                <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300 font-mono text-[10px]">
+                  #{sortedCategories.length + 1}
+                </Badge>
+              </TableCell>
+
+              <TableCell className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-md bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <Input
+                    ref={inlineInputRef}
+                    value={inlineName}
+                    onChange={(e) => setInlineName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSaveInline();
+                      }
+                    }}
+                    placeholder="Enter new category name... (e.g. Desi Cow Butter)"
+                    className="h-9 text-xs font-medium bg-white border-emerald-300 focus-visible:ring-emerald-500 min-w-[200px]"
+                  />
+                </div>
+              </TableCell>
+
+              <TableCell className="px-4 py-3 font-mono text-[11px]">
+                {inlineSlug ? (
+                  <span className="text-emerald-700 font-bold bg-white px-2 py-1 rounded border border-emerald-200">
+                    {inlineSlug}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/60 italic text-[10px]">auto-slug</span>
+                )}
+              </TableCell>
+
+              <TableCell className="px-4 py-3">
+                <Input
+                  value={inlineDesc}
+                  onChange={(e) => setInlineDesc(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveInline();
+                    }
+                  }}
+                  placeholder="Optional description for collection..."
+                  className="h-9 text-xs bg-white border-emerald-300 focus-visible:ring-emerald-500 min-w-[220px]"
+                />
+              </TableCell>
+
+              <TableCell className="px-4 py-3">
+                <Badge variant="outline" className="text-xs font-mono text-muted-foreground bg-white">
+                  0 SKUs
+                </Badge>
+              </TableCell>
+
+              <TableCell className="px-4 py-3">
+                <Badge className="bg-emerald-500/20 text-emerald-800 border border-emerald-500/30 text-[11px] font-semibold">
+                  Active
+                </Badge>
+              </TableCell>
+
+              <TableCell className="px-4 py-3 text-right">
+                <Button
+                  size="sm"
+                  onClick={handleSaveInline}
+                  disabled={isSavingInline || !inlineName.trim()}
+                  className="h-9 px-3 gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs whitespace-nowrap"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{isSavingInline ? 'Adding...' : 'Add Row'}</span>
+                </Button>
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </Card>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={(open) => { if (!open) { setIsEditOpen(false); setEditingId(null); } }}>
+        <DialogContent className="max-w-md p-6 font-sans">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Edit Category</DialogTitle>
+            <DialogDescription className="text-xs">
+              Update taxonomy name, slug, and descriptive details for this category.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">Category Name *</label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="e.g. A2 Gir Cow Milk, Wood Pressed Oils"
+                className="h-9 text-xs"
+                autoFocus
+              />
+              {editName.trim() && (
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
+                  <span>Slug:</span>
+                  <span className="text-emerald-700 font-bold">
+                    {editName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">Description</label>
+              <Textarea
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                rows={3}
+                placeholder="Collection of authentic farm products delivered fresh..."
+                className="text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="pt-4 border-t border-border/60">
+            <Button variant="outline" size="sm" onClick={() => setIsEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit || !editName.trim()} className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
+              {isSavingEdit ? 'Saving...' : 'Update Category'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

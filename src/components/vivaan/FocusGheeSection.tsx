@@ -174,13 +174,20 @@ export const FocusGheeSection: React.FC<FocusGheeSectionProps> = ({
                   {/* Clean White Product Image Area */}
                   <div className="relative w-full h-[155px] sm:h-[195px] md:h-[215px] flex items-center justify-center bg-white mt-1">
                     <div className="relative w-full h-full flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                      <Image
-                        src={(p.imageUrls && p.imageUrls[0]) || '/images/products/ghee_tin.jpg'}
-                        alt={p.name}
-                        fill
-                        className="object-contain p-1 sm:p-2"
-                        sizes="(max-width: 640px) 180px, 280px"
-                      />
+                      {p.imageUrls && p.imageUrls[0] ? (
+                        <Image
+                          src={p.imageUrls[0]}
+                          alt={p.name}
+                          fill
+                          className="object-contain p-1 sm:p-2"
+                          sizes="(max-width: 640px) 180px, 280px"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#FAF8F5] rounded-xl border border-dashed border-[#DFD3C3] text-[#143E31]/60">
+                          <Package className="w-9 h-9 stroke-[1.4] mb-1 text-emerald-800/40" />
+                          <span className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">Farm Fresh</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

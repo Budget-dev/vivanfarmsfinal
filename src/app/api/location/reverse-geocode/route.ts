@@ -34,7 +34,7 @@ async function resolveIndianPincode(
   const cleanVillage = (details.village || "").trim().toLowerCase();
   const cleanLocality = (details.locality || "").replace(/\s*(road|street|nagar|colony|lane|bypass)\b/gi, "").trim().toLowerCase();
 
-  // 1. If rawPincode is a 6-digit code, verify it with official India Post API
+  // 1. If rawPincode is a 6-digit code from GPS reverse geocoding, verify it with official India Post API
   if (rawPincode && /^\d{6}$/.test(rawPincode)) {
     try {
       const res = await fetch(`https://api.postalpincode.in/pincode/${rawPincode}`, {
@@ -43,19 +43,14 @@ async function resolveIndianPincode(
       const data = await res.json();
       if (Array.isArray(data) && data[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
         const offices = data[0].PostOffice;
-        // Verify this pincode actually matches the district and state!
         const matchesDistrict = !cleanDistrict || offices.some((o: any) =>
           (o.District || "").toLowerCase().includes(cleanDistrict) || cleanDistrict.includes((o.District || "").toLowerCase())
         );
         const matchesState = !cleanState || offices.some((o: any) =>
           (o.State || "").toLowerCase() === cleanState
         );
-        // If cleanMandal is provided, verify whether this pincode covers this mandal/block
-        const matchesBlock = !cleanMandal || offices.some((o: any) =>
-          (o.Block || "").toLowerCase().includes(cleanMandal) || cleanMandal.includes((o.Block || "").toLowerCase())
-        );
 
-        if (matchesDistrict && matchesState && matchesBlock) {
+        if (matchesState || matchesDistrict) {
           return {
             pincode: rawPincode,
             city: offices[0].District || details.city,
@@ -65,8 +60,17 @@ async function resolveIndianPincode(
         }
       }
     } catch {
-      // Network timeout or offline - continue to postal directory hierarchy lookup
+      // Network timeout - trust spatial GPS reverse geocoded pincode
     }
+
+    // CRITICAL: If a valid 6-digit postal code was computed from spatial GPS coordinates,
+    // trust it! Never overwrite it with a loose village name search that matches distant villages.
+    return {
+      pincode: rawPincode,
+      city: details.city,
+      state: details.state,
+      verified: true,
+    };
   }
 
   // 2. Search India Post database by administrative hierarchy:

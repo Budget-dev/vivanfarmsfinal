@@ -129,18 +129,10 @@ export const LeafletLocationPicker: React.FC<LeafletLocationPickerProps> = ({
       try {
         const checkRes = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, { signal: AbortSignal.timeout(2500) });
         const checkData = await checkRes.json();
-        if (checkData?.[0]?.Status !== 'Success') {
-          // If raw postcode from OSM failed (e.g. 531204 typo), look up by locality or city
-          const candidate = locality || city;
-          if (candidate) {
-            const poRes = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(candidate)}`, { signal: AbortSignal.timeout(2500) });
-            const poData = await poRes.json();
-            if (poData?.[0]?.Status === 'Success' && poData[0].PostOffice?.[0]?.Pincode) {
-              pincode = String(poData[0].PostOffice[0].Pincode).replace(/\D/g, '').slice(0, 6);
-              if (poData[0].PostOffice[0].District) city = poData[0].PostOffice[0].District;
-              if (poData[0].PostOffice[0].State) state = poData[0].PostOffice[0].State;
-            }
-          }
+        if (checkData?.[0]?.Status === 'Success' && checkData[0].PostOffice?.[0]) {
+          const po = checkData[0].PostOffice[0];
+          if (!city && po.District) city = po.District;
+          if (!state && po.State) state = po.State;
         }
       } catch {}
     }

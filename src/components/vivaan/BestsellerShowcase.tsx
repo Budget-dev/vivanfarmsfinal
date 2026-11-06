@@ -72,7 +72,7 @@ export const BestsellerShowcase: React.FC<BestsellerShowcaseProps> = ({
   };
 
   // Image source: if product has imageUrls use first, otherwise use our high-res home images
-  const displayImage = currentProduct.imageUrls?.[0] || '/images/home/featured_pure_jar.jpg';
+  const displayImage = currentProduct.imageUrls?.[0] || '';
 
   return (
     <section className="py-8 sm:py-12 md:py-16 bg-[#FAF7F0] border-b border-[#EAE3D2]">
@@ -102,14 +102,21 @@ export const BestsellerShowcase: React.FC<BestsellerShowcaseProps> = ({
             onClick={() => router.push(`/product/${currentProduct.id}`)}
             className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-[#F7F3EA] overflow-hidden cursor-pointer"
           >
-            <Image
-              src={displayImage}
-              alt={currentProduct.name}
-              fill
-              className="object-cover object-center transition-transform duration-700 hover:scale-105"
-              sizes="(max-width: 768px) 100vw, 700px"
-              referrerPolicy="no-referrer"
-            />
+            {displayImage ? (
+              <Image
+                src={displayImage}
+                alt={currentProduct.name}
+                fill
+                className="object-cover object-center transition-transform duration-700 hover:scale-105"
+                sizes="(max-width: 768px) 100vw, 700px"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-[#F4EFE6] text-[#143E31]">
+                <Package className="w-16 h-16 stroke-[1.2] mb-2 text-emerald-800/50" />
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-950/70">Pure Vedic Produce</span>
+              </div>
+            )}
             {/* Subtle Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
           </div>

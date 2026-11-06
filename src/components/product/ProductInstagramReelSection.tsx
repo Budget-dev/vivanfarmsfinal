@@ -52,7 +52,6 @@ export const ProductInstagramReelSection: React.FC<ProductInstagramReelSectionPr
   const reels: ReelItem[] = React.useMemo(() => {
     if (Array.isArray((product as any).reels) && (product as any).reels.length > 0) {
       return (product as any).reels.map((r: any, idx: number) => {
-        // Ensure reel title matches product as requested by user
         const baseTitle = r.title || 'In Action';
         const prodName = product.name || 'Product';
         const reelTitle = baseTitle.toLowerCase().includes(prodName.toLowerCase()) 
@@ -63,7 +62,7 @@ export const ProductInstagramReelSection: React.FC<ProductInstagramReelSectionPr
           id: r.id || `reel-${idx}`,
           title: reelTitle,
           subtitle: r.subtitle || 'Farm Fresh & Authentic',
-          videoUrl: r.videoUrl || product.videoUrl || DEFAULT_VIDEO_URL,
+          videoUrl: r.videoUrl || product.videoUrl || '',
           posterUrl: r.posterUrl || (product.imageUrls && product.imageUrls[idx % product.imageUrls.length]) || '',
           caption: r.caption || `Experience authentic farm-direct ${product.name}. 100% pure ingredients crafted with traditional love and care.`,
           likesCount: Number(r.likesCount) || (3500 + idx * 850),
@@ -72,53 +71,30 @@ export const ProductInstagramReelSection: React.FC<ProductInstagramReelSectionPr
           viewsLabel: r.viewsLabel || `${(18.5 + idx * 6.2).toFixed(1)}k`,
           tag: r.tag || product.name
         };
-      });
+      }).filter((r: ReelItem) => Boolean(r.videoUrl));
     }
 
-    const primaryImg = product.imageUrls?.[0] || '';
-    const prodName = product.name || 'A2 Desi Farm Product';
+    if (product.videoUrl) {
+      const prodName = product.name || 'Pure Farm Product';
+      return [
+        {
+          id: 'reel-main',
+          title: `${prodName} — Sacred Process`,
+          subtitle: 'Organic Farm Harvest',
+          videoUrl: product.videoUrl,
+          posterUrl: product.imageUrls?.[0] || '',
+          caption: `Slow-crafted with pure dedication and authentic farm tradition. Experience ${prodName}! 🔥🌿`,
+          likesCount: 3840,
+          commentsCount: 142,
+          sharesCount: 420,
+          viewsLabel: '24.5k',
+          tag: prodName
+        }
+      ];
+    }
 
-    return [
-      {
-        id: 'reel-1',
-        title: `${prodName} — Sacred Process`,
-        subtitle: 'Gujarat Organic Farm',
-        videoUrl: product.videoUrl || DEFAULT_VIDEO_URL,
-        posterUrl: primaryImg,
-        caption: `Slow-crafted with pure dedication and authentic farm tradition. Experience the genuine nutrition and natural richness of ${prodName}! 🔥🌿`,
-        likesCount: 4892,
-        commentsCount: 184,
-        sharesCount: 521,
-        viewsLabel: '28.4k',
-        tag: prodName
-      },
-      {
-        id: 'reel-2',
-        title: `${prodName} — Purity Tested`,
-        subtitle: '100% Cruelty-Free',
-        videoUrl: DEFAULT_VIDEO_URL,
-        posterUrl: product.imageUrls?.[1] || primaryImg,
-        caption: `Every batch of ${prodName} is double lab tested for 100% purity with zero artificial chemicals or adulteration. Certified farm fresh! 🌾🐄`,
-        likesCount: 3640,
-        commentsCount: 112,
-        sharesCount: 389,
-        viewsLabel: '19.7k',
-        tag: prodName
-      },
-      {
-        id: 'reel-3',
-        title: `${prodName} — Kitchen Fresh`,
-        subtitle: 'Unfiltered Goodness',
-        videoUrl: DEFAULT_VIDEO_URL,
-        posterUrl: product.imageUrls?.[2] || primaryImg,
-        caption: `Hand-packed in food-grade packaging and delivered straight from our farm to your kitchen in record time. Pure heritage goodness for your family 💛✨`,
-        likesCount: 6120,
-        commentsCount: 265,
-        sharesCount: 840,
-        viewsLabel: '34.2k',
-        tag: prodName
-      }
-    ];
+    // Do NOT show mock reels if no reels or video exist for this product
+    return [];
   }, [product]);
 
   const scrollLeft = () => {
@@ -132,6 +108,10 @@ export const ProductInstagramReelSection: React.FC<ProductInstagramReelSectionPr
       scrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
     }
   };
+
+  if (!reels || reels.length === 0) {
+    return null;
+  }
 
   return (
     <section id="product-reels" className="w-full py-10 sm:py-14 bg-gradient-to-b from-[#FAF7F2] via-[#F4EFE6] to-[#FAF7F2] border-t border-b border-[#E9DFCF] overflow-hidden">

@@ -3,14 +3,9 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-const LIVE_RAZORPAY_KEY_ID = 'rzp_live_Tw5iYEoGxeYl0c';
-const LIVE_RAZORPAY_KEY_SECRET = 'cj18vLpDFHxsGeonSQNTYl5H';
-
-let razorpayClient: InstanceType<typeof Razorpay> | null = null;
-
 function getRazorpay(): InstanceType<typeof Razorpay> | null {
-  const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || LIVE_RAZORPAY_KEY_ID;
-  const key_secret = process.env.RAZORPAY_KEY_SECRET || LIVE_RAZORPAY_KEY_SECRET;
+  const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
   if (!key_id || !key_secret) {
     return null;
   }
@@ -21,7 +16,7 @@ function getRazorpay(): InstanceType<typeof Razorpay> | null {
 }
 
 export async function getRazorpayClientKey(): Promise<string> {
-  return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || LIVE_RAZORPAY_KEY_ID;
+  return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || '';
 }
 
 export async function createRazorpayOrder(amount: number) {
@@ -61,7 +56,7 @@ export async function verifyRazorpayPayment(
       return { success: false, error: 'Payment verification parameters missing' };
     }
 
-    const secret = process.env.RAZORPAY_KEY_SECRET || LIVE_RAZORPAY_KEY_SECRET;
+    const secret = process.env.RAZORPAY_KEY_SECRET;
     if (!secret) {
       return { success: false, error: 'Payment verification secret is missing' };
     }
