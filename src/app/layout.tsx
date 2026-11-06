@@ -18,11 +18,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Vivaan Organic Farms | Pure A2 Desi Buffalo Ghee',
-  description: 'Authentic Vedic Bilona A2 Desi Buffalo Ghee, hand-churned in earthen pots and delivered fresh in 14 days.',
+  title: 'Vivaan Farms | Natural Products Directly From Farm',
+  description: 'Bringing farm freshness closer to your home. Fresh buffalo milk, pure traditional ghee, and natural farm products directly from Chandravelli, Bellampalli, Telangana.',
   openGraph: {
-    title: 'Vivaan Organic Farms | Pure A2 Desi Buffalo Ghee',
-    description: 'Authentic Vedic Bilona A2 Desi Buffalo Ghee, hand-churned in earthen pots and delivered fresh in 14 days.',
+    title: 'Vivaan Farms | Natural Products Directly From Farm',
+    description: 'Bringing farm freshness closer to your home. Fresh buffalo milk, pure traditional ghee, and natural farm products directly from Chandravelli, Bellampalli, Telangana.',
   },
   icons: {
     icon: '/favicon.ico',

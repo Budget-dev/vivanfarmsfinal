@@ -429,7 +429,7 @@ export async function cancelShipment(awbNumber: string) {
  */
 export async function checkServiceability(
   deliveryPincode: string,
-  pickupPincode: string = '395007', // Gujarat Farm Dispatch Hub
+  pickupPincode: string = '504251', // Vivaan Farms Origin Hub, Chandravelli, Bellampalli, Telangana
   weightGrams: number = 1000,
   isCod: boolean = false
 ) {

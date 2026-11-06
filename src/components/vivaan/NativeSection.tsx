@@ -19,7 +19,7 @@ const NATIVE_CARDS = [
   {
     title: "Impurities, Out.",
     subtitle: "Goodness, In.",
-    desc: "Only the best seeds & purest milk make the cut from our Gujarat farms.",
+    desc: "Only the freshest milk and natural ingredients make the cut directly from our farm.",
     image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2001_03_02%20AM.png",
   },
   {

@@ -405,7 +405,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart, cartCount, onFilter,
             <div className="p-6 bg-white border-t border-primary/5">
               <div className="bg-[#EBF5EE] p-4 rounded-[20px] text-center mb-4">
                 <div className="text-[10px] font-black text-primary uppercase tracking-[2px] mb-1">Pure Promise</div>
-                <div className="text-xs font-medium text-[#7A6848]">Gujarat Farm Direct Purity</div>
+                <div className="text-xs font-medium text-[#7A6848]">Natural Products Directly From Farm</div>
               </div>
               
               {user && (

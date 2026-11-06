@@ -407,7 +407,7 @@ export default function AdminOrdersPage() {
     setCourierPartner(order.courierPartner || order.courierName || 'Vivaan Farm Direct Express');
     setStatusInput(order.status || 'Shipped');
     setAdminMessageInput(order.adminMessage || '');
-    setLocationInput(order.currentLocation || 'Gujarat Vedic Farm Facility');
+    setLocationInput(order.currentLocation || 'Vivaan Farm Facility, Bellampalli, Telangana');
   };
 
   const getOfficialCourierUrl = (partner: string, awb: string) => {
@@ -480,7 +480,7 @@ export default function AdminOrdersPage() {
     const newCheckpoint = {
       status: statusInput.toUpperCase(),
       activity: cleanMessage || `Order status updated to ${statusInput} by farm manager`,
-      location: cleanLocation || (courierPartner.includes('Farm') ? 'Gujarat Vedic Farm' : courierPartner),
+      location: cleanLocation || (courierPartner.includes('Farm') ? 'Vivaan Farm, Telangana' : courierPartner),
       timestamp: new Date().toISOString(),
       source: 'admin_manual',
     };
@@ -1144,7 +1144,7 @@ export default function AdminOrdersPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Current Hub / Location (Optional)</label>
                 <Input
-                  placeholder="e.g. Gujarat Farm Facility, Surat Hub"
+                  placeholder="e.g. Vivaan Farms Hub, Bellampalli, Telangana"
                   value={locationInput}
                   onChange={(e) => setLocationInput(e.target.value)}
                   className="h-9 text-xs"
@@ -1163,7 +1163,7 @@ export default function AdminOrdersPage() {
               </div>
               <textarea
                 rows={3}
-                placeholder="e.g. Your Vedic Gir cow ghee has been freshly hand-churned and packed with natural insulation. Driver Ramesh (98765-43210) is out for delivery today."
+                placeholder="e.g. Your Vedic Gir cow ghee has been freshly hand-churned and packed with natural insulation. Delivery partner is on the way with your farm-fresh package."
                 value={adminMessageInput}
                 onChange={(e) => setAdminMessageInput(e.target.value)}
                 className="w-full p-2.5 text-xs rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none text-foreground placeholder:text-muted-foreground/60"

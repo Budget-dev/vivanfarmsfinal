@@ -57,7 +57,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, tot
           </div>
           <h2 className="font-headline text-5xl font-extrabold text-white mb-4">Order Placed! 🌿</h2>
           <p className="text-white/65 text-sm leading-relaxed mb-8 max-w-[340px] mx-auto">
-            Your pure A2 Gir Cow Ghee is being lovingly packed at Vivaan Farms, Gujarat. Your kitchen is about to smell amazing! 🧈
+            Your farm-fresh order is being carefully packed at Vivaan Farms. Bringing farm freshness directly to your home! 🌿
           </p>
           
           <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center gap-4 mb-6 text-left">

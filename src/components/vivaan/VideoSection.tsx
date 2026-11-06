@@ -10,7 +10,7 @@ export const VideoSection: React.FC = () => {
   const videos = [
     { title: "Farm to Table", sub: "The Vivaan Journey" },
     { title: "Traditional Roots", sub: "Bilona Craftsmanship" },
-    { title: "Pure Goodness", sub: "Gujarat's Finest" }
+    { title: "Pure Goodness", sub: "Pure Farm Harvest" }
   ];
 
   return (

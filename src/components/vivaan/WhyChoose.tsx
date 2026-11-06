@@ -7,7 +7,7 @@ const PILLARS = [
   {
     icon: <Tractor className="w-8 h-8 sm:w-10 sm:h-10 text-[#0D3520]" />,
     title: "Direct From Farms",
-    desc: "Pure farm-fresh harvest directly from certified organic pastures in Gujarat."
+    desc: "Pure farm-fresh harvest and dairy delivered directly from our farm to your home."
   },
   {
     icon: (

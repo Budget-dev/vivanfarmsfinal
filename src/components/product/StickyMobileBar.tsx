@@ -37,7 +37,7 @@ export const StickyMobileBar: React.FC<StickyMobileBarProps> = ({
     <>
       {/* Floating WhatsApp Action Button */}
       <a
-        href="https://wa.me/919217428737?text=Hi%20Vivaan%20Farms,%20I'd%20like%20to%20know%20more%20about%20your%20A2%20Desi%20Buffalo%20Ghee."
+        href="https://wa.me/919988667848?text=Hello%20Vivaan%20Farms,%20I'd%20like%20to%20know%20more%20about%20your%20fresh%20farm%20dairy%20products."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-20 right-4 z-40 w-12 h-12 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform md:hidden cursor-pointer"

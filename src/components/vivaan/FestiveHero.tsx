@@ -22,7 +22,7 @@ const BANNER_SLIDES = [
   {
     id: 'banner-3',
     url: 'https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%208%2C%202026%2C%2008_08_08%20AM.png',
-    alt: 'Vivaan Farms - Pure Organic Harvest Direct From Gujarat Pastures',
+    alt: 'Vivaan Farms - Natural Farm Fresh Products Directly From Farm',
   },
 ];
 

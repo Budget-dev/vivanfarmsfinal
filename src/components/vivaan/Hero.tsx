@@ -23,8 +23,8 @@ const HERO_SLIDES = [
     id: 'hero-banner-farm',
     url: 'https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%208%2C%202026%2C%2008_07_53%20AM.png',
     alt: 'Vivaan Farms - Sustainable Organic Dairy & Farm Goods',
-    subtitle: 'Pure Native Gir Cow & Murrah Buffalo Milk',
-    highlight: 'Ethically Sourced from Gujarat'
+    subtitle: 'Pure Farm Fresh Buffalo Milk & Traditional Goods',
+    highlight: 'Natural Products Directly From Farm'
   }
 ];
 

@@ -171,7 +171,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                   {productName}
                 </span>
                 <span className="text-xs text-muted-foreground mt-1 max-w-[280px]">
-                  100% pure harvest from Gujarat organic farms • Clean traditional processing
+                  100% natural harvest from Vivaan Farms • Pure traditional processing directly to your home
                 </span>
               </div>
             )}

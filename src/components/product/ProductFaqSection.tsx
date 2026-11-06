@@ -35,7 +35,7 @@ export const ProductFaqSection: React.FC = () => {
     {
       id: 'ship-4',
       q: 'What if my order arrives damaged or leaked?',
-      a: 'We pack in shatter-proof bubble and heavy corrugated boxes. In the rare event of transit leakage or glass damage, send us a photo on WhatsApp (+91 92174 28737) and we will send a 100% free immediate replacement with no questions asked.'
+      a: 'We pack in shatter-proof bubble and heavy corrugated boxes. In the rare event of transit leakage or glass damage, send us a photo on WhatsApp (+91 99886 67848) and we will send a 100% free immediate replacement with no questions asked.'
     },
     {
       id: 'ship-5',

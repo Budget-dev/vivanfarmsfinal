@@ -218,8 +218,8 @@ export interface SiteSettings {
   announcementBarText: string;
   logoText: string;                     // e.g. "VIVAAN"
   logoSubText: string;                  // e.g. "ORGANIC FARMS"
-  supportEmail: string;                 // e.g. "support@varahifarms.com"
-  supportPhone: string;                 // e.g. "+91 92174 28737"
+  supportEmail: string;                 // e.g. "support@vivaanfarms.in"
+  supportPhone: string;                 // e.g. "+91 99886 67848"
 }
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
@@ -228,8 +228,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   announcementBarText: 'Get 12% Off Permanently with Vivaan Membership',
   logoText: 'VIVAAN',
   logoSubText: 'ORGANIC FARMS',
-  supportEmail: 'support@varahifarms.com',
-  supportPhone: '+91 92174 28737',
+  supportEmail: 'support@vivaanfarms.in',
+  supportPhone: '+91 99886 67848',
 };
 
 export const DEFAULT_TRUST_STRIP: TrustStrip = {

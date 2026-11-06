@@ -58,7 +58,7 @@ export const HoverFooter: React.FC = () => {
               </div>
             </div>
             <p className="text-sm text-white/60 leading-relaxed font-medium">
-              Authentic farm-direct purity from the heart of Gujarat. Traditional Bilona method A2 Ghee and handcrafted goods.
+              Natural dairy farming and farm-fresh buffalo milk delivered directly from Chandravelli, Bellampalli, Telangana to your family.
             </p>
           </div>
 
@@ -96,19 +96,19 @@ export const HoverFooter: React.FC = () => {
                 <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-white/10 transition-all">
                   <Mail size={16} className="text-accent" />
                 </div>
-                <a href="mailto:care@vivaanfarms.com" className="text-sm font-semibold hover:text-accent transition-colors">care@vivaanfarms.com</a>
+                <a href="mailto:support@vivaanfarms.in" className="text-sm font-semibold hover:text-accent transition-colors">support@vivaanfarms.in</a>
               </li>
               <li className="flex items-center space-x-4 group">
                 <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-white/10 transition-all">
                   <Phone size={16} className="text-accent" />
                 </div>
-                <a href="tel:+919999999999" className="text-sm font-semibold hover:text-accent transition-colors">+91 98765 43210</a>
+                <a href="tel:+919988667848" className="text-sm font-semibold hover:text-accent transition-colors">+91 99886 67848</a>
               </li>
               <li className="flex items-center space-x-4 group">
                 <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-white/10 transition-all">
                   <MapPin size={16} className="text-accent" />
                 </div>
-                <span className="text-sm font-semibold">Rajkot, Gujarat</span>
+                <span className="text-sm font-semibold">Chandravelli, Bellampalli, Telangana – 504251</span>
               </li>
             </ul>
           </div>

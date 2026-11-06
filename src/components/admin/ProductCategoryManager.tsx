@@ -260,7 +260,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
   // 9:16 Video Reels
   const [reels, setReels] = useState<ProductReel[]>([]);
   const [reelTitleSuffix, setReelTitleSuffix] = useState('Vedic Process');
-  const [reelSubtitle, setReelSubtitle] = useState('Gujarat Organic Farm');
+  const [reelSubtitle, setReelSubtitle] = useState('Vivaan Organic Farm');
   const [reelVideoUrl, setReelVideoUrl] = useState('');
   const [reelPosterUrl, setReelPosterUrl] = useState('');
   const [reelCaption, setReelCaption] = useState('');
@@ -502,7 +502,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
     const newReel: ProductReel = {
       id: `reel-${Date.now()}`,
       title: computedTitle,
-      subtitle: reelSubtitle.trim() || 'Gujarat Organic Farm',
+      subtitle: reelSubtitle.trim() || 'Vivaan Organic Farm',
       videoUrl: video,
       posterUrl: reelPosterUrl.trim() || uploadedImages[0] || '',
       caption: reelCaption.trim() || `Experience authentic Vedic ${prodTitle}. Handcrafted with pure farm-fresh ingredients! 🔥🌿`,
@@ -551,7 +551,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
     setNewVarMrp('');
     setReels([]);
     setReelTitleSuffix('Vedic Process');
-    setReelSubtitle('Gujarat Organic Farm');
+    setReelSubtitle('Vivaan Organic Farm');
     setReelVideoUrl('');
     setReelPosterUrl('');
     setReelCaption('');
@@ -1786,7 +1786,7 @@ export const ProductCategoryManager: React.FC<ProductCategoryManagerProps> = ({
                         <Input
                           value={reelSubtitle}
                           onChange={(e) => setReelSubtitle(e.target.value)}
-                          placeholder="e.g. Gujarat Organic Farm"
+                          placeholder="e.g. Vivaan Organic Farm"
                           className="h-8 text-xs"
                         />
                       </div>

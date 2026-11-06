@@ -20,8 +20,8 @@ export const WhatsAppButton: React.FC = () => {
     return null;
   }
 
-  const phoneNumber = "919217428737"; 
-  const message = "Hi Vivaan Farms, I'd like to inquire about your pure A2 Desi Buffalo Ghee.";
+  const phoneNumber = "919988667848"; 
+  const message = "Hello Vivaan Farms, I'd like to inquire about your fresh farm dairy products.";
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
   return (

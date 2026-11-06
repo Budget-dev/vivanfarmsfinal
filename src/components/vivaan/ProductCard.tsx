@@ -10,8 +10,8 @@ import { cn } from '@/lib/utils';
 
 // Default descriptions by category for products missing a description
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  ghee: 'Pure A2 Gir Cow Bilona Ghee, hand-churned from farm-fresh curd using traditional methods.',
-  honey: 'Raw unprocessed forest honey, ethically harvested from wild bee colonies in Gujarat.',
+  ghee: 'Pure traditional Bilona Ghee, hand-churned from farm-fresh curd using natural methods.',
+  honey: 'Raw unprocessed forest honey, naturally harvested with care and zero heating or additives.',
   sweets: 'Artisanal farm sweets made with pure A2 ghee, jaggery & love — no preservatives.',
   combo: 'Curated combo pack of our finest farm-fresh products at special savings.',
   default: 'Farm-fresh, naturally pure & crafted with tradition. No chemicals, no shortcuts.',

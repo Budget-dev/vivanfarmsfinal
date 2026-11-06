@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
       const fallbackRes = await fetch(fallbackUrl, {
         headers: {
           Accept: "application/json",
-          "User-Agent": "VarahiFarmsApp/1.0 (contact@varahifarms.com)", // Nominatim requires a User-Agent header
+          "User-Agent": "VivaanFarmsApp/1.0 (support@vivaanfarms.in)", // Nominatim requires a User-Agent header
         },
         signal: AbortSignal.timeout(6000),
       });

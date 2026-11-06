@@ -334,11 +334,11 @@ export default function AdminShippingPage() {
               </div>
               <div className="p-3 bg-muted/40 rounded-xl border border-border/50">
                 <span className="text-muted-foreground font-medium block">Registered Warehouse</span>
-                <span className="font-semibold text-foreground mt-1 block">Gujarat Farm Dispatch Facility</span>
+                <span className="font-semibold text-foreground mt-1 block">Vivaan Farms Dispatch Hub (Telangana)</span>
               </div>
               <div className="p-3 bg-muted/40 rounded-xl border border-border/50">
                 <span className="text-muted-foreground font-medium block">Default Pickup Pincode</span>
-                <span className="font-mono font-bold text-foreground mt-1 block">395007 (Gujarat Origin)</span>
+                <span className="font-mono font-bold text-foreground mt-1 block">504251 (Telangana Origin)</span>
               </div>
               <div className="p-3 bg-muted/40 rounded-xl border border-border/50">
                 <span className="text-muted-foreground font-medium block">Partner Couriers</span>

@@ -540,7 +540,7 @@ export default function CheckoutPage() {
                     Shipping Address
                   </h1>
                   <p className="text-xs text-[#7A6848] font-medium mt-0.5">
-                    Enter details or use current location for Gujarat farm-direct delivery
+                    Enter details or use current location for farm-direct delivery to your doorstep
                   </p>
                 </div>
               </div>

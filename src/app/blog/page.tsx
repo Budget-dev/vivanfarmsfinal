@@ -42,8 +42,8 @@ const BLOG_POSTS = [
   },
   {
     id: 3,
-    title: "The Story of the Gir Cow: India's Golden Heritage",
-    excerpt: "Learn about the history and spiritual significance of the indigenous Gir cows of Gujarat and why their milk is special.",
+    title: "The Story of Pure Dairy: India's Traditional Heritage",
+    excerpt: "Learn about the history and nutritional richness of traditional dairy farming and why natural fresh milk is special.",
     image: "https://picsum.photos/seed/blog3/800/500",
     date: "Feb 02, 2025",
     author: "Farm Desk",
