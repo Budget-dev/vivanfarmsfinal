@@ -8,25 +8,25 @@ const NATIVE_CARDS = [
     title: "From Native Geographies",
     subtitle: "to Ideal Growing Seasons",
     desc: "We take care of every factor when sourcing local ingredients.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2001_02_36%20AM.png",
+    image: "/images/native/native_geographies.jpg",
   },
   {
     title: "What Do We Look For?",
     subtitle: "Nutrition over Cost",
     desc: "Not high yield. Not lower cost. Just flavour, nutrition, and soul.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2001_02_43%20AM.png",
+    image: "/images/native/nutrition_over_cost.jpg",
   },
   {
     title: "Impurities, Out.",
     subtitle: "Goodness, In.",
     desc: "Only the freshest milk and natural ingredients make the cut directly from our farm.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2001_03_02%20AM.png",
+    image: "/images/native/impurities_out_goodness_in.jpg",
   },
   {
     title: "Native Heritage",
     subtitle: "A2 Gir Milk & Seeds",
     desc: "We dare you to find better native ingredients than our farm direct goods.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2011_51_13%20AM.png",
+    image: "/images/native/a2_desi_cows.jpg",
   }
 ];
 

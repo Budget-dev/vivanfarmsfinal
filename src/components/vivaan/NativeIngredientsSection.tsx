@@ -11,28 +11,28 @@ const NATIVE_CARDS = [
     title: "From Native Geographies",
     subtitle: "to Ideal Growing Seasons",
     desc: "We take care of every factor when sourcing authentic local heirloom ingredients.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2001_02_36%20AM.png",
+    image: "/images/native/native_geographies.jpg",
     fallback: "/images/home/hero_lifestyle.jpg"
   },
   {
     title: "What Do We Look For?",
     subtitle: "Nutrition over Cost",
     desc: "Not high yield. Not lower cost. Just pure authentic flavour, nutrition, and soul.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2001_02_43%20AM.png",
+    image: "/images/native/nutrition_over_cost.jpg",
     fallback: "/images/products/mustard_oil.jpg"
   },
   {
     title: "Impurities, Out.",
     subtitle: "Goodness, In.",
     desc: "Slow wood-pressing under 40°C to preserve vital enzymes and natural aroma.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2001_03_02%20AM.png",
+    image: "/images/native/impurities_out_goodness_in.jpg",
     fallback: "/images/home/bilona_blog.jpg"
   },
   {
     title: "A2 Milk from Desi Cows",
     subtitle: "Grass-Fed & Cruelty Free",
     desc: "Pure native Gir cows and Murrah buffaloes raised with ethical, calf-first care.",
-    image: "https://vivanfa.sirv.com/ChatGPT%20Image%20Sep%2011%2C%202026%2C%2011_51_13%20AM.png",
+    image: "/images/native/a2_desi_cows.jpg",
     fallback: "/images/home/trust_pastoral_farm.jpg"
   }
 ];
@@ -112,7 +112,7 @@ export const NativeIngredientsSection: React.FC = () => {
                 />
 
                 {/* Gradient Scrim */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
                 {/* Content Overlay */}
                 <div className="absolute inset-0 p-3 sm:p-6 flex flex-col justify-end text-white">
